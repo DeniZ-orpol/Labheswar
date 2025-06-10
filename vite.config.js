@@ -8,12 +8,12 @@ export default defineConfig({
                 // CSS Themes
                 "resources/css/themes/enigma/side-menu.css",
                 "resources/css/themes/enigma/top-menu.css",
-                "resources/css/themes/icewall/side-menu.css",
-                "resources/css/themes/icewall/top-menu.css",
-                "resources/css/themes/rubick/side-menu.css",
-                "resources/css/themes/rubick/top-menu.css",
-                "resources/css/themes/tinker/side-menu.css",
-                "resources/css/themes/tinker/top-menu.css",
+                // "resources/css/themes/icewall/side-menu.css",
+                // "resources/css/themes/icewall/top-menu.css",
+                // "resources/css/themes/rubick/side-menu.css",
+                // "resources/css/themes/rubick/top-menu.css",
+                // "resources/css/themes/tinker/side-menu.css",
+                // "resources/css/themes/tinker/top-menu.css",
 
                 // CSS Vendors
                 "resources/css/vendors/ckeditor.css",
@@ -84,9 +84,9 @@ export default defineConfig({
 
                 // JS Themes
                 "resources/js/themes/enigma.js",
-                "resources/js/themes/icewall.js",
-                "resources/js/themes/rubick.js",
-                "resources/js/themes/tinker.js",
+                // "resources/js/themes/icewall.js",
+                // "resources/js/themes/rubick.js",
+                // "resources/js/themes/tinker.js",
 
                 // JS Base Components
                 "resources/js/components/base/calendar/calendar.js",
