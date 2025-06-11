@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ThemeController;
@@ -84,11 +85,14 @@ Route::get('layout-switcher/{activeLayout}', [LayoutController::class, 'switch']
     // Route::get('/slider', 'slider')->name('slider');
     // Route::get('/image-zoom', 'imageZoom')->name('image-zoom');
 // });
-Route::middleware(['web'])->group(function () {
+// Route::middleware(['web'])->group(function () {
     Route::get('/', [LoginController::class, 'index'])->name('index');
-    Route::post('/', [LoginController::class, 'login'])->name('login');
+    Route::post('/login', [LoginController::class, 'login'])->name('login');
     
     Route::group(['auth'], function () {
         Route::get('/dashboard', [LoginController::class, 'dashboardOverview4'])->name('dashboard');
     });
-});
+    Route::get('/users', [UserController::class, 'index'])->name('users-list');
+    Route::get('/add-user', [UserController::class, 'create'])->name('add-user');
+    Route::post('/add-user', [UserController::class, 'store'])->name('add-user.store');
+// });

@@ -1,7 +1,7 @@
 @extends('../themes/base')
 
 @section('head')
-    <title>Login - Midone - Tailwind Admin Dashboard Template</title>
+    <title>Login</title>
 @endsection
 
 @section('content')
@@ -25,7 +25,7 @@
                             <img
                                 class="w-6"
                                 src="{{ Vite::asset('resources/images/logo.svg') }}"
-                                alt="Midone - Tailwind Admin Dashboard Template"
+                                alt="Midone"
                             />
                             <span class="ml-3 text-xl font-medium text-white">
                                 Midone <span class="font-light opacity-70">Admin</span>
