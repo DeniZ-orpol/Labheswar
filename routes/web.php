@@ -93,6 +93,8 @@ Route::get('layout-switcher/{activeLayout}', [LayoutController::class, 'switch']
         Route::get('/dashboard', [LoginController::class, 'dashboardOverview4'])->name('dashboard');
     });
     Route::get('/users', [UserController::class, 'index'])->name('users-list');
-    Route::get('/add-user', [UserController::class, 'create'])->name('add-user');
-    Route::post('/add-user', [UserController::class, 'store'])->name('add-user.store');
+    Route::get('/add-user', [UserController::class, 'create'])->name('create-user');
+    Route::post('/add-user', [UserController::class, 'store'])->name('store-user');
+    Route::get('edit-user/{id}', [UserController::class, 'edit'])->name('edit-user');
+    Route::put('update-user/{id}', [UserController::class, 'update'])->name('update-user');
 // });

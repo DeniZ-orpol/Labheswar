@@ -10,7 +10,7 @@
     </div>
     <div class="grid grid-cols-12 gap-6">
         <!-- BEGIN: Profile Menu -->
-        <div class="col-span-12 flex flex-col-reverse lg:col-span-4 lg:block 2xl:col-span-3">
+        {{-- <div class="col-span-12 flex flex-col-reverse lg:col-span-4 lg:block 2xl:col-span-3">
             <x-base.box class="mt-5 p-0">
                 <div class="relative flex items-center p-5">
                     <x-base.avatar
@@ -181,11 +181,11 @@
                     </x-base.button>
                 </div>
             </x-base.box>
-        </div>
+        </div> --}}
         <!-- END: Profile Menu -->
-        <div class="col-span-12 lg:col-span-8 2xl:col-span-9">
+        <div class="col-span-12 lg:col-span-12 2xl:col-span-12">
             <!-- BEGIN: Display Information -->
-            <x-base.box class="p-0 lg:mt-5">
+            {{-- <x-base.box class="p-0 lg:mt-5">
                 <div class="flex items-center border-b p-5">
                     <h2 class="mr-auto text-base font-medium">
                         Display Information
@@ -318,145 +318,135 @@
                         </div>
                     </div>
                 </div>
-            </x-base.box>
+            </x-base.box> --}}
             <!-- END: Display Information -->
             <!-- BEGIN: Personal Information -->
-            <x-base.box class="mt-8 p-0">
-                <div class="flex items-center border-b p-5">
-                    <h2 class="mr-auto text-base font-medium">
-                        Personal Information
-                    </h2>
-                </div>
-                <div class="p-5">
-                    <div class="grid grid-cols-12 gap-x-5">
-                        <div class="col-span-12 xl:col-span-6">
-                            <x-base.form.item>
-                                <x-base.label for="update-profile-form-7">Name</x-base.label>
-                                <x-base.input
-                                    type="text"
-                                    name="name"
-                                    placeholder="Enter Name"
-                                />
-                            </x-base.form.item>
-                            <x-base.form.item class="mt-3">
-                                <x-base.label for="update-profile-form-6">Email</x-base.label>
-                                <x-base.input
-                                    type="email"
-                                    name="email"
-                                    placeholder="Enter Email"
-                                />
-                            </x-base.form.item>
-                            
-                            {{-- <x-base.form.item class="mt-3">
-                                <x-base.label for="update-profile-form-8">
-                                    Role
-                                </x-base.label>
-                                <x-base.select id="update-profile-form-8">
-                                    <option>Admin</option>
-                                    <option>Manager</option>
-                                    <option>Cashier</option>
-                                </x-base.select>
-                            </x-base.form.item> --}}
-                            <x-base.form.item class="mt-3">
-                                <x-base.label for="update-profile-form-9">
-                                    Password
-                                </x-base.label>
-                                <x-base.input
-                                    type="password"
-                                    name="password"
-                                    placeholder="Enter Password"
-                                />
-                            </x-base.form.item>
+            <form action="{{ route('update-user', ['id' => $user->id]) }}" method="post">
+                @csrf
+                @method('PUT')
+                <x-base.box class="mt-8 p-0">
+                    <div class="flex items-center border-b p-5">
+                        <h2 class="mr-auto text-base font-medium">
+                            Update User Information
+                        </h2>
+                    </div>
+                    <div class="p-5">
+                        <div class="grid grid-cols-12 gap-x-5">
+                            <div class="col-span-12 xl:col-span-6">
+                                <x-base.form.item>
+                                    <x-base.label for="user-name">Name</x-base.label>
+                                    <x-base.input id="user-name" type="text" name="name" placeholder="Enter Name"
+                                        value="{{ $user->name }}" required />
+                                </x-base.form.item>
+                                <x-base.form.item class="mt-3">
+                                    <x-base.label for="user-email">Email</x-base.label>
+                                    <x-base.input id="user-email" type="email" name="email" placeholder="Enter Email"
+                                        value="{{ $user->email }}" required />
+                                </x-base.form.item>
+                                <x-base.form.item class="mt-3">
+                                    <x-base.label for="user-phone-number">Phone Number</x-base.label>
+                                    <x-base.input id="user-phone-number" type="text" name="mobile" placeholder="Input text"
+                                        value="{{ $user->mobile }}" />
+                                </x-base.form.item>
+    
+                                {{-- <x-base.form.item class="mt-3">
+                                    <x-base.label for="update-profile-form-8">
+                                        Role
+                                    </x-base.label>
+                                    <x-base.select id="update-profile-form-8">
+                                        <option>Admin</option>
+                                        <option>Manager</option>
+                                        <option>Cashier</option>
+                                    </x-base.select>
+                                </x-base.form.item> --}}
+                                {{-- <x-base.form.item class="mt-3">
+                                    <x-base.label for="update-profile-form-9">
+                                        Password
+                                    </x-base.label>
+                                    <x-base.input
+                                        type="password"
+                                        name="password"
+                                        placeholder="Enter Password"
+                                    />
+                                </x-base.form.item> --}}
+                            </div>
+                            <div class="col-span-12 xl:col-span-6">
+                                <x-base.form.item>
+                                    <x-base.label for="user-role">
+                                        Role
+                                    </x-base.label>
+                                    <x-base.select id="user-role" name="role">
+                                        <option value="admin"
+                                            {{ old('role', $user->role ?? '') === 'admin' ? 'selected' : '' }}>Admin</option>
+                                        <option value="manager"
+                                            {{ old('role', $user->role ?? '') === 'manager' ? 'selected' : '' }}>Manager
+                                        </option>
+                                        <option value="cashier"
+                                            {{ old('role', $user->role ?? '') === 'cashier' ? 'selected' : '' }}>Cashier
+                                        </option>
+                                    </x-base.select>
+                                </x-base.form.item>
+                                <x-base.form.item class="mt-3">
+                                    <x-base.label for="user-password">
+                                        Password
+                                    </x-base.label>
+                                    <x-base.input id="user-password" type="password" name="password"
+                                        placeholder="Enter Password" required />
+                                </x-base.form.item>
+                                <x-base.form.item class="mt-3">
+                                    <x-base.label for="user-confirm-password">
+                                        Confirm Password
+                                    </x-base.label>
+                                    <x-base.input id="user-confirm-password" type="password" name="password_confirmation"
+                                        placeholder="Confirm Password" required />
+                                </x-base.form.item>
+                                {{-- <x-base.form.item class="mt-3">
+                                    <x-base.label for="update-profile-form-11">
+                                        Address
+                                    </x-base.label>
+                                    <x-base.input
+                                        id="update-profile-form-11"
+                                        type="text"
+                                        value="10 Anson Road, International Plaza, #10-11, 079903 Singapore, Singapore"
+                                        placeholder="Input text"
+                                    />
+                                </x-base.form.item> --}}
+                                {{-- <x-base.form.item class="mt-3">
+                                    <x-base.label for="update-profile-form-12">
+                                        Bank Name
+                                    </x-base.label>
+                                    <x-base.tom-select
+                                        class="w-full"
+                                        id="update-profile-form-12"
+                                    >
+                                        <option value="1">SBI - STATE BANK OF INDIA</option>
+                                        <option value="2">CITI BANK - CITI BANK</option>
+                                    </x-base.tom-select>
+                                </x-base.form.item> --}}
+                                {{-- <x-base.form.item class="mt-3">
+                                    <x-base.label for="update-profile-form-13">
+                                        Bank Account
+                                    </x-base.label>
+                                    <x-base.input
+                                        id="update-profile-form-13"
+                                        type="text"
+                                        value="DBS Current 011-903573-0"
+                                        placeholder="Input text"
+                                    />
+                                </x-base.form.item> --}}
+                            </div>
                         </div>
-                        <div class="col-span-12 xl:col-span-6">
-                            <x-base.form.item class="mt-3 xl:mt-0">
-                                <x-base.label for="update-profile-form-10">
-                                    Phone Number
-                                </x-base.label>
-                                <x-base.input
-                                    id="update-profile-form-10"
-                                    type="number"
-                                    name="phone_number"
-                                    value="65570828"
-                                    placeholder="Input text"
-                                />
-                            </x-base.form.item>
-                            <x-base.form.item class="mt-3">
-                                <x-base.label for="update-profile-form-8">
-                                    Role
-                                </x-base.label>
-                                <x-base.select id="update-profile-form-8">
-                                    <option>Admin</option>
-                                    <option>Manager</option>
-                                    <option>Cashier</option>
-                                </x-base.select>
-                            </x-base.form.item>
-                            <x-base.form.item class="mt-3">
-                                <x-base.label for="update-profile-form-10">
-                                    Confirm Password
-                                </x-base.label>
-                                <x-base.input
-                                    type="password"
-                                    name="confirm_password"
-                                    placeholder="Confirm Password"
-                                />
-                            </x-base.form.item>
-                            {{-- <x-base.form.item class="mt-3">
-                                <x-base.label for="update-profile-form-11">
-                                    Address
-                                </x-base.label>
-                                <x-base.input
-                                    id="update-profile-form-11"
-                                    type="text"
-                                    value="10 Anson Road, International Plaza, #10-11, 079903 Singapore, Singapore"
-                                    placeholder="Input text"
-                                />
-                            </x-base.form.item> --}}
-                            {{-- <x-base.form.item class="mt-3">
-                                <x-base.label for="update-profile-form-12">
-                                    Bank Name
-                                </x-base.label>
-                                <x-base.tom-select
-                                    class="w-full"
-                                    id="update-profile-form-12"
-                                >
-                                    <option value="1">SBI - STATE BANK OF INDIA</option>
-                                    <option value="2">CITI BANK - CITI BANK</option>
-                                </x-base.tom-select>
-                            </x-base.form.item> --}}
-                            {{-- <x-base.form.item class="mt-3">
-                                <x-base.label for="update-profile-form-13">
-                                    Bank Account
-                                </x-base.label>
-                                <x-base.input
-                                    id="update-profile-form-13"
-                                    type="text"
-                                    value="DBS Current 011-903573-0"
-                                    placeholder="Input text"
-                                />
-                            </x-base.form.item> --}}
+                        <div class="mt-4 flex justify-end">
+                            <x-base.button class="mr-auto w-28" type="submit" variant="primary">
+                                Save
+                            </x-base.button>
+                            <x-base.button type="button" variant="danger">
+                                <x-base.lucide class="mr-1 size-4" icon="Trash" /> Delete Account
+                            </x-base.button>
                         </div>
                     </div>
-                    <div class="mt-4 flex justify-end">
-                        <x-base.button
-                            class="mr-auto w-28"
-                            type="button"
-                            variant="primary"
-                        >
-                            Save
-                        </x-base.button>
-                        <x-base.button
-                            type="button"
-                            variant="danger"
-                        >
-                            <x-base.lucide
-                                class="mr-1 size-4"
-                                icon="Trash"
-                            /> Delete Account
-                        </x-base.button>
-                    </div>
-                </div>
-            </x-base.box>
+                </x-base.box>
+            </form>
             <!-- END: Personal Information -->
         </div>
     </div>

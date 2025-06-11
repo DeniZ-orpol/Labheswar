@@ -14,8 +14,9 @@ class UserController extends Controller
      */
     public function index()
     {
+        $users = User::paginate(10);
         return view('user.user-list', [
-            'users' => User::all(),
+            'users' => $users,
         ]);
     }
 
@@ -70,7 +71,11 @@ class UserController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $user = User::findOrFail($id);
+
+        return view('user.edit-user', [
+            'user' => $user,
+        ]);
     }
 
     /**
@@ -78,7 +83,27 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'role' => 'required|string',
+            'password' => 'required|string|min:4|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $user = User::findOrFail($id);
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->mobile = $request->mobile;
+        $user->role = $request->role;
+        $user->password = bcrypt($request->password);
+        $user->save();
+        return redirect()->route('users-list')->with('success', 'User updated successfully!');
     }
 
     /**

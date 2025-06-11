@@ -14,7 +14,7 @@
                         class="box mr-2"
                         variant="primary"
                     >
-                        Add New User
+                        <a href="{{ route('create-user') }}" >Add New User</a>
                     </x-base.button>
                     {{-- <x-base.dropdown-menu>
                         <x-base.dropdown-menu.trigger
@@ -50,10 +50,10 @@
                         </x-base.dropdown-menu.content>
                     </x-base.dropdown-menu> --}}
                 </div>
-                <div class="mx-auto hidden opacity-70 md:block">
+                {{-- <div class="mx-auto hidden opacity-70 md:block">
                     Showing 1 to 10 of 150 entries
-                </div>
-                <div class="mt-3 flex w-full items-center xl:mt-0 xl:w-auto">
+                </div> --}}
+                {{-- <div class="mt-3 flex w-full items-center xl:mt-0 xl:w-auto">
                     <div class="relative w-56">
                         <x-base.input
                             class="box w-56 pr-10"
@@ -70,7 +70,7 @@
                         <option>Active</option>
                         <option>Inactive</option>
                     </x-base.select>
-                </div>
+                </div> --}}
             </div>
             <!-- BEGIN: Data List -->
             <div class="col-span-12 overflow-auto lg:overflow-visible">
@@ -83,24 +83,24 @@
                             <x-base.table.th>
                                 <x-base.checkbox />
                             </x-base.table.th>
-                            <x-base.table.th>SELLER</x-base.table.th>
+                            <x-base.table.th>Name</x-base.table.th>
                             <x-base.table.th>
-                                STORE
+                                Email
                             </x-base.table.th>
                             <x-base.table.th>
-                                GENDER
+                                Mobile
                             </x-base.table.th>
-                            <x-base.table.th class="text-center">
-                                STATUS
+                            <x-base.table.th>
+                                Role
                             </x-base.table.th>
-                            <x-base.table.th class="text-right">TOTAL PRODUCTS</x-base.table.th>
+                            {{-- <x-base.table.th class="text-right">TOTAL PRODUCTS</x-base.table.th> --}}
                             <x-base.table.th class="text-center">
                                 ACTIONS
                             </x-base.table.th>
                         </x-base.table.tr>
                     </x-base.table.thead>
                     <x-base.table.tbody>
-                        @foreach (array_slice($fakers, 0, 9) as $faker)
+                        @foreach ($users as $user)
                             <x-base.table.tr>
                                 <x-base.table.td>
                                     <x-base.checkbox />
@@ -110,38 +110,37 @@
                                         <div class="image-fit h-9 w-9">
                                             <x-base.tooltip
                                                 class="rounded-lg shadow-md"
-                                                src="{{ Vite::asset($faker['images'][0]) }}"
                                                 alt="Midone - Tailwind Admin Dashboard Template"
                                                 as="img"
-                                                content="{{ 'Uploaded at ' . $faker['dates'][0] }}"
                                             />
                                         </div>
                                         <div class="ml-4">
                                             <a
                                                 class="whitespace-nowrap font-medium"
-                                                href=""
-                                            >
-                                                {{ $faker['users'][0]['name'] }}
+                                                href="">
+                                                {{ $user->name }}
                                             </a>
-                                            <div class="mt-0.5 whitespace-nowrap text-xs opacity-70">
-                                                {{ $faker['users'][0]['email'] }}
-                                            </div>
+                                            {{-- <div class="mt-0.5 whitespace-nowrap text-xs opacity-70">
+                                                {{ $user->email }}
+                                            </div> --}}
                                         </div>
                                     </div>
                                 </x-base.table.td>
-                                <x-base.table.td>
+                                {{-- <x-base.table.td>
                                     <a
                                         class="flex items-center underline decoration-dotted"
                                         href="#"
                                     >
                                         {{ ['Themeforest', 'Codecanyon', 'Graphicriver'][rand(0, 2)] }}
                                     </a>
+                                </x-base.table.td> --}}
+                                <x-base.table.td>{{ $user->email }}
                                 </x-base.table.td>
                                 <x-base.table.td>
                                     <div class="capitalize">
-                                        {{ $faker['users'][0]['gender'] }}</div>
+                                        {{ $user->mobile }}</div>
                                 </x-base.table.td>
-                                <x-base.table.td>
+                                {{-- <x-base.table.td>
                                     <div @class([
                                         'flex items-center justify-center',
                                         'text-success' => $faker['true_false'][0],
@@ -153,35 +152,33 @@
                                         />
                                         {{ $faker['true_false'][0] ? 'Active' : 'Inactive' }}
                                     </div>
-                                </x-base.table.td>
-                                <x-base.table.td class="text-right">
-                                    {{ $faker['totals'][0] }} Items
+                                </x-base.table.td> --}}
+                                <x-base.table.td class="text-left">
+                                    {{ $user->role }}
                                 </x-base.table.td>
                                 <x-base.table.td>
-                                    <div class="flex items-center justify-center">
-                                        <a
-                                            class="mr-3 flex items-center"
-                                            href=""
-                                        >
-                                            <x-base.lucide
-                                                class="mr-1 h-4 w-4"
-                                                icon="CheckSquare"
-                                            />
-                                            Edit
-                                        </a>
-                                        <a
-                                            class="text-danger flex items-center"
-                                            data-tw-toggle="modal"
-                                            data-tw-target="#delete-confirmation-dialog"
-                                            href="#"
-                                        >
-                                            <x-base.lucide
-                                                class="mr-1 h-4 w-4"
-                                                icon="Trash"
-                                            /> Delete
-                                        </a>
-                                    </div>
-                                </x-base.table.td>
+                                        @if ($user->role !== 'super-admin')
+                                        <div class="flex items-center justify-center">
+                                            <a
+                                                class="mr-3 flex items-center"
+                                                href="{{ route('edit-user', ['id' => $user->id]) }}" >
+                                                <x-base.lucide
+                                                    class="mr-1 h-4 w-4"
+                                                    icon="CheckSquare"
+                                                />Edit
+                                            </a>
+                                            <a class="text-danger flex items-center"
+                                                data-tw-toggle="modal"
+                                                data-tw-target="#delete-confirmation-dialog"
+                                                href="#" >
+                                                <x-base.lucide
+                                                    class="mr-1 h-4 w-4"
+                                                    icon="Trash"
+                                                /> Delete
+                                            </a>
+                                        </div>
+                                        @endif
+                                    </x-base.table.td>
                             </x-base.table.tr>
                         @endforeach
                     </x-base.table.tbody>

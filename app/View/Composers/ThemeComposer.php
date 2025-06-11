@@ -12,7 +12,8 @@ class ThemeComposer
     public function compose(View $view): void
     {
         if (!is_null(request()->route())) {
-            $activeTheme = $this->activeTheme($view);
+            $activeTheme = 'enigma';
+            // $activeTheme = $this->activeTheme($view);
             $view->with('activeTheme', $activeTheme);
         }
     }
@@ -28,6 +29,7 @@ class ThemeComposer
             return request()->query('active-theme');
         }
 
-        return session()->has('activeTheme') ? session('activeTheme') : "enigma";
+        return session('activeTheme', 'enigma');
+        // return session()->has('activeTheme') ? session('activeTheme') : "enigma";
     }
 }

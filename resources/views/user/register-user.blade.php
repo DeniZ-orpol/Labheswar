@@ -333,7 +333,7 @@
             </x-base.box> --}}
             <!-- END: Display Information -->
             <!-- BEGIN: Personal Information -->
-            <form action="{{ route('add-user.store') }}" method="post">
+            <form action="{{ route('store-user') }}" method="post">
                 @csrf
                 <x-base.box class="mt-8 p-0">
                     <div class="flex items-center border-b p-5">
