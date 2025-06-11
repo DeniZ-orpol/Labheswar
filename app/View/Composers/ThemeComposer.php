@@ -28,6 +28,6 @@ class ThemeComposer
             return request()->query('active-theme');
         }
 
-        return session()->has('activeTheme') ? session('activeTheme') : "rubick";
+        return session()->has('activeTheme') ? session('activeTheme') : "enigma";
     }
 }
