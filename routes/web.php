@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -21,3 +22,13 @@ Route::get('/party/create', [UserController::class, 'create'])->name('customers.
 Route::post('/user/store', [UserController::class, 'store'])->name('customers.store')->middleware('auth');
 Route::get('/user/edit/{customer}', [UserController::class, 'edit'])->name('customers.edit')->middleware('auth');
 Route::post('/user/update/{customer}', [UserController::class, 'update'])->name('customers.update')->middleware('auth');
+
+Route::group(['middleware' => 'auth'], function () {
+    Route::get('/branch', [BranchController::class, 'index'])->name('branch.index');
+    Route::get('/branch/create', [BranchController::class, 'create'])->name('branch.create');
+    Route::post('/branch/store', [BranchController::class, 'store'])->name('branch.store');
+    Route::get('/branch/edit/{branch}', [BranchController::class, 'edit'])->name('branch.edit');
+    Route::post('/branch/update/{branch}', [BranchController::class, 'update'])->name('branch.update');
+    Route::get('/branch/{branch}', [BranchController::class, 'show'])->name('branch.show');
+    Route::delete('/branch/{branch}', [BranchController::class, 'destroy'])->name('branch.destroy');
+});
