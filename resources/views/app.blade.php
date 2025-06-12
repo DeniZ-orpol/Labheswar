@@ -180,6 +180,12 @@ License: You must have a valid license purchased only from themeforest(the above
                         </ul>
                     </li>
                     <li>
+                        <a href="{{Route('users.index')}}" class="menu">
+                            <div class="menu__icon"> <i data-lucide="users"></i> </div>
+                            <div class="menu__title"> Users </div>
+                        </a>
+                    </li>
+                       <li>
                         <a href="side-menu-light-inbox.html" class="menu">
                             <div class="menu__icon"> <i data-lucide="inbox"></i> </div>
                             <div class="menu__title"> Inbox </div>
@@ -671,7 +677,7 @@ License: You must have a valid license purchased only from themeforest(the above
                 <!-- BEGIN: Logo -->
                 <a href="" class="logo -intro-x hidden md:flex xl:w-[180px] block">
                     <img alt="Midone - HTML Admin Template" class="logo__image w-6" src="{{ asset('images/logo.svg') }}">
-                    <span class="logo__text text-white text-lg ml-3"> Enigma </span> 
+                    <span class="logo__text text-white text-lg ml-3"> Enigma </span>
                 </a>
                 <!-- END: Logo -->
                 <!-- BEGIN: Breadcrumb -->
@@ -686,7 +692,7 @@ License: You must have a valid license purchased only from themeforest(the above
                 <div class="intro-x relative mr-3 sm:mr-6">
                     <div class="search hidden sm:block">
                         <input type="text" class="search__input form-control border-transparent" placeholder="Search...">
-                        <i data-lucide="search" class="search__icon dark:text-slate-500"></i> 
+                        <i data-lucide="search" class="search__icon dark:text-slate-500"></i>
                     </div>
                     <a class="notification notification--light sm:hidden" href=""> <i data-lucide="search" class="notification__icon dark:text-slate-500"></i> </a>
                     <div class="search-result">
@@ -783,7 +789,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 </div>
                                 <div class="ml-2 overflow-hidden">
                                     <div class="flex items-center">
-                                        <a href="javascript:;" class="font-medium truncate mr-5">Al Pacino</a> 
+                                        <a href="javascript:;" class="font-medium truncate mr-5">Al Pacino</a>
                                         <div class="text-xs text-slate-400 ml-auto whitespace-nowrap">01:10 PM</div>
                                     </div>
                                     <div class="w-full truncate text-slate-500 mt-0.5">Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 20</div>
@@ -796,7 +802,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 </div>
                                 <div class="ml-2 overflow-hidden">
                                     <div class="flex items-center">
-                                        <a href="javascript:;" class="font-medium truncate mr-5">Sean Connery</a> 
+                                        <a href="javascript:;" class="font-medium truncate mr-5">Sean Connery</a>
                                         <div class="text-xs text-slate-400 ml-auto whitespace-nowrap">01:10 PM</div>
                                     </div>
                                     <div class="w-full truncate text-slate-500 mt-0.5">It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem </div>
@@ -809,7 +815,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 </div>
                                 <div class="ml-2 overflow-hidden">
                                     <div class="flex items-center">
-                                        <a href="javascript:;" class="font-medium truncate mr-5">Johnny Depp</a> 
+                                        <a href="javascript:;" class="font-medium truncate mr-5">Johnny Depp</a>
                                         <div class="text-xs text-slate-400 ml-auto whitespace-nowrap">01:10 PM</div>
                                     </div>
                                     <div class="w-full truncate text-slate-500 mt-0.5">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry&#039;s standard dummy text ever since the 1500</div>
@@ -822,7 +828,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 </div>
                                 <div class="ml-2 overflow-hidden">
                                     <div class="flex items-center">
-                                        <a href="javascript:;" class="font-medium truncate mr-5">Russell Crowe</a> 
+                                        <a href="javascript:;" class="font-medium truncate mr-5">Russell Crowe</a>
                                         <div class="text-xs text-slate-400 ml-auto whitespace-nowrap">05:09 AM</div>
                                     </div>
                                     <div class="w-full truncate text-slate-500 mt-0.5">It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem </div>
@@ -835,7 +841,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 </div>
                                 <div class="ml-2 overflow-hidden">
                                     <div class="flex items-center">
-                                        <a href="javascript:;" class="font-medium truncate mr-5">Kevin Spacey</a> 
+                                        <a href="javascript:;" class="font-medium truncate mr-5">Kevin Spacey</a>
                                         <div class="text-xs text-slate-400 ml-auto whitespace-nowrap">01:10 PM</div>
                                     </div>
                                     <div class="w-full truncate text-slate-500 mt-0.5">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry&#039;s standard dummy text ever since the 1500</div>
@@ -892,7 +898,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <a href="javascript:;.html" class="side-menu side-menu--active">
                             <div class="side-menu__icon"> <i data-lucide="home"></i> </div>
                             <div class="side-menu__title">
-                                Dashboard 
+                                Dashboard
                                 <div class="side-menu__sub-icon transform rotate-180"> <i data-lucide="chevron-down"></i> </div>
                             </div>
                         </a>
@@ -927,7 +933,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <a href="javascript:;" class="side-menu">
                             <div class="side-menu__icon"> <i data-lucide="box"></i> </div>
                             <div class="side-menu__title">
-                                Menu Layout 
+                                Menu Layout
                                 <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                             </div>
                         </a>
@@ -956,7 +962,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <a href="javascript:;" class="side-menu">
                             <div class="side-menu__icon"> <i data-lucide="shopping-bag"></i> </div>
                             <div class="side-menu__title">
-                                E-Commerce 
+                                E-Commerce
                                 <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                             </div>
                         </a>
@@ -977,7 +983,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 <a href="javascript:;" class="side-menu">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title">
-                                        Products 
+                                        Products
                                         <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                                     </div>
                                 </a>
@@ -1000,7 +1006,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 <a href="javascript:;" class="side-menu">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title">
-                                        Transactions 
+                                        Transactions
                                         <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                                     </div>
                                 </a>
@@ -1023,7 +1029,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 <a href="javascript:;" class="side-menu">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title">
-                                        Sellers 
+                                        Sellers
                                         <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                                     </div>
                                 </a>
@@ -1049,6 +1055,12 @@ License: You must have a valid license purchased only from themeforest(the above
                                 </a>
                             </li>
                         </ul>
+                    </li>
+                      <li>
+                        <a href="{{Route('users.index')}}" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="users"></i> </div>
+                            <div class="side-menu__title"> Users </div>
+                        </a>
                     </li>
                     <li>
                         <a href="side-menu-light-inbox.html" class="side-menu">
@@ -1091,7 +1103,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <a href="javascript:;" class="side-menu">
                             <div class="side-menu__icon"> <i data-lucide="edit"></i> </div>
                             <div class="side-menu__title">
-                                Crud 
+                                Crud
                                 <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                             </div>
                         </a>
@@ -1114,7 +1126,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <a href="javascript:;" class="side-menu">
                             <div class="side-menu__icon"> <i data-lucide="users"></i> </div>
                             <div class="side-menu__title">
-                                Users 
+                                Users
                                 <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                             </div>
                         </a>
@@ -1143,7 +1155,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <a href="javascript:;" class="side-menu">
                             <div class="side-menu__icon"> <i data-lucide="trello"></i> </div>
                             <div class="side-menu__title">
-                                Profile 
+                                Profile
                                 <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                             </div>
                         </a>
@@ -1172,7 +1184,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <a href="javascript:;" class="side-menu">
                             <div class="side-menu__icon"> <i data-lucide="layout"></i> </div>
                             <div class="side-menu__title">
-                                Pages 
+                                Pages
                                 <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                             </div>
                         </a>
@@ -1181,7 +1193,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 <a href="javascript:;" class="side-menu">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title">
-                                        Wizards 
+                                        Wizards
                                         <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                                     </div>
                                 </a>
@@ -1210,7 +1222,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 <a href="javascript:;" class="side-menu">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title">
-                                        Blog 
+                                        Blog
                                         <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                                     </div>
                                 </a>
@@ -1239,7 +1251,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 <a href="javascript:;" class="side-menu">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title">
-                                        Pricing 
+                                        Pricing
                                         <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                                     </div>
                                 </a>
@@ -1262,7 +1274,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 <a href="javascript:;" class="side-menu">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title">
-                                        Invoice 
+                                        Invoice
                                         <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                                     </div>
                                 </a>
@@ -1285,7 +1297,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 <a href="javascript:;" class="side-menu">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title">
-                                        FAQ 
+                                        FAQ
                                         <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                                     </div>
                                 </a>
@@ -1347,7 +1359,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <a href="javascript:;" class="side-menu">
                             <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
                             <div class="side-menu__title">
-                                Components 
+                                Components
                                 <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                             </div>
                         </a>
@@ -1356,7 +1368,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 <a href="javascript:;" class="side-menu">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title">
-                                        Table 
+                                        Table
                                         <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                                     </div>
                                 </a>
@@ -1379,7 +1391,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 <a href="javascript:;" class="side-menu">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title">
-                                        Overlay 
+                                        Overlay
                                         <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                                     </div>
                                 </a>
@@ -1470,7 +1482,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <a href="javascript:;" class="side-menu">
                             <div class="side-menu__icon"> <i data-lucide="sidebar"></i> </div>
                             <div class="side-menu__title">
-                                Forms 
+                                Forms
                                 <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                             </div>
                         </a>
@@ -1503,7 +1515,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 <a href="javascript:;" class="side-menu">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title">
-                                        Wysiwyg Editor 
+                                        Wysiwyg Editor
                                         <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                                     </div>
                                 </a>
@@ -1552,7 +1564,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <a href="javascript:;" class="side-menu">
                             <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
                             <div class="side-menu__title">
-                                Widgets 
+                                Widgets
                                 <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
                             </div>
                         </a>
@@ -1600,7 +1612,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                         <div class="report-box zoom-in">
                                             <div class="box p-5">
                                                 <div class="flex">
-                                                    <i data-lucide="shopping-cart" class="report-box__icon text-primary"></i> 
+                                                    <i data-lucide="shopping-cart" class="report-box__icon text-primary"></i>
                                                     <div class="ml-auto">
                                                         <div class="report-box__indicator bg-success tooltip cursor-pointer" title="33% Higher than last month"> 33% <i data-lucide="chevron-up" class="w-4 h-4 ml-0.5"></i> </div>
                                                     </div>
@@ -1614,7 +1626,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                         <div class="report-box zoom-in">
                                             <div class="box p-5">
                                                 <div class="flex">
-                                                    <i data-lucide="credit-card" class="report-box__icon text-pending"></i> 
+                                                    <i data-lucide="credit-card" class="report-box__icon text-pending"></i>
                                                     <div class="ml-auto">
                                                         <div class="report-box__indicator bg-danger tooltip cursor-pointer" title="2% Lower than last month"> 2% <i data-lucide="chevron-down" class="w-4 h-4 ml-0.5"></i> </div>
                                                     </div>
@@ -1628,7 +1640,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                         <div class="report-box zoom-in">
                                             <div class="box p-5">
                                                 <div class="flex">
-                                                    <i data-lucide="monitor" class="report-box__icon text-warning"></i> 
+                                                    <i data-lucide="monitor" class="report-box__icon text-warning"></i>
                                                     <div class="ml-auto">
                                                         <div class="report-box__indicator bg-success tooltip cursor-pointer" title="12% Higher than last month"> 12% <i data-lucide="chevron-up" class="w-4 h-4 ml-0.5"></i> </div>
                                                     </div>
@@ -1642,7 +1654,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                         <div class="report-box zoom-in">
                                             <div class="box p-5">
                                                 <div class="flex">
-                                                    <i data-lucide="user" class="report-box__icon text-success"></i> 
+                                                    <i data-lucide="user" class="report-box__icon text-success"></i>
                                                     <div class="ml-auto">
                                                         <div class="report-box__indicator bg-success tooltip cursor-pointer" title="22% Higher than last month"> 22% <i data-lucide="chevron-up" class="w-4 h-4 ml-0.5"></i> </div>
                                                     </div>
@@ -1662,7 +1674,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                         Sales Report
                                     </h2>
                                     <div class="sm:ml-auto mt-3 sm:mt-0 relative text-slate-500">
-                                        <i data-lucide="calendar" class="w-4 h-4 z-10 absolute my-auto inset-y-0 ml-3 left-0"></i> 
+                                        <i data-lucide="calendar" class="w-4 h-4 z-10 absolute my-auto inset-y-0 ml-3 left-0"></i>
                                         <input type="text" class="datepicker form-control sm:w-56 box pl-10">
                                     </div>
                                 </div>
@@ -1706,7 +1718,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                     <h2 class="text-lg font-medium truncate mr-5">
                                         Weekly Top Seller
                                     </h2>
-                                    <a href="" class="ml-auto text-primary truncate">Show More</a> 
+                                    <a href="" class="ml-auto text-primary truncate">Show More</a>
                                 </div>
                                 <div class="intro-y box p-5 mt-5">
                                     <div class="mt-3">
@@ -1717,15 +1729,15 @@ License: You must have a valid license purchased only from themeforest(the above
                                     <div class="w-52 sm:w-auto mx-auto mt-8">
                                         <div class="flex items-center">
                                             <div class="w-2 h-2 bg-primary rounded-full mr-3"></div>
-                                            <span class="truncate">17 - 30 Years old</span> <span class="font-medium ml-auto">62%</span> 
+                                            <span class="truncate">17 - 30 Years old</span> <span class="font-medium ml-auto">62%</span>
                                         </div>
                                         <div class="flex items-center mt-4">
                                             <div class="w-2 h-2 bg-pending rounded-full mr-3"></div>
-                                            <span class="truncate">31 - 50 Years old</span> <span class="font-medium ml-auto">33%</span> 
+                                            <span class="truncate">31 - 50 Years old</span> <span class="font-medium ml-auto">33%</span>
                                         </div>
                                         <div class="flex items-center mt-4">
                                             <div class="w-2 h-2 bg-warning rounded-full mr-3"></div>
-                                            <span class="truncate">>= 50 Years old</span> <span class="font-medium ml-auto">10%</span> 
+                                            <span class="truncate">>= 50 Years old</span> <span class="font-medium ml-auto">10%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1737,7 +1749,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                     <h2 class="text-lg font-medium truncate mr-5">
                                         Sales Report
                                     </h2>
-                                    <a href="" class="ml-auto text-primary truncate">Show More</a> 
+                                    <a href="" class="ml-auto text-primary truncate">Show More</a>
                                 </div>
                                 <div class="intro-y box p-5 mt-5">
                                     <div class="mt-3">
@@ -1748,15 +1760,15 @@ License: You must have a valid license purchased only from themeforest(the above
                                     <div class="w-52 sm:w-auto mx-auto mt-8">
                                         <div class="flex items-center">
                                             <div class="w-2 h-2 bg-primary rounded-full mr-3"></div>
-                                            <span class="truncate">17 - 30 Years old</span> <span class="font-medium ml-auto">62%</span> 
+                                            <span class="truncate">17 - 30 Years old</span> <span class="font-medium ml-auto">62%</span>
                                         </div>
                                         <div class="flex items-center mt-4">
                                             <div class="w-2 h-2 bg-pending rounded-full mr-3"></div>
-                                            <span class="truncate">31 - 50 Years old</span> <span class="font-medium ml-auto">33%</span> 
+                                            <span class="truncate">31 - 50 Years old</span> <span class="font-medium ml-auto">33%</span>
                                         </div>
                                         <div class="flex items-center mt-4">
                                             <div class="w-2 h-2 bg-warning rounded-full mr-3"></div>
-                                            <span class="truncate">>= 50 Years old</span> <span class="font-medium ml-auto">10%</span> 
+                                            <span class="truncate">>= 50 Years old</span> <span class="font-medium ml-auto">10%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1769,7 +1781,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                         Official Store
                                     </h2>
                                     <div class="sm:ml-auto mt-3 sm:mt-0 relative text-slate-500">
-                                        <i data-lucide="map-pin" class="w-4 h-4 z-10 absolute my-auto inset-y-0 ml-3 left-0"></i> 
+                                        <i data-lucide="map-pin" class="w-4 h-4 z-10 absolute my-auto inset-y-0 ml-3 left-0"></i>
                                         <input type="text" class="form-control sm:w-56 box pl-10" placeholder="Filter by city">
                                     </div>
                                 </div>
@@ -1835,7 +1847,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                             <div class="py-1 px-2 rounded-full text-xs bg-success text-white cursor-pointer font-medium">137 Sales</div>
                                         </div>
                                     </div>
-                                    <a href="" class="intro-y w-full block text-center rounded-md py-4 border border-dotted border-slate-400 dark:border-darkmode-300 text-slate-500">View More</a> 
+                                    <a href="" class="intro-y w-full block text-center rounded-md py-4 border border-dotted border-slate-400 dark:border-darkmode-300 text-slate-500">View More</a>
                                 </div>
                             </div>
                             <!-- END: Weekly Best Sellers -->
@@ -1939,7 +1951,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <a href="" class="font-medium whitespace-nowrap">Nike Tanjun</a> 
+                                                    <a href="" class="font-medium whitespace-nowrap">Nike Tanjun</a>
                                                     <div class="text-slate-500 text-xs whitespace-nowrap mt-0.5">Sport &amp; Outdoor</div>
                                                 </td>
                                                 <td class="text-center">177</td>
@@ -1968,7 +1980,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <a href="" class="font-medium whitespace-nowrap">Samsung Galaxy S20 Ultra</a> 
+                                                    <a href="" class="font-medium whitespace-nowrap">Samsung Galaxy S20 Ultra</a>
                                                     <div class="text-slate-500 text-xs whitespace-nowrap mt-0.5">Smartphone &amp; Tablet</div>
                                                 </td>
                                                 <td class="text-center">50</td>
@@ -1997,7 +2009,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <a href="" class="font-medium whitespace-nowrap">Nike Air Max 270</a> 
+                                                    <a href="" class="font-medium whitespace-nowrap">Nike Air Max 270</a>
                                                     <div class="text-slate-500 text-xs whitespace-nowrap mt-0.5">Sport &amp; Outdoor</div>
                                                 </td>
                                                 <td class="text-center">188</td>
@@ -2026,7 +2038,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <a href="" class="font-medium whitespace-nowrap">Sony A7 III</a> 
+                                                    <a href="" class="font-medium whitespace-nowrap">Sony A7 III</a>
                                                     <div class="text-slate-500 text-xs whitespace-nowrap mt-0.5">Photography</div>
                                                 </td>
                                                 <td class="text-center">50</td>
@@ -2147,7 +2159,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                                 <div class="text-success">+$42</div>
                                             </div>
                                         </div>
-                                        <a href="" class="intro-x w-full block text-center rounded-md py-3 border border-dotted border-slate-400 dark:border-darkmode-300 text-slate-500">View More</a> 
+                                        <a href="" class="intro-x w-full block text-center rounded-md py-3 border border-dotted border-slate-400 dark:border-darkmode-300 text-slate-500">View More</a>
                                     </div>
                                 </div>
                                 <!-- END: Transactions -->
@@ -2157,7 +2169,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                         <h2 class="text-lg font-medium truncate mr-5">
                                             Recent Activities
                                         </h2>
-                                        <a href="" class="ml-auto text-primary truncate">Show More</a> 
+                                        <a href="" class="ml-auto text-primary truncate">Show More</a>
                                     </div>
                                     <div class="mt-5 relative before:block before:absolute before:w-px before:h-[85%] before:bg-slate-200 before:dark:bg-darkmode-400 before:ml-5 before:mt-5">
                                         <div class="intro-x relative flex items-center mb-3">
@@ -2289,9 +2301,9 @@ License: You must have a valid license purchased only from themeforest(the above
                                         <div class="intro-x box">
                                             <div class="p-5">
                                                 <div class="flex">
-                                                    <i data-lucide="chevron-left" class="w-5 h-5 text-slate-500"></i> 
+                                                    <i data-lucide="chevron-left" class="w-5 h-5 text-slate-500"></i>
                                                     <div class="font-medium text-base mx-auto">April</div>
-                                                    <i data-lucide="chevron-right" class="w-5 h-5 text-slate-500"></i> 
+                                                    <i data-lucide="chevron-right" class="w-5 h-5 text-slate-500"></i>
                                                 </div>
                                                 <div class="grid grid-cols-7 gap-4 mt-5 text-center">
                                                     <div class="font-medium">Su</div>
@@ -2348,15 +2360,15 @@ License: You must have a valid license purchased only from themeforest(the above
                                             <div class="border-t border-slate-200/60 p-5">
                                                 <div class="flex items-center">
                                                     <div class="w-2 h-2 bg-pending rounded-full mr-3"></div>
-                                                    <span class="truncate">UI/UX Workshop</span> <span class="font-medium xl:ml-auto">23th</span> 
+                                                    <span class="truncate">UI/UX Workshop</span> <span class="font-medium xl:ml-auto">23th</span>
                                                 </div>
                                                 <div class="flex items-center mt-4">
                                                     <div class="w-2 h-2 bg-primary rounded-full mr-3"></div>
-                                                    <span class="truncate">VueJs Frontend Development</span> <span class="font-medium xl:ml-auto">10th</span> 
+                                                    <span class="truncate">VueJs Frontend Development</span> <span class="font-medium xl:ml-auto">10th</span>
                                                 </div>
                                                 <div class="flex items-center mt-4">
                                                     <div class="w-2 h-2 bg-warning rounded-full mr-3"></div>
-                                                    <span class="truncate">Laravel Rest API</span> <span class="font-medium xl:ml-auto">31th</span> 
+                                                    <span class="truncate">Laravel Rest API</span> <span class="font-medium xl:ml-auto">31th</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -2376,7 +2388,7 @@ License: You must have a valid license purchased only from themeforest(the above
             <div class="dark-mode-switcher__toggle border"></div>
         </div>
         <!-- END: Dark Mode Switcher-->
-        
+
         <!-- BEGIN: JS Assets-->
         <script src="https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js"></script>
         <script src="https://maps.googleapis.com/maps/api/js?key=["your-google-map-api"]&libraries=places"></script>
