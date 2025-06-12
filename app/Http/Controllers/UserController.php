@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -13,7 +14,12 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::where('role', '!=', 'Superadmin')->get();
+        $users = User::with('role')
+            ->whereHas('role', function ($query) {
+                $query->where('role_name', '!=', 'Superadmin');
+            })
+            ->get();
+
         return view('users.index', compact('users'));
     }
 
@@ -22,7 +28,8 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('users.create');
+        $roles = Role::where('role_name', '!=', 'Superadmin')->get();
+        return view('users.create', compact('roles'));
     }
 
     /**
@@ -38,7 +45,7 @@ class UserController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'nullable|email|max:255|unique:users',
                 'mobile' => 'nullable|string|max:15',
-                'role' => 'required|string|in:Admin,Manager,Cashier',
+                'role_id' => 'required|exists:roles,id',
                 'dob' => 'nullable|date',
                 'password' => 'nullable|string|min:6',
             ]);
@@ -53,7 +60,7 @@ class UserController extends Controller
             'name',
             'email',
             'mobile',
-            'role',
+            'role_id',
             'dob',
             'password',
         ]);
@@ -86,20 +93,20 @@ class UserController extends Controller
     public function edit(string $id)
     {
         $user = User::findOrFail($id);
-        return view('users.edit', compact('user'));
+        $roles = Role::where('role_name', '!=', 'Superadmin')->select('id', 'role_name')->get();
+        return view('users.edit', compact('user', 'roles'));
     }
 
     /**
      * Update the specified resource in storage.
-     */
-    public function update(Request $request, User $user)
+     */ public function update(Request $request, User $user)
     {
         try {
             $validatedData = $request->validate([
                 'name'     => 'required|string|max:255',
                 'email'    => 'nullable|email|max:255|unique:users,email,' . $user->id,
                 'mobile'   => 'nullable|string|max:15',
-                'role'     => 'required|string|in:Admin,Manager,Cashier',
+                'role_id'  => 'required|exists:roles,id',
                 'dob'      => 'nullable|date',
                 'password' => 'nullable|string|min:6',
             ]);
@@ -107,17 +114,17 @@ class UserController extends Controller
             dd($e->errors()); // Check what is failing
         }
 
-        // Hash the password if provided
         if (!empty($validatedData['password'])) {
             $validatedData['password'] = Hash::make($validatedData['password']);
         } else {
-            unset($validatedData['password']); // Don't overwrite if not changing
+            unset($validatedData['password']);
         }
 
         $user->update($validatedData);
 
         return redirect()->route('users.index')->with('success', 'User updated successfully!');
     }
+
 
 
     /**
