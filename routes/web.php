@@ -16,7 +16,7 @@ Route::get('logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard')->middleware('auth');
 
 Route::get('/users', [UserController::class, 'index'])->name('users.index')->middleware('auth');
-// Route::get('/users/{id}', [UserController::class, 'show'])->name('users.show')->middleware('auth');
+Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show')->middleware('auth');
 Route::get('/user/create', [UserController::class, 'create'])->name('users.create')->middleware('auth');
 Route::post('/users/store', [UserController::class, 'store'])->name('users.store')->middleware('auth');
 Route::get('/users/edit/{user}', [UserController::class, 'edit'])->name('users.edit')->middleware('auth');

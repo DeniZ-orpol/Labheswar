@@ -13,7 +13,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::all();
+        $users = User::where('role', '!=', 'Superadmin')->get();
         return view('users.index', compact('users'));
     }
 
@@ -76,7 +76,8 @@ class UserController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $user = User::findOrFail($id); // or use route model binding
+        return view('users.show', compact('user'));
     }
 
     /**

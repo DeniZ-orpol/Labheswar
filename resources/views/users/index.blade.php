@@ -27,7 +27,7 @@
                 <tbody>
                     @foreach ($users as $user)
                         <tr>
-                            <td>{{ $user->id }}</td>
+                            <td>{{ $loop->iteration }}</td>
                             <td>{{ $user->name }}</td>
                             <td>{{ $user->email }}</td>
                             <td style="TEXT-ALIGN: left;">{{ $user->mobile }}</td>
@@ -37,8 +37,8 @@
                                 <!-- Add buttons for actions like 'View', 'Edit' etc. -->
                                 <!-- <button class="btn btn-primary">Message</button> -->
                                 <div class="flex gap-2 justify-content-left">
-                                    {{-- <a href="{{ route('users.show', $user->id) }}"
-                                        class="btn btn-primary mr-1 mb-2">View  </a> --}}
+                                    <a href="{{ route('users.show', $user->id) }}"
+                                        class="btn btn-primary mr-1 mb-2">View  </a>
                                     <form action="{{ route('users.delete', $user->id) }}" method="POST"
                                         onsubmit="return confirm('Are you sure you want to delete this user?');"
                                         style="display: inline-block;">
