@@ -24,7 +24,7 @@
                         <th>Branch Admin</th>
                         {{-- <th>Email</th>
                         <th style="TEXT-ALIGN: left;">Phone</th> --}}
-                        <th style="TEXT-ALIGN: left;" >Actions</th>
+                        <th style="TEXT-ALIGN: left;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -42,8 +42,15 @@
                                 <!-- <button class="btn btn-primary">Message</button> -->
                                 <div class="flex gap-2 justify-content-left">
                                     <a href="{{ route('branch.show', $branch->id) }}"
-                                        class="btn btn-primary mr-1 mb-2">View  </a>
-                                    <a href="{{ route('branch.edit', $branch->id) }}" class="btn btn-primary mr-1 mb-2"> Edit   </a>
+                                        class="btn btn-primary mr-1 mb-2">View</a>
+                                    <a href="{{ route('branch.edit', $branch->id) }}" class="btn btn-primary mr-1 mb-2">
+                                        Edit</a>
+                                    <form action="{{ route('branch.delete', $branch->id) }}" method="POST"
+                                        onsubmit="return confirm('Are you sure you want to delete this user?');"
+                                        style="display: inline-block;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>

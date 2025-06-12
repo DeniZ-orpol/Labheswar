@@ -9,14 +9,14 @@
             <div class="box p-5 rounded-md">
                 <!-- Header -->
                 <div class="flex items-center border-b border-slate-200/60 dark:border-darkmode-400 pb-5 mb-5">
-                    <div class="font-medium text-base truncate">User Details</div>
+                    <div class="font-medium text-base truncate">Branch Details</div>
                 </div>
 
                 <!-- Grid Content -->
                 <div class="grid grid-cols-2 gap-5">
                     <!-- User Info -->
                     <div class="p-5 rounded-md bg-slate-100">
-                        <div class="font-medium text-lg mb-3">User Information</div>
+                        <div class="font-medium text-lg mb-3">Branch Information</div>
                         <div class="flex items-center">
                             <i data-lucide="user" class="w-4 h-4 text-slate-500 mr-2"></i>
                             Name: {{ $branch->name }}

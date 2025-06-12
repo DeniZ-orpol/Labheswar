@@ -30,7 +30,7 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/branch/edit/{branch}', [BranchController::class, 'edit'])->name('branch.edit');
     Route::post('/branch/update/{branch}', [BranchController::class, 'update'])->name('branch.update');
     Route::get('/branch/{branch}', [BranchController::class, 'show'])->name('branch.show');
-    Route::delete('/branch/{branch}', [BranchController::class, 'destroy'])->name('branch.destroy');
+    Route::post('/branch/delete/{branch}', [BranchController::class, 'destroy'])->name('branch.delete');
 });
 Route::get('/users', [UserController::class, 'index'])->name('users.index')->middleware('auth');
 Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show')->middleware('auth');

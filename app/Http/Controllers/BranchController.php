@@ -83,7 +83,18 @@ class BranchController extends Controller
      */
     public function edit(Branch $branch)
     {
-        //
+        // $branch = $branch->id; // Get the branch ID from the route model binding
+        // dd($branch);
+        $users = User::all();
+        $branch = Branch::leftJoin('users', 'branches.branch_admin', '=', 'users.id')
+            ->where('branches.id', $branch->id)
+            ->select(
+                'branches.*',
+                'users.name as admin_name'
+            )
+            ->first();
+            // dd($branch);
+        return view('branch.edit', compact('branch', 'users'));
     }
 
     /**
@@ -91,16 +102,34 @@ class BranchController extends Controller
      */
     public function update(Request $request, Branch $branch)
     {
-        //
+        try {
+            $validate = $request->validate([
+                'name' => 'required|string|max:255',
+                'address' => 'required|string|max:255',
+                'latitude' => 'nullable',
+                'longitude' => 'nullable',
+                'gst_no' => 'nullable|string|max:15',
+                'branch_admin' => 'nullable|exists:users,id',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            dd($e->errors()); // Check what is failing
+        }
+
+        // Hash the password if provided
+
+        $branch->update($validate);
+
+        return redirect()->route('branch.index')->with('success', 'Branch updated successfully!');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(String $branch)
+    public function destroy(Branch $branch)
     {
-        $branch = Branch::findOrFail($branch);
+        // dd($branch);
+        $branch = Branch::findOrFail($branch->id);
         $branch->delete();
-        return redirect()->route('users.index')->with('success', 'User deleted successfully!');
+        return redirect()->route('branch.index')->with('success', 'Branch deleted successfully!');
     }
 }
