@@ -28,7 +28,7 @@
                     <label for="latitude" class="form-label w-full flex flex-col sm:flex-row">
                         Latitude
                     </label>
-                    <input id="latitude" type="text" name="latitude" class="form-control field-new" maxlength="255">
+                    <input id="latitude" type="text" name="latitude" class="form-control field-new"=">
                 </div>
 
                 <!-- longitude -->
@@ -36,7 +36,7 @@
                     <label for="longitude" class="form-label w-full flex flex-col sm:flex-row">
                         Longitude
                     </label>
-                    <input id="longitude" type="text" name="longitude" class="form-control field-new" maxlength="255">
+                    <input id="longitude" type="text" name="longitude" class="form-control field-new">
                 </div>
 
                 <!-- GST No -->

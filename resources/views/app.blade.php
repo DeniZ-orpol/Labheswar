@@ -199,7 +199,7 @@ License: You must have a valid license purchased only from themeforest(the above
                 </li>
                 <li>
                     <a href="{{ Route('branch.index') }}" class="menu">
-                        <div class="menu__icon"> <i data-lucide="branch"></i> </div>
+                        <div class="menu__icon"> <i data-lucide="users"></i> </div>
                         <div class="menu__title"> Branches </div>
                     </a>
                 </li>
@@ -1155,6 +1155,12 @@ License: You must have a valid license purchased only from themeforest(the above
                     <a href="{{ Route('users.index') }}" class="side-menu">
                         <div class="side-menu__icon"> <i data-lucide="users"></i> </div>
                         <div class="side-menu__title"> Users </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ Route('branch.index') }}" class="side-menu">
+                        <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
+                        <div class="side-menu__title"> Branch </div>
                     </a>
                 </li>
                 <li>

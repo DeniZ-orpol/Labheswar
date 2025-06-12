@@ -20,7 +20,7 @@
                         <th>Address</th>
                         <th>Latitude</th>
                         <th>Longitude</th>
-                        <th>Gst No</th>
+                        <th>GST No</th>
                         <th>Branch Admin</th>
                         {{-- <th>Email</th>
                         <th style="TEXT-ALIGN: left;">Phone</th> --}}
