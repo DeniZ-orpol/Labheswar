@@ -62,8 +62,8 @@
                         Branch Admin 
                     </label>
                     <select id="branch_admin" name="branch_admin" class="form-control field-new">
+                        <option value="" selected>Choose...</option>
                         @foreach ($users as $user)
-                            <option value="" selected>Choose...</option>
                             @if($user != null && $user->role != 'Superadmin')
                                 <option value="{{ $user->id }}">{{ $user->name }}</option>
                             @endif

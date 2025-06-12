@@ -198,6 +198,12 @@ License: You must have a valid license purchased only from themeforest(the above
                     </a>
                 </li>
                 <li>
+                    <a href="{{ Route('branch.index') }}" class="menu">
+                        <div class="menu__icon"> <i data-lucide="branch"></i> </div>
+                        <div class="menu__title"> Branches </div>
+                    </a>
+                </li>
+                <li>
                     <a href="side-menu-light-inbox.html" class="menu">
                         <div class="menu__icon"> <i data-lucide="inbox"></i> </div>
                         <div class="menu__title"> Inbox </div>
