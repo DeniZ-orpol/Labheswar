@@ -65,9 +65,17 @@ class BranchController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Branch $branch)
+    public function show(String $branch)
     {
-
+        // $branch = Branch::findOrFail($branch); // or use route model binding
+        $branch = Branch::leftJoin('users', 'branches.branch_admin', '=', 'users.id')
+            ->where('branches.id', $branch)
+            ->select(
+                'branches.*',
+                'users.name as admin_name'
+            )
+            ->first();
+        return view('branch.show', compact('branch'));
     }
 
     /**
