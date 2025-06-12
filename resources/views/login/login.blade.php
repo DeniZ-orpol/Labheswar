@@ -80,9 +80,9 @@ License: You must have a valid license purchased only from themeforest(the above
                                 class="btn login-page-button btn-primary py-3 px-4 w-full xl:w-32 xl:mr-3">Login</button>
                         </div>
                     </form>
-                    <div class="intro-x mt-2 xl:mt-6 text-slate-600 dark:text-slate-500 ">
+                    {{-- <div class="intro-x mt-2 xl:mt-6 text-slate-600 dark:text-slate-500 ">
                         <a class="text-primary dark:text-slate-200" href="/forgot-password">Forgot Password ?</a>
-                    </div>
+                    </div> --}}
                     {{-- <div class="intro-x mt-2 xl:mt-6 text-slate-600 dark:text-slate-500 text-center">
                             By signing up, you agree to our
                             <a class="text-primary dark:text-slate-200" href="/">Terms and Conditions</a> &

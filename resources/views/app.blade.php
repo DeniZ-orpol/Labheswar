@@ -97,6 +97,12 @@ License: You must have a valid license purchased only from themeforest(the above
                         </li>
                     </ul>
                 </li>
+                 <li>
+                    <a href="{{ Route('branch.index') }}" class="menu">
+                        <div class="menu__icon"> <i data-lucide="users"></i> </div>
+                        <div class="menu__title"> Branches </div>
+                    </a>
+                </li>
                 {{-- <li>
                     <a href="javascript:;" class="menu">
                         <div class="menu__icon"> <i data-lucide="shopping-bag"></i> </div>
@@ -972,7 +978,7 @@ License: You must have a valid license purchased only from themeforest(the above
                             <hr class="dropdown-divider border-white/[0.08]">
                         </li>
                         <li>
-                            <a href="" class="dropdown-item hover:bg-white/5"> <i data-lucide="toggle-right"
+                            <a href="{{ route('logout')}}" class="dropdown-item hover:bg-white/5"> <i data-lucide="toggle-right"
                                     class="w-4 h-4 mr-2"></i> Logout </a>
                         </li>
                     </ul>
@@ -1054,7 +1060,12 @@ License: You must have a valid license purchased only from themeforest(the above
                         </li>
                     </ul>
                 </li>
-
+                      <li>
+                        <a href="{{ Route('branch.index') }}" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
+                            <div class="side-menu__title"> Branch </div>
+                        </a>
+                    </li>
                 {{-- <li>
                         <a href="javascript:;" class="side-menu">
                             <div class="side-menu__icon"> <i data-lucide="shopping-bag"></i> </div>
@@ -1159,7 +1170,7 @@ License: You must have a valid license purchased only from themeforest(the above
                             <div class="side-menu__title"> Users </div>
                         </a>
                     </li>
-                    <li>
+                     <li>
                         <a href="{{ Route('branch.index') }}" class="side-menu">
                             <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
                             <div class="side-menu__title"> Branch </div>
