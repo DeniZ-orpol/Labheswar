@@ -13,7 +13,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::all();
+        $users = User::where('role', '!=', 'Superadmin')->get();
         return view('users.index', compact('users'));
     }
 
@@ -31,23 +31,36 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255|unique:users',
-            'mobile' => 'nullable|string|max:15',
-            'role' => 'nullable|string',
-            'password' => 'nullable|string|min:6',
-        ]);
+        // dd(13);
+
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'nullable|email|max:255|unique:users',
+                'mobile' => 'nullable|string|max:15',
+                'role' => 'required|string|in:Admin,Manager,Cashier',
+                'dob' => 'nullable|date',
+                'password' => 'nullable|string|min:6',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            dd($e->errors()); // Check what is failing
+        }
+
+
+        // dd($request->all());
 
         $data = $request->only([
             'name',
             'email',
             'mobile',
             'role',
+            'dob',
             'password',
         ]);
 
-        // Hash the password if provided
+        // dd($data);
+
+        // Hash the password if it's provided
         if (!empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         }
@@ -63,7 +76,8 @@ class UserController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $user = User::findOrFail($id); // or use route model binding
+        return view('users.show', compact('user'));
     }
 
     /**
@@ -71,22 +85,49 @@ class UserController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $user = User::findOrFail($id);
+        return view('users.edit', compact('user'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, User $user)
     {
-        //
+        try {
+            $validatedData = $request->validate([
+                'name'     => 'required|string|max:255',
+                'email'    => 'nullable|email|max:255|unique:users,email,' . $user->id,
+                'mobile'   => 'nullable|string|max:15',
+                'role'     => 'required|string|in:Admin,Manager,Cashier',
+                'dob'      => 'nullable|date',
+                'password' => 'nullable|string|min:6',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            dd($e->errors()); // Check what is failing
+        }
+
+        // Hash the password if provided
+        if (!empty($validatedData['password'])) {
+            $validatedData['password'] = Hash::make($validatedData['password']);
+        } else {
+            unset($validatedData['password']); // Don't overwrite if not changing
+        }
+
+        $user->update($validatedData);
+
+        return redirect()->route('users.index')->with('success', 'User updated successfully!');
     }
+
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
     {
-        //
+        $user = User::findOrFail($id);
+        $user->delete();
+
+        return redirect()->route('users.index')->with('success', 'User deleted successfully!');
     }
 }

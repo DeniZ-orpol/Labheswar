@@ -3,43 +3,52 @@
     <!-- BEGIN: Content -->
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
-            Party
+            Users
         </h2>
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
-                <a  class="btn btn-primary shadow-md mr-2 btn-hover">Add New Party</a>
+                <a href="{{ Route('users.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add New User</a>
             </div>
 
             <!-- BEGIN: Users Layout -->
             <!-- DataTable: Add class 'datatable' to your table -->
-            <table id="DataTable" class="display table table-bordered intro-y col-span-12 ">
+            <table id="DataTable" class="display table table-bordered intro-y col-span-12" >
                 <thead>
-                    <tr>
+                    <tr class="bg-primary font-bold text-white">
                         <th>ID</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th style="TEXT-ALIGN: left;">Phone</th>
-                        <th>Address</th>
-                        <th style="TEXT-ALIGN: left;" >Actions</th>
+                        <th>Role</th>
+                        <th>Dob</th>
+                        <th style="TEXT-ALIGN: left;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($users as $user)
                         <tr>
-                            <td>{{ $user->id }}</td>
+                            <td>{{ $loop->iteration }}</td>
                             <td>{{ $user->name }}</td>
                             <td>{{ $user->email }}</td>
-                            <td style="TEXT-ALIGN: left;">{{ $user->phone }}</td>
-                            <td>{{ $user->address }}</td>
-                            {{-- <td>
+                            <td style="TEXT-ALIGN: left;">{{ $user->mobile }}</td>
+                            <td>{{ $user->role }}</td>
+                            <td>{{ $user->dob }}</td>
+                            <td>
                                 <!-- Add buttons for actions like 'View', 'Edit' etc. -->
                                 <!-- <button class="btn btn-primary">Message</button> -->
                                 <div class="flex gap-2 justify-content-left">
                                     <a href="{{ route('users.show', $user->id) }}"
                                         class="btn btn-primary mr-1 mb-2">View  </a>
-                                    <a href="{{ route('users.edit', $user->id) }}" class="btn btn-primary mr-1 mb-2"> Edit   </a>
+                                    <form action="{{ route('users.delete', $user->id) }}" method="POST"
+                                        onsubmit="return confirm('Are you sure you want to delete this user?');"
+                                        style="display: inline-block;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
+                                    </form>
+                                    <a href="{{ route('users.edit', $user->id) }}" class="btn btn-primary mr-1 mb-2"> Edit
+                                    </a>
                                 </div>
-                            </td> --}}
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
