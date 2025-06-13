@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
 use App\Models\Role;
 use Illuminate\Http\Request;
 
@@ -12,7 +13,26 @@ class RoleController extends Controller
      */
     public function index()
     {
-        $roles = Role::where('role_name', '!=', 'Superadmin')->get(); // Exclude Superadmin
+        $allRoles = collect();
+
+        // Get all branches
+        $branches = Branch::all();
+
+        foreach ($branches as $branch) {
+            try {
+                $branchRoles = Role::on($branch->connection_name)
+                    ->where('role_name', '!=', 'Superadmin')
+                    ->get();
+
+                $allRoles = $allRoles->merge($branchRoles);
+
+            } catch (\Exception $e) {
+                \Log::warning("Could not access roles from branch {$branch->name}: " . $e->getMessage());
+            }
+        }
+
+        // $roles = Role::where('role_name', '!=', 'Superadmin')->get(); // Exclude Superadmin
+        $roles = $allRoles->unique('role_name')->sortBy('role_name')->values();
         return view('roles.index', compact('roles'));
     }
 
@@ -33,25 +53,45 @@ class RoleController extends Controller
             'role_name' => 'required|string|max:255',
         ]);
 
-        $data = [
-            'role_name' => $validatedData['role_name'],
-        ];
+        $roleName = $validatedData['role_name'];
 
-        Role::create($data);
+        $branches = Branch::all();
+
+        foreach ($branches as $branch) {
+            try {
+                Role::on($branch->connection_name)->firstOrCreate(['role_name' => $roleName]);
+            } catch (\Exception $e) {
+                return redirect()->back()->with('error', 'Role creation failed.');
+            }
+        }
+        // $branches = Branch::all();
         return redirect()->route('roles.index')->with('success', 'Role created successfully.');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id) {}
+    public function show(string $id)
+    {
+    }
 
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
     {
-        $role = Role::findOrFail($id);
+        // $role = Role::findOrFail($id);
+        $branches = Branch::all();
+        $role = null;
+
+        foreach ($branches as $branch) {
+            try {
+                $role = Role::on($branch->connection_name)->findOrFail($id);
+                break;
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
         return view('roles.edit', compact('role'));
     }
 
@@ -64,11 +104,16 @@ class RoleController extends Controller
             'role_name' => 'required|string|max:255',
         ]);
 
-        $data = [
-            'role_name' => $validatedData['role_name'],
-        ];
+        $roleName = $validatedData['role_name'];
+        $branches = Branch::all();
+        foreach ($branches as $branch) {
+            try {
+                Role::on($branch->connection_name)->where('id', $id)->update(['role_name' => $roleName]);
+            } catch (\Exception $e) {
+                return redirect()->route('roles.index')->with('error', 'Role update failed.');
+            }
+        }
 
-        Role::where('id', $id)->update($data);
         return redirect()->route('roles.index')->with('success', 'Role updated successfully.');
     }
 
@@ -77,8 +122,15 @@ class RoleController extends Controller
      */
     public function destroy(string $id)
     {
-        $role = Role::findOrFail($id);
-        $role->delete();
+        $branches = Branch::all();
+
+        foreach ($branches as $branch) {
+            try {
+                Role::on($branch->connection_name)->where('id', $id)->delete();
+            } catch (\Exception $e) {
+                return redirect()->route('roles.index')->with('error', 'Role deletion failed.');
+            }
+        }
 
         return redirect()->route('roles.index')->with('success', 'role deleted successfully!');
     }
