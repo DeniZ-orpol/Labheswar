@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-       public function showLoginForm()
+    public function showLoginForm()
     {
         $User = User::get();
         return view('login.login'); // Create this view in resources/views/auth/login.blade.php
@@ -23,7 +23,11 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt($request->only('email', 'password'), $request->filled('remember'))) {
-            return redirect()->Route('dashboard'); // Redirect to intended route or dashboard
+            $user = Auth::user();
+
+            // Check if user is Superadmin
+
+            return redirect()->route('dashboard');
         }
 
         return back()->withErrors([
@@ -31,12 +35,23 @@ class AuthController extends Controller
         ]);
     }
 
-        public function logout(Request $request)
+
+    public function logout(Request $request)
     {
+        // Manually remove remember token from DB
+        $user = Auth::user();
+        if ($user) {
+            $user->setRememberToken(null);
+            $user->save();
+        }
+
+        // Logout the user
         Auth::logout();
+
+        // Invalidate the session and regenerate CSRF token
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->Route('dashboard');
+        return redirect()->route('login'); // or wherever you want to redirect
     }
 }

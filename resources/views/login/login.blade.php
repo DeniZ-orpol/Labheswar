@@ -10,7 +10,6 @@ License: You must have a valid license purchased only from themeforest(the above
 -->
 <html lang="en" class="light">
 <!-- BEGIN: Head -->
-
 <head>
     <meta charset="utf-8">
     <link href="{{ asset('images/logo.svg') }}" rel="shortcut icon">
@@ -26,7 +25,6 @@ License: You must have a valid license purchased only from themeforest(the above
     <!-- END: CSS Assets-->
 </head>
 <!-- END: Head -->
-
 <body class="login">
     <div class="container sm:px-10">
         <div class="block xl:grid grid-cols-2 gap-4">
@@ -69,19 +67,20 @@ License: You must have a valid license purchased only from themeforest(the above
                                 class="intro-x login__input form-control py-3 px-4 block mt-4 login-page-input"
                                 placeholder="Password" required>
                         </div>
-                        {{-- <div class="intro-x flex text-slate-600 dark:text-slate-500 text-xs sm:text-sm mt-4">
+                        <div class="intro-x flex text-slate-600 dark:text-slate-500 text-xs sm:text-sm mt-4">
                                 <div class="flex items-center mr-auto">
                                     <input id="remember-me" type="checkbox" name="remember" class="form-check-input border mr-2">
                                     <label class="cursor-pointer select-none" for="remember-me">Remember me</label>
                                 </div>
-                            </div> --}}
+                                <a class="text-primary dark:text-slate-200" href="/forgot-password">Forgot Password ?</a>
+                            </div>
                         <div class="intro-x mt-5 xl:mt-4 text-center">
                             <button type="submit"
                                 class="btn login-page-button btn-primary py-3 px-4 w-full xl:w-32 xl:mr-3">Login</button>
                         </div>
                     </form>
                     <div class="intro-x mt-2 xl:mt-6 text-slate-600 dark:text-slate-500 ">
-                        <a class="text-primary dark:text-slate-200" href="/forgot-password">Forgot Password ?</a>
+
                     </div>
                     {{-- <div class="intro-x mt-2 xl:mt-6 text-slate-600 dark:text-slate-500 text-center">
                             By signing up, you agree to our
@@ -100,10 +99,8 @@ License: You must have a valid license purchased only from themeforest(the above
         <div class="dark-mode-switcher__toggle border"></div>
     </div> --}}
     <!-- END: Dark Mode Switcher-->
-
     <!-- BEGIN: JS Assets-->
     <script src="{{ asset('js/app.js') }}"></script>
     <!-- END: JS Assets-->
 </body>
-
 </html>

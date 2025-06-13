@@ -31,7 +31,7 @@ License: You must have a valid license purchased only from themeforest(the above
     <!-- BEGIN: Mobile Menu -->
     <div class="mobile-menu md:hidden">
         <div class="mobile-menu-bar">
-            <a href="" class="flex mr-auto">
+            <a href="{{ route('dashboard') }}" class="flex mr-auto">
                 <img alt="Midone - HTML Admin Template" class="w-6" src="{{ asset('images/logo.svg') }}">
             </a>
             <a href="javascript:;" class="mobile-menu-toggler"> <i data-lucide="bar-chart-2"
@@ -74,34 +74,43 @@ License: You must have a valid license purchased only from themeforest(the above
                         </li>
                     </ul>
                 </li>
+                  @php
+                    $user = Auth::user();
+                    $userMenuOpen = request()->routeIs('users.*') || request()->routeIs('roles.*');
+                @endphp
+
+                @if ($user && $user->role->role_name === 'Superadmin')
                 <li>
-                    <a href="javascript:;" class="menu">
+                    <a href="javascript:;"
+                        class="menu {{ request()->routeIs('User Mangement.*') ? 'side-menu--active side-menu--opensss' : '' }}{{ request()->routeIs('items.*') ? 'side-menu--active side-menu--opensss' : '' }}">
                         <div class="menu__icon"> <i data-lucide="box"></i> </div>
-                        <div class="menu__title"> Menu Layout <i data-lucide="chevron-down" class="menu__sub-icon "></i>
+                        <div class="menu__title"> User Mangement <i data-lucide="chevron-down"
+                                class="menu__sub-icon "></i>
                         </div>
                     </a>
                     <ul class="">
                         <li>
-                            <a href="side-menu-light-dashboard-overview-1.html" class="menu menu--active">
-                                <div class="menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="menu__title"> Side Menu </div>
+                            <a href="{{ Route('users.index') }}" class="menu menu--active">
+                                <div class="menu__icon"> <i data-lucide="users"></i> </div>
+                                <div class="menu__title"> Users</div>
                             </a>
                         </li>
                         <li>
-                            <a href="simple-menu-light-dashboard-overview-1.html" class="menu menu--active">
+                            <a href="{{ Route('roles.index') }}" class="menu menu--active">
                                 <div class="menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="menu__title"> Simple Menu </div>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="top-menu-light-dashboard-overview-1.html" class="menu menu--active">
-                                <div class="menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="menu__title"> Top Menu </div>
+                                <div class="menu__title"> Role </div>
                             </a>
                         </li>
                     </ul>
                 </li>
                 <li>
+                    <a href="{{ Route('branch.index') }}" class="menu">
+                        <div class="menu__icon"> <i data-lucide="users"></i> </div>
+                        <div class="menu__title"> Branches </div>
+                    </a>
+                </li>
+                @endif
+                {{-- <li>
                     <a href="javascript:;" class="menu">
                         <div class="menu__icon"> <i data-lucide="shopping-bag"></i> </div>
                         <div class="menu__title"> E-Commerce <i data-lucide="chevron-down" class="menu__sub-icon "></i>
@@ -260,8 +269,8 @@ License: You must have a valid license purchased only from themeforest(the above
                             </a>
                         </li>
                     </ul>
-                </li>
-                <li>
+                </li> --}}
+                {{-- <li>
                     <a href="javascript:;" class="menu">
                         <div class="menu__icon"> <i data-lucide="users"></i> </div>
                         <div class="menu__title"> Users <i data-lucide="chevron-down" class="menu__sub-icon "></i>
@@ -699,7 +708,7 @@ License: You must have a valid license purchased only from themeforest(the above
                             </a>
                         </li>
                     </ul>
-                </li>
+                </li> --}}
             </ul>
         </div>
     </div>
@@ -709,7 +718,7 @@ License: You must have a valid license purchased only from themeforest(the above
         class="top-bar-boxed h-[70px] md:h-[65px] z-[51] border-b border-white/[0.08] mt-12 md:mt-0 -mx-3 sm:-mx-8 md:-mx-0 px-3 md:border-b-0 relative md:fixed md:inset-x-0 md:top-0 sm:px-8 md:px-10 md:pt-10 md:bg-gradient-to-b md:from-slate-100 md:to-transparent dark:md:from-darkmode-700">
         <div class="h-full flex items-center">
             <!-- BEGIN: Logo -->
-            <a href="" class="logo -intro-x hidden md:flex xl:w-[180px] block">
+            <a href="{{ route('dashboard') }}" class="logo -intro-x hidden md:flex xl:w-[180px] block">
                 <img alt="Midone - HTML Admin Template" class="logo__image w-6" src="{{ asset('images/logo.svg') }}">
                 <span class="logo__text text-white text-lg ml-3"> Enigma </span>
             </a>
@@ -738,19 +747,22 @@ License: You must have a valid license purchased only from themeforest(the above
                             <a href="" class="flex items-center">
                                 <div
                                     class="w-8 h-8 bg-success/20 dark:bg-success/10 text-success flex items-center justify-center rounded-full">
-                                    <i class="w-4 h-4" data-lucide="inbox"></i> </div>
+                                    <i class="w-4 h-4" data-lucide="inbox"></i>
+                                </div>
                                 <div class="ml-3">Mail Settings</div>
                             </a>
                             <a href="" class="flex items-center mt-2">
                                 <div
                                     class="w-8 h-8 bg-pending/10 text-pending flex items-center justify-center rounded-full">
-                                    <i class="w-4 h-4" data-lucide="users"></i> </div>
+                                    <i class="w-4 h-4" data-lucide="users"></i>
+                                </div>
                                 <div class="ml-3">Users & Permissions</div>
                             </a>
                             <a href="" class="flex items-center mt-2">
                                 <div
                                     class="w-8 h-8 bg-primary/10 dark:bg-primary/20 text-primary/80 flex items-center justify-center rounded-full">
-                                    <i class="w-4 h-4" data-lucide="credit-card"></i> </div>
+                                    <i class="w-4 h-4" data-lucide="credit-card"></i>
+                                </div>
                                 <div class="ml-3">Transactions Report</div>
                             </a>
                         </div>
@@ -843,7 +855,7 @@ License: You must have a valid license purchased only from themeforest(the above
                             <div class="w-12 h-12 flex-none image-fit mr-1">
                                 <img alt="Midone - HTML Admin Template" class="rounded-full"
                                     src="{{ asset('images/profile-3.jpg">
-                                    ') }}">
+                                                                                                                                                                                    ') }}">
                                 <div
                                     class="w-3 h-3 bg-success absolute right-0 bottom-0 rounded-full border-2 border-white">
                                 </div>
@@ -862,7 +874,7 @@ License: You must have a valid license purchased only from themeforest(the above
                             <div class="w-12 h-12 flex-none image-fit mr-1">
                                 <img alt="Midone - HTML Admin Template" class="rounded-full"
                                     src="{{ asset('images/profile-4.jpg">
-                                    ') }}">
+                                                                                                                                                                                    ') }}">
                                 <div
                                     class="w-3 h-3 bg-success absolute right-0 bottom-0 rounded-full border-2 border-white">
                                 </div>
@@ -881,7 +893,7 @@ License: You must have a valid license purchased only from themeforest(the above
                             <div class="w-12 h-12 flex-none image-fit mr-1">
                                 <img alt="Midone - HTML Admin Template" class="rounded-full"
                                     src="{{ asset('images/profile-2.jpg">
-                                    ') }}">
+                                                                                                                                                                                    ') }}">
                                 <div
                                     class="w-3 h-3 bg-success absolute right-0 bottom-0 rounded-full border-2 border-white">
                                 </div>
@@ -900,7 +912,7 @@ License: You must have a valid license purchased only from themeforest(the above
                             <div class="w-12 h-12 flex-none image-fit mr-1">
                                 <img alt="Midone - HTML Admin Template" class="rounded-full"
                                     src="{{ asset('images/profile-5.jpg">
-                                    ') }}">
+                                                                                                                                                                                    ') }}">
                                 <div
                                     class="w-3 h-3 bg-success absolute right-0 bottom-0 rounded-full border-2 border-white">
                                 </div>
@@ -919,7 +931,7 @@ License: You must have a valid license purchased only from themeforest(the above
                             <div class="w-12 h-12 flex-none image-fit mr-1">
                                 <img alt="Midone - HTML Admin Template" class="rounded-full"
                                     src="{{ asset('images/profile-9.jpg">
-                                    ') }}">
+                                                                                                                                                                                    ') }}">
                                 <div
                                     class="w-3 h-3 bg-success absolute right-0 bottom-0 rounded-full border-2 border-white">
                                 </div>
@@ -974,8 +986,8 @@ License: You must have a valid license purchased only from themeforest(the above
                             <hr class="dropdown-divider border-white/[0.08]">
                         </li>
                         <li>
-                            <a href="" class="dropdown-item hover:bg-white/5"> <i data-lucide="toggle-right"
-                                    class="w-4 h-4 mr-2"></i> Logout </a>
+                            <a href="{{ route('logout') }}" class="dropdown-item hover:bg-white/5"> <i
+                                    data-lucide="toggle-right" class="w-4 h-4 mr-2"></i> Logout </a>
                         </li>
                     </ul>
                 </div>
@@ -1024,205 +1036,220 @@ License: You must have a valid license purchased only from themeforest(the above
                         </li>
                     </ul>
                 </li>
-                <li>
-                    <a href="javascript:;" class="side-menu">
-                        <div class="side-menu__icon"> <i data-lucide="box"></i> </div>
-                        <div class="side-menu__title">
-                            Menu Layout
-                            <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
-                        </div>
-                    </a>
-                    <ul class="">
-                        <li>
-                            <a href="side-menu-light-dashboard-overview-1.html" class="side-menu">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title"> Side Menu </div>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="simple-menu-light-dashboard-overview-1.html" class="side-menu">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title"> Simple Menu </div>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="top-menu-light-dashboard-overview-1.html" class="side-menu">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title"> Top Menu </div>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    <a href="javascript:;" class="side-menu">
-                        <div class="side-menu__icon"> <i data-lucide="shopping-bag"></i> </div>
-                        <div class="side-menu__title">
-                            E-Commerce
-                            <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
-                        </div>
-                    </a>
-                    <ul class="">
-                        <li>
-                            <a href="side-menu-light-categories.html" class="side-menu">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title"> Categories </div>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="side-menu-light-add-product.html" class="side-menu">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title"> Add Product </div>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:;" class="side-menu">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title">
-                                    Products
-                                    <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
-                                </div>
-                            </a>
-                            <ul class="">
-                                <li>
-                                    <a href="side-menu-light-product-list.html" class="side-menu">
-                                        <div class="side-menu__icon"> <i data-lucide="zap"></i> </div>
-                                        <div class="side-menu__title">Product List</div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="side-menu-light-product-grid.html" class="side-menu">
-                                        <div class="side-menu__icon"> <i data-lucide="zap"></i> </div>
-                                        <div class="side-menu__title">Product Grid</div>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="javascript:;" class="side-menu">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title">
-                                    Transactions
-                                    <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
-                                </div>
-                            </a>
-                            <ul class="">
-                                <li>
-                                    <a href="side-menu-light-transaction-list.html" class="side-menu">
-                                        <div class="side-menu__icon"> <i data-lucide="zap"></i> </div>
-                                        <div class="side-menu__title">Transaction List</div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="side-menu-light-transaction-detail.html" class="side-menu">
-                                        <div class="side-menu__icon"> <i data-lucide="zap"></i> </div>
-                                        <div class="side-menu__title">Transaction Detail</div>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="javascript:;" class="side-menu">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title">
-                                    Sellers
-                                    <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
-                                </div>
-                            </a>
-                            <ul class="">
-                                <li>
-                                    <a href="side-menu-light-seller-list.html" class="side-menu">
-                                        <div class="side-menu__icon"> <i data-lucide="zap"></i> </div>
-                                        <div class="side-menu__title">Seller List</div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="side-menu-light-seller-detail.html" class="side-menu">
-                                        <div class="side-menu__icon"> <i data-lucide="zap"></i> </div>
-                                        <div class="side-menu__title">Seller Detail</div>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="side-menu-light-reviews.html" class="side-menu">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title"> Reviews </div>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    <a href="{{ Route('users.index') }}" class="side-menu">
-                        <div class="side-menu__icon"> <i data-lucide="users"></i> </div>
-                        <div class="side-menu__title"> Users </div>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ Route('branch.index') }}" class="side-menu">
-                        <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
-                        <div class="side-menu__title"> Branch </div>
-                    </a>
-                </li>
-                <li>
-                    <a href="side-menu-light-inbox.html" class="side-menu">
-                        <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
-                        <div class="side-menu__title"> Inbox </div>
-                    </a>
-                </li>
-                <li>
-                    <a href="side-menu-light-file-manager.html" class="side-menu">
-                        <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
-                        <div class="side-menu__title"> File Manager </div>
-                    </a>
-                </li>
-                <li>
-                    <a href="side-menu-light-point-of-sale.html" class="side-menu">
-                        <div class="side-menu__icon"> <i data-lucide="credit-card"></i> </div>
-                        <div class="side-menu__title"> Point of Sale </div>
-                    </a>
-                </li>
-                <li>
-                    <a href="side-menu-light-chat.html" class="side-menu">
-                        <div class="side-menu__icon"> <i data-lucide="message-square"></i> </div>
-                        <div class="side-menu__title"> Chat </div>
-                    </a>
-                </li>
-                <li>
-                    <a href="side-menu-light-post.html" class="side-menu">
-                        <div class="side-menu__icon"> <i data-lucide="file-text"></i> </div>
-                        <div class="side-menu__title"> Post </div>
-                    </a>
-                </li>
-                <li>
-                    <a href="side-menu-light-calendar.html" class="side-menu">
-                        <div class="side-menu__icon"> <i data-lucide="calendar"></i> </div>
-                        <div class="side-menu__title"> Calendar </div>
-                    </a>
-                </li>
-                <li class="side-nav__devider my-6"></li>
-                <li>
-                    <a href="javascript:;" class="side-menu">
-                        <div class="side-menu__icon"> <i data-lucide="edit"></i> </div>
-                        <div class="side-menu__title">
-                            Crud
-                            <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
-                        </div>
-                    </a>
-                    <ul class="">
-                        <li>
-                            <a href="side-menu-light-crud-data-list.html" class="side-menu">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title"> Data List </div>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="side-menu-light-crud-form.html" class="side-menu">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title"> Form </div>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
+                @php
+                    $user = Auth::user();
+                    $userMenuOpen = request()->routeIs('users.*') || request()->routeIs('roles.*');
+                @endphp
+
+                @if ($user && $user->role->role_name === 'Superadmin')
+                    <li>
+                        <a href="javascript:;"
+                            class="side-menu {{ $userMenuOpen ? 'side-menu--active side-menu--opensss' : '' }}">
+                            <div class="side-menu__icon"> <i data-lucide="user"></i> </div>
+                            <div class="side-menu__title">
+                                User Management
+                                <i data-lucide="chevron-down"
+                                    class="side-menu__sub-icon {{ $userMenuOpen ? 'transform rotate-180' : '' }}"></i>
+                            </div>
+                        </a>
+
+                        <ul class="{{ $userMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
+                            <li>
+                                <a href="{{ route('users.index') }}"
+                                    class="side-menu {{ request()->routeIs('users.*') ? 'side-menu--active' : '' }}">
+                                    <div class="side-menu__icon"> <i data-lucide="users"></i> </div>
+                                    <div class="side-menu__title"> Users </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('roles.index') }}"
+                                    class="side-menu {{ request()->routeIs('roles.*') ? 'side-menu--active' : '' }}">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Role </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    </li>
+                    <li>
+                        <a href="{{ Route('branch.index') }}" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
+                            <div class="side-menu__title"> Branch </div>
+                        </a>
+                    </li>
+                @endif
+
+                {{-- <li>
+                        <a href="javascript:;" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="shopping-bag"></i> </div>
+                            <div class="side-menu__title">
+                                E-Commerce
+                                <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
+                            </div>
+                        </a>
+                        <ul class="">
+                            <li>
+                                <a href="side-menu-light-categories.html" class="side-menu">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Categories </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="side-menu-light-add-product.html" class="side-menu">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Add Product </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:;" class="side-menu">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title">
+                                        Products
+                                        <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
+                                    </div>
+                                </a>
+                                <ul class="">
+                                    <li>
+                                        <a href="side-menu-light-product-list.html" class="side-menu">
+                                            <div class="side-menu__icon"> <i data-lucide="zap"></i> </div>
+                                            <div class="side-menu__title">Product List</div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="side-menu-light-product-grid.html" class="side-menu">
+                                            <div class="side-menu__icon"> <i data-lucide="zap"></i> </div>
+                                            <div class="side-menu__title">Product Grid</div>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="javascript:;" class="side-menu">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title">
+                                        Transactions
+                                        <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
+                                    </div>
+                                </a>
+                                <ul class="">
+                                    <li>
+                                        <a href="side-menu-light-transaction-list.html" class="side-menu">
+                                            <div class="side-menu__icon"> <i data-lucide="zap"></i> </div>
+                                            <div class="side-menu__title">Transaction List</div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="side-menu-light-transaction-detail.html" class="side-menu">
+                                            <div class="side-menu__icon"> <i data-lucide="zap"></i> </div>
+                                            <div class="side-menu__title">Transaction Detail</div>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="javascript:;" class="side-menu">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title">
+                                        Sellers
+                                        <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
+                                    </div>
+                                </a>
+                                <ul class="">
+                                    <li>
+                                        <a href="side-menu-light-seller-list.html" class="side-menu">
+                                            <div class="side-menu__icon"> <i data-lucide="zap"></i> </div>
+                                            <div class="side-menu__title">Seller List</div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="side-menu-light-seller-detail.html" class="side-menu">
+                                            <div class="side-menu__icon"> <i data-lucide="zap"></i> </div>
+                                            <div class="side-menu__title">Seller Detail</div>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="side-menu-light-reviews.html" class="side-menu">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Reviews </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="{{ Route('users.index') }}" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="users"></i> </div>
+                            <div class="side-menu__title"> Users </div>
+                        </a>
+                    </li>
+                     <li>
+                        <a href="{{ Route('branch.index') }}" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
+                            <div class="side-menu__title"> Branch </div>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="side-menu-light-inbox.html" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
+                            <div class="side-menu__title"> Inbox </div>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="side-menu-light-file-manager.html" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
+                            <div class="side-menu__title"> File Manager </div>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="side-menu-light-point-of-sale.html" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="credit-card"></i> </div>
+                            <div class="side-menu__title"> Point of Sale </div>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="side-menu-light-chat.html" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="message-square"></i> </div>
+                            <div class="side-menu__title"> Chat </div>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="side-menu-light-post.html" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="file-text"></i> </div>
+                            <div class="side-menu__title"> Post </div>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="side-menu-light-calendar.html" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="calendar"></i> </div>
+                            <div class="side-menu__title"> Calendar </div>
+                        </a>
+                    </li>
+                    <li class="side-nav__devider my-6"></li>
+                    <li>
+                        <a href="javascript:;" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="edit"></i> </div>
+                            <div class="side-menu__title">
+                                Crud
+                                <div class="side-menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
+                            </div>
+                        </a>
+                        <ul class="">
+                            <li>
+                                <a href="side-menu-light-crud-data-list.html" class="side-menu">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Data List </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="side-menu-light-crud-form.html" class="side-menu">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Form </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                 <li>
                     <a href="javascript:;" class="side-menu">
                         <div class="side-menu__icon"> <i data-lucide="users"></i> </div>
@@ -1689,7 +1716,7 @@ License: You must have a valid license purchased only from themeforest(the above
                             </a>
                         </li>
                     </ul>
-                </li>
+                </li> --}}
             </ul>
         </nav>
         <!-- END: Side Menu -->

@@ -40,19 +40,19 @@
 
                 <!-- Role -->
                 <div class="input-form col-span-3 mt-3">
-                    <label for="role" class="form-label w-full flex flex-col sm:flex-row">
-                        Role <p style="color: red;margin-left: 3px;">*</p>
+                    <label for="role_id" class="form-label w-full flex flex-col sm:flex-row">
+                        Role<p style="color: red;margin-left: 3px;"> *</p>
                     </label>
-                    <select id="role" name="role" class="form-control field-new" required>
-                        <option value="" disabled {{ old('role', $user->role) == '' ? 'selected' : '' }}>Choose...
-                        </option>
-                        <option value="Admin" {{ old('role', $user->role) == 'Admin' ? 'selected' : '' }}>Admin</option>
-                        <option value="Manager" {{ old('role', $user->role) == 'Manager' ? 'selected' : '' }}>Manager
-                        </option>
-                        <option value="Cashier" {{ old('role', $user->role) == 'Cashier' ? 'selected' : '' }}>Cashier
-                        </option>
+                    <select id="role_id" name="role_id" class="form-control field-new" required>
+                        <option value="" disabled {{ !$user->role_id ? 'selected' : '' }}>Choose...</option>
+                        @foreach ($roles as $role)
+                            <option value="{{ $role->id }}" {{ $user->role_id == $role->id ? 'selected' : '' }}>
+                                {{ $role->role_name }}
+                            </option>
+                        @endforeach
                     </select>
                 </div>
+
 
                 <!-- Date of Birth -->
                 <div class="input-form col-span-3 mt-3">

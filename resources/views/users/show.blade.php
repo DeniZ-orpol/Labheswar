@@ -35,7 +35,7 @@
                         </div>
                         <div class="flex items-center mt-3">
                             <i data-lucide="shield" class="w-4 h-4 text-slate-500 mr-2"></i>
-                            Role: {{ $user->role }}
+                            Role: {{ $user->role->role_name ?? '-' }}
                         </div>
                     </div>
                 </div>

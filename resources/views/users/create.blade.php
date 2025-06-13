@@ -2,7 +2,7 @@
 @section('content')
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
-            user
+            Create User
         </h2>
         <form action="{{ route('users.store') }}" method="POST" class="form-updated validate-form">
             @csrf <!-- CSRF token for security -->
@@ -34,18 +34,18 @@
                         placeholder="Enter phone number" required maxlength="15">
                 </div>
 
-                <!-- Role -->
                 <div class="input-form col-span-3 mt-3">
-                    <label for="customer_type" class="form-label w-full flex flex-col sm:flex-row">
+                    <label for="role_id" class="form-label w-full flex flex-col sm:flex-row">
                         Role<p style="color: red;margin-left: 3px;"> *</p>
                     </label>
-                    <select id="customer_type" name="role" class="form-control field-new" required>
+                    <select id="role_id" name="role_id" class="form-control field-new" required>
                         <option value="" selected>Choose...</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Manager">Manager</option>
-                        <option value="Cashier">Cashier</option>
+                        @foreach ($roles as $role)
+                            <option value="{{ $role->id }}">{{ $role->role_name }}</option>
+                        @endforeach
                     </select>
                 </div>
+
 
                 <!-- Date of Birth -->
                 <div class="input-form col-span-3 mt-3">
