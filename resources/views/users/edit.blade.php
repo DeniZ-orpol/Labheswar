@@ -6,7 +6,7 @@
             Edit User
         </h2>
 
-        <form action="{{ route('users.update', $user->id) }}" method="POST" class="form-updated validate-form">
+        <form action="{{ route('users.update', ['branchId' => $user->branch->id, 'id' => $user->id]) }}" method="POST" class="form-updated validate-form">
             @csrf
             @method('PUT')
 
@@ -38,6 +38,15 @@
                         value="{{ old('mobile', $user->mobile) }}" placeholder="Enter phone number" maxlength="15">
                 </div>
 
+                <!-- Date of Birth -->
+                <div class="input-form col-span-3 mt-3">
+                    <label for="dob" class="form-label w-full flex flex-col sm:flex-row">
+                        Date of Birth
+                    </label>
+                    <input id="dob" type="date" name="dob" class="form-control field-new"
+                        value="{{ old('dob', $user->dob ? \Carbon\Carbon::parse($user->dob)->format('Y-m-d') : '') }}">
+                </div>
+
                 <!-- Role -->
                 <div class="input-form col-span-3 mt-3">
                     <label for="role_id" class="form-label w-full flex flex-col sm:flex-row">
@@ -53,14 +62,21 @@
                     </select>
                 </div>
 
-
-                <!-- Date of Birth -->
+                <!-- Branch -->
                 <div class="input-form col-span-3 mt-3">
-                    <label for="dob" class="form-label w-full flex flex-col sm:flex-row">
-                        Date of Birth
+                    <label for="branch_id" class="form-label w-full flex flex-col sm:flex-row">
+                        Branch<p style="color: red;margin-left: 3px;"> *</p>
                     </label>
-                    <input id="dob" type="date" name="dob" class="form-control field-new"
-                        value="{{ old('dob', $user->dob ? \Carbon\Carbon::parse($user->dob)->format('Y-m-d') : '') }}">
+                    <input id="branch_id" type="text" name="branch_id" class="form-control field-new"
+                        value="{{ old('branch_id', $user->branch->name) }}" disabled >
+                    {{-- <select id="branch_id" name="branch_id" class="form-control field-new" required>
+                        <option value="" disabled {{ !$user->branch->id ? 'selected' : '' }}>Choose...</option>
+                        @foreach ($branches as $branch)
+                            <option value="{{ $branch->id }}" {{ $branch->id == $branch->id ? 'selected' : '' }}>
+                                {{ $branch->name }}
+                            </option>
+                        @endforeach
+                    </select> --}}
                 </div>
 
                 <!-- Password -->

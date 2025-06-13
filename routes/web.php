@@ -29,6 +29,7 @@ Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'
 
 Route::group(['middleware' => 'auth'], function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    
     Route::get('/branch', [BranchController::class, 'index'])->name('branch.index');
     Route::get('/branch/create', [BranchController::class, 'create'])->name('branch.create');
     Route::post('/branch/store', [BranchController::class, 'store'])->name('branch.store');
@@ -36,7 +37,13 @@ Route::group(['middleware' => 'auth'], function () {
     Route::post('/branch/update/{branch}', [BranchController::class, 'update'])->name('branch.update');
     Route::get('/branch/{branch}', [BranchController::class, 'show'])->name('branch.show');
     Route::post('/branch/delete/{branch}', [BranchController::class, 'destroy'])->name('branch.delete');
-    Route::resource('users', UserController::class);
+
+    Route::resource('users', UserController::class)->except(['show', 'edit', 'update', 'destroy']);
+    Route::get('/users/{branchId}/show/{id}', [UserController::class, 'show'])->name('users.show');
+    Route::get('/users/{branchId}/edit/{id}', [UserController::class, 'edit'])->name('users.edit');
+    Route::put('/users/{branchId}/update/{id}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{branchId}/delete/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+
     Route::resource('roles', RoleController::class);
 });
 

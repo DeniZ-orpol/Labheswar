@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Branch extends Model
 {
+    use HasFactory;
+    protected $connection = 'master';
     protected $fillable = [
         'user_id',
         'name',
@@ -16,8 +19,29 @@ class Branch extends Model
         'branch_admin',
     ];
 
+    protected $casts = [
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8'
+    ];
+
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(BranchUsers::class);
     }
+
+    public function getBranchUsers()
+    {
+        return BranchUsers::on($this->connection_name)->get();
+    }
+
+    public function getBranchUsersCount()
+    {
+        return BranchUsers::on($this->connection_name)->count();
+    }
+
+    public function getActiveBranchUsersCount()
+    {
+        return BranchUsers::on($this->connection_name)->where('is_active', true)->count();
+    }
+
 }

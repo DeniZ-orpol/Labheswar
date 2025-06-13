@@ -19,39 +19,49 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th style="TEXT-ALIGN: left;">Phone</th>
-                        <th>Role</th>
                         <th>Dob</th>
+                        <th>Role</th>
+                        <th>Branch</th>
                         <th style="TEXT-ALIGN: left;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($users as $user)
+                    @if ($users && $users->count())
+                        @foreach ($users as $user)
+                            <tr>
+                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $user->name }}</td>
+                                <td>{{ $user->email }}</td>
+                                <td style="TEXT-ALIGN: left;">{{ $user->mobile }}</td>
+                                <td>{{ $user->dob }}</td>
+                                <td>{{ $user->role->role_name ?? '-' }}</td>
+                                <td>{{ $user->branch_name ?? '-' }}</td>
+                                <td>
+                                    <!-- Add buttons for actions like 'View', 'Edit' etc. -->
+                                    <!-- <button class="btn btn-primary">Message</button> -->
+                                    <div class="flex gap-2 justify-content-left">
+                                        <a href="{{ route('users.show', ['branchId' => $user->branch_id, 'id' => $user->id]) }}"
+                                            class="btn btn-primary mr-1 mb-2">View
+                                        </a>
+                                        <form action="{{ route('users.destroy', ['branchId' => $user->branch_id, 'id' => $user->id]) }}" method="POST"
+                                            onsubmit="return confirm('Are you sure you want to delete this user?');"
+                                            style="display: inline-block;">
+                                            @csrf
+                                            @method('DELETE') <!-- Add this line -->
+                                            <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
+                                        </form>
+                                        <a href="{{ route('users.edit', ['branchId' => $user->branch_id, 'id' => $user->id]) }}" class="btn btn-primary mr-1 mb-2">
+                                            Edit
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    @else
                         <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ $user->name }}</td>
-                            <td>{{ $user->email }}</td>
-                            <td style="TEXT-ALIGN: left;">{{ $user->mobile }}</td>
-                            <td>{{ $user->role->role_name ?? '-' }}</td>
-                            <td>{{ $user->dob }}</td>
-                            <td>
-                                <!-- Add buttons for actions like 'View', 'Edit' etc. -->
-                                <!-- <button class="btn btn-primary">Message</button> -->
-                                <div class="flex gap-2 justify-content-left">
-                                    <a href="{{ route('users.show', $user->id) }}" class="btn btn-primary mr-1 mb-2">View
-                                    </a>
-                                    <form action="{{ route('users.destroy', $user->id) }}" method="POST"
-                                        onsubmit="return confirm('Are you sure you want to delete this user?');"
-                                        style="display: inline-block;">
-                                        @csrf
-                                        @method('DELETE') <!-- Add this line -->
-                                        <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
-                                    </form>
-                                    <a href="{{ route('users.edit', $user->id) }}" class="btn btn-primary mr-1 mb-2"> Edit
-                                    </a>
-                                </div>
-                            </td>
+                            <td colspan="7" class="text-center">No users found.</td>
                         </tr>
-                    @endforeach
+                    @endif
                 </tbody>
             </table>
 

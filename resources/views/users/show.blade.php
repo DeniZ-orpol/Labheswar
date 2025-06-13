@@ -31,11 +31,15 @@
                         </div>
                         <div class="flex items-center mt-3">
                             <i data-lucide="calendar" class="w-4 h-4 text-slate-500 mr-2"></i>
-                            DOB: {{ $user->dob ?? 'N/A' }}
+                            DOB: {{ $user->dob ? \Carbon\Carbon::parse($user->dob)->format('d-m-Y') : 'N/A' }}
                         </div>
                         <div class="flex items-center mt-3">
                             <i data-lucide="shield" class="w-4 h-4 text-slate-500 mr-2"></i>
                             Role: {{ $user->role->role_name ?? '-' }}
+                        </div>
+                        <div class="flex items-center mt-3">
+                            <i data-lucide="shield" class="w-4 h-4 text-slate-500 mr-2"></i>
+                            Branch: {{ $branch->name }}
                         </div>
                     </div>
                 </div>
@@ -43,7 +47,7 @@
                 <!-- Navigation Buttons -->
                 <div class="mt-5">
                     <a href="{{ route('users.index') }}" class="btn btn-secondary">Back to User List</a>
-                    <a href="{{ route('users.edit', $user->id) }}" class="btn btn-primary ml-2">Edit User</a>
+                    <a href="{{ route('users.edit', ['branchId' => $branch->id, 'id' => $user->id]) }}" class="btn btn-primary ml-2">Edit User</a>
                 </div>
             </div>
         </div>

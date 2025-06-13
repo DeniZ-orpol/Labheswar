@@ -79,7 +79,7 @@ License: You must have a valid license purchased only from themeforest(the above
                     $userMenuOpen = request()->routeIs('users.*') || request()->routeIs('roles.*');
                 @endphp
 
-                @if ($user && $user->role->role_name === 'Superadmin')
+                @if ($user && $user->role === 'Superadmin')
                 <li>
                     <a href="javascript:;"
                         class="menu {{ request()->routeIs('User Mangement.*') ? 'side-menu--active side-menu--opensss' : '' }}{{ request()->routeIs('items.*') ? 'side-menu--active side-menu--opensss' : '' }}">
@@ -1041,7 +1041,7 @@ License: You must have a valid license purchased only from themeforest(the above
                     $userMenuOpen = request()->routeIs('users.*') || request()->routeIs('roles.*');
                 @endphp
 
-                @if ($user && $user->role->role_name === 'Superadmin')
+                @if ($user && $user->role === 'Superadmin')
                     <li>
                         <a href="javascript:;"
                             class="side-menu {{ $userMenuOpen ? 'side-menu--active side-menu--opensss' : '' }}">

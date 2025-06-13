@@ -12,6 +12,9 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
+    protected $connection = 'master';
+
+
     /**
      * The attributes that are mass assignable.
      *
@@ -20,10 +23,11 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
-        'password',
         'mobile',
-        'role_id',
+        'password',
+        'role',
         'dob',
+        // 'role_id',
     ];
 
     /**
@@ -46,7 +50,18 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'dob' => 'date'
         ];
+    }
+
+    public function isSuperAdmin()
+    {
+        return $this->role === 'Superadmin';
+    }
+
+    public function managedBranches()
+    {
+        return $this->hasMany(Branch::class, 'branch_admin');
     }
 
     public function role_data()
