@@ -37,10 +37,10 @@
                             <i data-lucide="shield" class="w-4 h-4 text-slate-500 mr-2"></i>
                             GST No: {{ $branch->gst_no }}
                         </div>
-                        <div class="flex items-center mt-3">
+                        {{-- <div class="flex items-center mt-3">
                             <i data-lucide="shield" class="w-4 h-4 text-slate-500 mr-2"></i>
                             Branch Admin: {{ $branch->admin_name ?? 'No Admin Assigned' }}
-                        </div>
+                        </div> --}}
                     </div>
                 </div>
 

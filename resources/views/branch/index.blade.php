@@ -6,9 +6,9 @@
             Branch
         </h2>
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
-            <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
+            {{-- <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
                 <a href="{{ route('branch.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add New Branch</a>
-            </div>
+            </div> --}}
 
             <!-- BEGIN: Users Layout -->
             <!-- DataTable: Add class 'datatable' to your table -->
@@ -21,7 +21,7 @@
                         <th>Latitude</th>
                         <th>Longitude</th>
                         <th>GST No</th>
-                        <th>Branch Admin</th>
+                        {{-- <th>Branch Admin</th> --}}
                         {{-- <th>Email</th>
                         <th style="TEXT-ALIGN: left;">Phone</th> --}}
                         <th style="TEXT-ALIGN: left;">Actions</th>
@@ -36,7 +36,7 @@
                             <td>{{ $branch->latitude }}</td>
                             <td>{{ $branch->longitude }}</td>
                             <td>{{ $branch->gst_no }}</td>
-                            <td>{{ $branch->admin_name ?? 'No Admin Assigned' }}</td>
+                            {{-- <td>{{ $branch->admin_name ?? 'No Admin Assigned' }}</td> --}}
                             <td>
                                 <!-- Add buttons for actions like 'View', 'Edit' etc. -->
                                 <!-- <button class="btn btn-primary">Message</button> -->
@@ -45,12 +45,12 @@
                                         class="btn btn-primary mr-1 mb-2">View</a>
                                     <a href="{{ route('branch.edit', $branch->id) }}" class="btn btn-primary mr-1 mb-2">
                                         Edit</a>
-                                    <form action="{{ route('branch.delete', $branch->id) }}" method="POST"
+                                    {{-- <form action="{{ route('branch.delete', $branch->id) }}" method="POST"
                                         onsubmit="return confirm('Are you sure you want to delete this user?');"
                                         style="display: inline-block;">
                                         @csrf
                                         <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
-                                    </form>
+                                    </form> --}}
                                 </div>
                             </td>
                         </tr>

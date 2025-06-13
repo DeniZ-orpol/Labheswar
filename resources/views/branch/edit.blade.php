@@ -58,7 +58,7 @@
                 </div> --}}
 
                 <!-- Branch admin -->
-                <div class="input-form col-span-3 mt-3">
+                {{-- <div class="input-form col-span-3 mt-3">
                     <label for="branch_admin" class="form-label w-full flex flex-col sm:flex-row">
                         Branch Admin
                     </label>
@@ -70,7 +70,7 @@
                             @endif
                         @endforeach
                     </select>
-                </div>
+                </div> --}}
 
                 <!-- Preferred Payment Method -->
                 {{-- <div class="input-form col-span-3 mt-3">
