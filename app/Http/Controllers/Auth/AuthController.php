@@ -26,12 +26,6 @@ class AuthController extends Controller
             $user = Auth::user();
 
             // Check if user is Superadmin
-            if ($user->role->role_name !== 'Superadmin') {
-                Auth::logout();
-                return back()->withErrors([
-                    'email' => 'Only Superadmin users are allowed to login.',
-                ]);
-            }
 
             return redirect()->route('dashboard');
         }
@@ -44,10 +38,20 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        // Manually remove remember token from DB
+        $user = Auth::user();
+        if ($user) {
+            $user->setRememberToken(null);
+            $user->save();
+        }
+
+        // Logout the user
         Auth::logout();
+
+        // Invalidate the session and regenerate CSRF token
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->Route('dashboard');
+        return redirect()->route('login'); // or wherever you want to redirect
     }
 }
