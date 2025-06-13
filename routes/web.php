@@ -27,7 +27,7 @@ Route::get('/reset-password', [ForgotPasswordController::class, 'showResetForm']
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'])->name('password.update');
 
 
-Route::group(['middleware' => 'auth'], function () {
+Route::group(['middleware' => 'custom.auth','check.remember'], function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     
     Route::get('/branch', [BranchController::class, 'index'])->name('branch.index');
