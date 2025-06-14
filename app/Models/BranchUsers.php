@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class BranchUsers extends Model
+class BranchUsers extends Authenticatable
 {
+    use HasApiTokens, Notifiable;
     protected $connection = null;
     protected $table = 'branch_users';
     protected $fillable = [
@@ -70,5 +74,45 @@ class BranchUsers extends Model
         $this->update(['last_login_at' => now()]);
     }
 
+    public function setBranchInfo($branch)
+    {
+        $this->branch_info = $branch;
+        return $this;
+    }
+    
+    /**
+     * Create token using custom service
+     */
+    public function createToken($name, array $abilities = ['*'], $expiresAt = null)
+    {
+        $tokenService = app(\App\Services\BranchTokenService::class);
+        return $tokenService->createToken($this, $name, $abilities, $expiresAt);
+    }
+
+    /**
+     * Get user tokens
+     */
+    public function tokens()
+    {
+        $tokenService = app(\App\Services\BranchTokenService::class);
+        return $tokenService->getUserTokens($this->id, $this->getConnectionName());
+    }
+
+    /**
+     * Set current access token
+     */
+    public function withAccessToken($token)
+    {
+        $this->accessToken = $token;
+        return $this;
+    }
+
+    /**
+     * Get current access token
+     */
+    public function currentAccessToken()
+    {
+        return $this->accessToken ?? null;
+    }
 
 }
