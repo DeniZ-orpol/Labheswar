@@ -9,6 +9,7 @@ class Product extends Model
     protected $fillable = [
         'product_name',
         'barcode',
+        'image',
         'search_option',
         'unit_types',
         'decimal_btn',
