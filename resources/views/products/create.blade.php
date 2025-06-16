@@ -292,15 +292,14 @@
                     </div>
 
                     <div class="input-form col-span-3 mt-3">
-                        <label for="product_image" class="form-label w-full flex flex-col sm:flex-row">
+                        <label for="fileInput" class="form-label w-full flex flex-col sm:flex-row">
                             Product Image
                         </label>
                         <div class="input-form col-span-3 mt-3"
-                            style="position: relative; border: 2px dashed #ccc; border-radius: 8px; padding: 50px 40px; text-align: center; background-color: #f9f9f9; cursor: pointer;"
-                            onclick="document.getElementById('fileInput').click()">
+                            style="position: relative; border: 2px dashed #ccc; border-radius: 8px; padding: 50px 40px; text-align: center; background-color: #f9f9f9; cursor: pointer;">
                             <div class="fallback">
                                 <input name="product_image" type="file" id="fileInput" accept="image/*"
-                                    style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer;"
+                                    style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; z-index: 1;"
                                     onchange="previewImage(this)" />
                             </div>
                             <div id="uploadMessage" style="color: #666; font-size: 16px; pointer-events: none;">
