@@ -74,12 +74,12 @@ License: You must have a valid license purchased only from themeforest(the above
                         </li>
                     </ul>
                 </li>
-                  @php
+                {{-- @php
                     $user = Auth::user();
                     $userMenuOpen = request()->routeIs('users.*') || request()->routeIs('roles.*');
-                @endphp
+                @endphp --}}
 
-                @if ($user && $user->role === 'Superadmin')
+                {{-- @if ($user && $user->role === 'Superadmin') --}}
                 <li>
                     <a href="javascript:;"
                         class="menu {{ request()->routeIs('User Mangement.*') ? 'side-menu--active side-menu--opensss' : '' }}{{ request()->routeIs('items.*') ? 'side-menu--active side-menu--opensss' : '' }}">
@@ -109,7 +109,29 @@ License: You must have a valid license purchased only from themeforest(the above
                         <div class="menu__title"> Branches </div>
                     </a>
                 </li>
-                @endif
+                    <li>
+                        <a href="javascript:;"
+                            class="menu {{ request()->routeIs('Product.*') ? 'side-menu--active side-menu--opensss' : '' }}{{ request()->routeIs('items.*') ? 'side-menu--active side-menu--opensss' : '' }}">
+                            <div class="menu__icon"> <i data-lucide="box"></i> </div>
+                            <div class="menu__title"> Product <i data-lucide="chevron-down" class="menu__sub-icon "></i>
+                            </div>
+                        </a>
+                        <ul class="">
+                            <li>
+                                <a href="#" class="menu menu--active">
+                                    <div class="menu__icon"> <i data-lucide="users"></i> </div>
+                                    <div class="menu__title"> Product </div>
+                                </a>
+                            </li>
+                            {{-- <li>
+                                <a href="{{ Route('roles.index') }}" class="menu menu--active">
+                                    <div class="menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="menu__title"> Role </div>
+                                </a>
+                            </li> --}}
+                        </ul>
+                    </li>
+                {{-- @endif --}}
                 {{-- <li>
                     <a href="javascript:;" class="menu">
                         <div class="menu__icon"> <i data-lucide="shopping-bag"></i> </div>
@@ -854,8 +876,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <div class="cursor-pointer relative flex items-center ">
                             <div class="w-12 h-12 flex-none image-fit mr-1">
                                 <img alt="Midone - HTML Admin Template" class="rounded-full"
-                                    src="{{ asset('images/profile-3.jpg">
-                                                                                                                                                                                    ') }}">
+                                    src="{{ asset('images/profile-3.jpg">') }}">
                                 <div
                                     class="w-3 h-3 bg-success absolute right-0 bottom-0 rounded-full border-2 border-white">
                                 </div>
@@ -873,8 +894,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <div class="cursor-pointer relative flex items-center mt-5">
                             <div class="w-12 h-12 flex-none image-fit mr-1">
                                 <img alt="Midone - HTML Admin Template" class="rounded-full"
-                                    src="{{ asset('images/profile-4.jpg">
-                                                                                                                                                                                    ') }}">
+                                    src="{{ asset('images/profile-4.jpg">') }}">
                                 <div
                                     class="w-3 h-3 bg-success absolute right-0 bottom-0 rounded-full border-2 border-white">
                                 </div>
@@ -892,8 +912,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <div class="cursor-pointer relative flex items-center mt-5">
                             <div class="w-12 h-12 flex-none image-fit mr-1">
                                 <img alt="Midone - HTML Admin Template" class="rounded-full"
-                                    src="{{ asset('images/profile-2.jpg">
-                                                                                                                                                                                    ') }}">
+                                    src="{{ asset('images/profile-2.jpg">') }}">
                                 <div
                                     class="w-3 h-3 bg-success absolute right-0 bottom-0 rounded-full border-2 border-white">
                                 </div>
@@ -911,8 +930,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <div class="cursor-pointer relative flex items-center mt-5">
                             <div class="w-12 h-12 flex-none image-fit mr-1">
                                 <img alt="Midone - HTML Admin Template" class="rounded-full"
-                                    src="{{ asset('images/profile-5.jpg">
-                                                                                                                                                                                    ') }}">
+                                    src="{{ asset('images/profile-5.jpg">') }}">
                                 <div
                                     class="w-3 h-3 bg-success absolute right-0 bottom-0 rounded-full border-2 border-white">
                                 </div>
@@ -930,8 +948,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         <div class="cursor-pointer relative flex items-center mt-5">
                             <div class="w-12 h-12 flex-none image-fit mr-1">
                                 <img alt="Midone - HTML Admin Template" class="rounded-full"
-                                    src="{{ asset('images/profile-9.jpg">
-                                                                                                                                                                                    ') }}">
+                                    src="{{ asset('images/profile-9.jpg">') }}">
                                 <div
                                     class="w-3 h-3 bg-success absolute right-0 bottom-0 rounded-full border-2 border-white">
                                 </div>
@@ -1036,12 +1053,12 @@ License: You must have a valid license purchased only from themeforest(the above
                         </li>
                     </ul>
                 </li>
-                @php
+                {{-- @php
                     $user = Auth::user();
                     $userMenuOpen = request()->routeIs('users.*') || request()->routeIs('roles.*');
-                @endphp
+                @endphp --}}
 
-                @if ($user && $user->role === 'Superadmin')
+                {{-- @if ($user && $user->role === 'Superadmin') --}}
                     <li>
                         <a href="javascript:;"
                             class="side-menu {{ $userMenuOpen ? 'side-menu--active side-menu--opensss' : '' }}">
@@ -1071,14 +1088,43 @@ License: You must have a valid license purchased only from themeforest(the above
                         </ul>
                     </li>
 
-                    </li>
                     <li>
                         <a href="{{ Route('branch.index') }}" class="side-menu">
                             <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
                             <div class="side-menu__title"> Branch </div>
                         </a>
                     </li>
-                @endif
+
+                        <li>
+                            <a href="javascript:;" class="side-menu">
+                                {{-- class="side-menu {{ $productMenuOpen ? 'side-menu--active side-menu--opensss' : '' }}"> --}}
+                                <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
+                                <div class="side-menu__title">
+                                    Products
+                                    <i data-lucide="chevron-down" class="side-menu__sub-icon"></i>
+                                    {{-- class="side-menu__sub-icon {{ $productMenuOpen ? 'transform rotate-180' : '' }}"></i> --}}
+                                </div>
+                            </a>
+
+                            <ul class="">
+                                {{-- <ul class="{{ $productMenuOpen ? 'side-menu__sub-open' : 'hidden' }}"> --}}
+                                <li>
+                                    <a href="{{ route('product.index') }}"
+                                        class="side-menu {{ request()->routeIs('products.*') ? 'side-menu--active' : '' }}">
+                                        <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                        <div class="side-menu__title"> Products </div>
+                                    </a>
+                                </li>
+                                {{-- <li>
+                                    <a href="{{ route('roles.index') }}"
+                                        class="side-menu {{ request()->routeIs('roles.*') ? 'side-menu--active' : '' }}">
+                                        <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                        <div class="side-menu__title"> Role </div>
+                                    </a>
+                                </li> --}}
+                            </ul>
+                        </li>
+                    {{-- @endif --}}
 
                 {{-- <li>
                         <a href="javascript:;" class="side-menu">

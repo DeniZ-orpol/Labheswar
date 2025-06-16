@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ForgotPasswordController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +46,10 @@ Route::group(['middleware' => 'custom.auth','check.remember'], function () {
     Route::delete('/users/{branchId}/delete/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 
     Route::resource('roles', RoleController::class);
+
+    Route::get('/products', [ProductController::class, 'index'])->name('product.index');
+    Route::get('/products/create', [ProductController::class, 'create'])->name('product.create');
+    Route::post('/products/create', [ProductController::class, 'store'])->name('product.store');
 });
 
 

@@ -1,0 +1,319 @@
+@extends('app')
+@section('content')
+    <style>
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .column {
+            width: 50%;
+            /* Adjust as needed */
+            /* background-color: #f2f2f2; */
+            padding: 10px;
+            /* border: 1px solid #ddd; */
+            box-sizing: border-box;
+        }
+    </style>
+    <div class="content">
+        <h2 class="intro-y text-lg font-medium mt-10 heading">
+            Create User
+        </h2>
+        <form action="{{route('product.store')}}" method="POST" class="form-updated validate-form">
+            @csrf <!-- CSRF token for security -->
+            <div class="row">
+                <div class="column">
+                    {{-- <div class="grid grid-cols-12 gap-2 grid-updated"> --}}
+                    <!-- barcode -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="barcode" class="form-label w-full flex flex-col sm:flex-row">
+                            Barcode<span style="color: red;margin-left: 3px;"> *</span>
+                        </label>
+                        <input id="barcode" type="text" name="product_barcode" class="form-control field-new" required>
+                    </div>
+
+                    <!-- Name -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_name" class="form-label w-full flex flex-col sm:flex-row">
+                            Name<span style="color: red;margin-left: 3px;"> *</span>
+                        </label>
+                        <input id="product_name" type="text" name="product_name" class="form-control field-new"
+                            placeholder="Enter Product name" required maxlength="255">
+                    </div>
+
+                    <!-- search option -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="search_option" class="form-label w-full flex flex-col sm:flex-row">
+                            Search Option
+                        </label>
+                        <input id="search_option" type="text" name="search_option" class="form-control field-new">
+                    </div>
+
+                    <!-- Unit Types -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="unit_type" class="form-label w-full flex flex-col sm:flex-row">
+                            Unit Type<p style="color: red;margin-left: 3px;"> *</p>
+                        </label>
+                        <select id="unit_type" name="unit_type" class="form-control field-new" required>
+                            <option value="" selected>Choose...</option>
+                            <option value="PCS">PCS</option>
+                            <option value="KG">KG</option>
+                            <option value="LITER">LITER</option>
+                            <option value="BOX">BOX</option>
+                            {{-- @foreach ($roles as $role)
+                                    <option value="{{ $role->id }}">{{ $role->role_name }}</option>
+                                @endforeach --}}
+                        </select>
+                    </div>
+
+                    <!-- Company -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_company" class="form-label w-full flex flex-col sm:flex-row">
+                            Company
+                        </label>
+                        <input id="product_company" type="text" name="product_company" class="form-control field-new">
+                    </div>
+
+                    <!-- category -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_category" class="form-label w-full flex flex-col sm:flex-row">
+                            category
+                        </label>
+                        <input id="product_category" type="text" name="product_category" class="form-control field-new">
+                    </div>
+
+                    <!-- HSN code -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="hsn_code" class="form-label w-full flex flex-col sm:flex-row">
+                            HSN Code
+                        </label>
+                        <input id="hsn_code" type="text" name="hsn_code" class="form-control field-new">
+                    </div>
+
+                    <!-- sgst -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_sgst" class="form-label w-full flex flex-col sm:flex-row">
+                            SGST
+                        </label>
+                        <input id="product_sgst" type="number" step="0.01" name="sgst" class="form-control field-new">
+                    </div>
+
+                    <!-- CGST 1 -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_cgst_1" class="form-label w-full flex flex-col sm:flex-row">
+                            CGST 1
+                        </label>
+                        <input id="product_cgst_1" type="number" step="0.01" name="cgst_1" class="form-control field-new">
+                    </div>
+
+                    <!-- CGST 2 -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_cgst_2" class="form-label w-full flex flex-col sm:flex-row">
+                            CGST 2
+                        </label>
+                        <input id="product_cgst_2" type="number" step="0.01" name="cgst_2" class="form-control field-new">
+                    </div>
+
+                    <!-- CESS -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_cess" class="form-label w-full flex flex-col sm:flex-row">
+                            CESS
+                        </label>
+                        <input id="product_cess" type="number" step="0.01" name="cess" class="form-control field-new">
+                    </div>
+
+                    <!-- MRP -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_mrp" class="form-label w-full flex flex-col sm:flex-row">
+                            MRP
+                        </label>
+                        <input id="product_mrp" type="number" name="mrp" step="0.01" class="form-control field-new">
+                    </div>
+
+                    <!-- Purchase rate -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_purchase_rate" class="form-label w-full flex flex-col sm:flex-row">
+                            Purchase Rate
+                        </label>
+                        <input id="product_purchase_rate" type="number" step="0.01" name="purchase_rate"
+                            class="form-control field-new">
+                    </div>
+
+                    <!-- Sale rate A -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_sale_rate_a" class="form-label w-full flex flex-col sm:flex-row">
+                            Sale Rate A
+                        </label>
+                        <input id="product_sale_rate_a" type="number" step="0.01" name="sale_rate_a"
+                            class="form-control field-new">
+                    </div>
+
+                    <!-- Sale rate B -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_sale_rate_b" class="form-label w-full flex flex-col sm:flex-row">
+                            Sale Rate B
+                        </label>
+                        <input id="product_sale_rate_b" type="number" step="0.01" name="sale_rate_b"
+                            class="form-control field-new">
+                    </div>
+
+                    <!-- Sale rate C -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_sale_rate_c" class="form-label w-full flex flex-col sm:flex-row">
+                            Sale Rate C
+                        </label>
+                        <input id="product_sale_rate_c" type="number" step="0.01" name="sale_rate_c"
+                            class="form-control field-new">
+                    </div>
+
+                    <!-- Converse carton -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="converse_carton" class="form-label w-full flex flex-col sm:flex-row">
+                            Converse Carton
+                        </label>
+                        <input id="converse_carton" type="number" name="converse_carton"
+                            class="form-control field-new">
+                    </div>
+
+                    <!-- Converse BOX -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="converse_box" class="form-label w-full flex flex-col sm:flex-row">
+                            Converse Box
+                        </label>
+                        <input id="converse_box" type="number" name="converse_boc" class="form-control field-new">
+                    </div>
+
+                    <!-- Converse pcs -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="converse_pcs" class="form-label w-full flex flex-col sm:flex-row">
+                            Converse PCS
+                        </label>
+                        <input id="converse_pcs" type="number" name="converse_pcs" class="form-control field-new">
+                    </div>
+
+                    <!-- Negative Billing -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="negative_billing" class="form-label w-full flex flex-col sm:flex-row">
+                            Negative Billing
+                        </label>
+                        <select id="negative_billing" name="negative_billing" class="form-control field-new">
+                            <option value="NO" selected>NO</option>
+                            <option value="YES">YES</option>
+                            {{-- @foreach ($roles as $role)
+                                    <option value="{{ $role->id }}">{{ $role->role_name }}</option>
+                                @endforeach --}}
+                        </select>
+                    </div>
+
+                    <!-- Min quantity -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="min_qty" class="form-label w-full flex flex-col sm:flex-row">
+                            Minimum Quantity
+                        </label>
+                        <input id="min_qty" type="number" name="min_qty" class="form-control field-new">
+                    </div>
+
+                    <!-- Reorder quantity -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="reorder_qty" class="form-label w-full flex flex-col sm:flex-row">
+                            Reorder Quantity
+                        </label>
+                        <input id="reorder_qty" type="number" name="reorder_qty" class="form-control field-new">
+                    </div>
+
+                    <!-- Discount -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="negative_billing" class="form-label w-full flex flex-col sm:flex-row">
+                            Discount
+                        </label>
+                        <select id="discount" name="discount" class="form-control field-new">
+                            <option value="" selected>Choose...</option>
+                            <option value="applicable">Applicable</option>
+                            <option value="not_applicable">Not Applicable</option>
+                        </select>
+                    </div>
+
+                    <!-- Max Discount -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="max_discount" class="form-label w-full flex flex-col sm:flex-row">
+                            Max Discount
+                        </label>
+                        <input id="max_discount" type="number" name="max_discount" class="form-control field-new">
+                    </div>
+
+                    <!-- Discount Scheme -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="discount_scheme" class="form-label w-full flex flex-col sm:flex-row">
+                            Discount Scheme
+                        </label>
+                        <input id="discount_scheme" type="text" name="discount_scheme"
+                            class="form-control field-new">
+                    </div>
+
+                    <!-- Bonus Use -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="bonus_use" class="form-label w-full flex flex-col sm:flex-row">
+                            Bonus Use
+                        </label>
+                        <select id="bonus_use" name="bonus_use" class="form-control field-new">
+                            <option value="no" selected>NO</option>
+                            <option value="yes">YES</option>
+                        </select>
+                        {{-- <input id="bonus_use" type="text" name="bonus_use" class="form-control field-new"> --}}
+                    </div>
+
+                    <!-- Submit Button -->
+                </div>
+
+                <div class="column">
+                    <!-- Loose quantity decimal button -->
+                    <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
+                        <label for="decimal_btn" class="form-label w-full flex flex-col sm:flex-row">
+                            Decimal
+                        </label>
+                        <input id="decimal_btn" type="checkbox" name="decimal_btn" class="form-check-input mr-0 ml-3">
+                    </div>
+
+                    <!-- Sale online toggle -->
+                    <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
+                        <label for="sale_online" class="form-label w-full flex flex-col sm:flex-row">
+                            Sale Online
+                        </label>
+                        <input id="sale_online" type="checkbox" name="sale_online" class="form-check-input mr-0 ml-3">
+                    </div>
+
+                    <!-- GST active toggle -->
+                    <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
+                        <label for="gst_active" class="form-label w-full flex flex-col sm:flex-row">
+                            GST
+                        </label>
+                        <input id="gst_active" type="checkbox" name="gst_active" class="form-check-input mr-0 ml-3">
+                    </div>
+                </div>
+            </div>
+            <a onclick="goBack()" class="btn btn-outline-primary shadow-md mr-2">Back</a>
+            <button type="submit" class="btn btn-primary mt-5 btn-hover">Submit</button>
+        </form>
+        {{-- </div> --}}
+        <!-- END: Validation Form -->
+        <!-- BEGIN: Success Notification Content -->
+        <div id="success-notification-content" class="toastify-content hidden flex">
+            <i class="text-success" data-lucide="check-circle"></i>
+            <div class="ml-4 mr-4">
+                <div class="font-medium">Registration success!</div>
+                <div class="text-slate-500 mt-1"> Please check your e-mail for further info! </div>
+            </div>
+        </div>
+        <!-- END: Success Notification Content -->
+        <!-- BEGIN: Failed Notification Content -->
+        <div id="failed-notification-content" class="toastify-content hidden flex">
+            <i class="text-danger" data-lucide="x-circle"></i>
+            <div class="ml-4 mr-4">
+                <div class="font-medium">Registration failed!</div>
+                <div class="text-slate-500 mt-1"> Please check the fileld form. </div>
+            </div>
+        </div>
+        <!-- END: Failed Notification Content -->
+    </div>
+@endsection
