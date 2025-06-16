@@ -291,11 +291,28 @@
                         <input id="gst_active" type="checkbox" name="gst_active" class="form-check-input mr-0 ml-3">
                     </div>
 
-                    {{-- <form data-file-types="image/jpeg|image/png|image/jpg" class="dropzone"> --}}
-                    <div class="input-form col-span-3 mt-3 dropzone dz-clickable">
-                        <div class="fallback"> <input name="product_image" type="file" /> </div>
-                        <div class="dz-message" data-dz-message>
-                            <div class="text-lg font-medium">Drop Product image file here or click to upload.</div>
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_image" class="form-label w-full flex flex-col sm:flex-row">
+                            Product Image
+                        </label>
+                        <div class="input-form col-span-3 mt-3"
+                            style="position: relative; border: 2px dashed #ccc; border-radius: 8px; padding: 50px 40px; text-align: center; background-color: #f9f9f9; cursor: pointer;"
+                            onclick="document.getElementById('fileInput').click()">
+                            <div class="fallback">
+                                <input name="product_image" type="file" id="fileInput" accept="image/*"
+                                    style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer;"
+                                    onchange="previewImage(this)" />
+                            </div>
+                            <div id="uploadMessage" style="color: #666; font-size: 16px; pointer-events: none;">
+                                Drop Product image file here or click to upload.
+                            </div>
+                            <div id="imagePreview" style="display: none; max-width: 300px; margin: 0 auto;">
+                                <img id="previewImg"
+                                    style="width: 100%; height: auto; border-radius: 8px; margin-top: 10px;" />
+                                <div style="margin-top: 10px; font-size: 14px; color: #666;">
+                                    <span id="fileName"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     {{-- </form> --}}
@@ -326,3 +343,57 @@
         <!-- END: Failed Notification Content -->
     </div>
 @endsection
+
+<script>
+    // preview image box
+
+    function previewImage(input) {
+        const file = input.files[0];
+        const uploadMessage = document.getElementById('uploadMessage');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        const fileName = document.getElementById('fileName');
+
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                fileName.textContent = file.name;
+                uploadMessage.style.display = 'none';
+                imagePreview.style.display = 'block';
+            };
+
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Handle drag and drop
+    const dropArea = document.querySelector('.input-form');
+
+    dropArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#007bff';
+        this.style.backgroundColor = '#f0f8ff';
+    });
+
+    dropArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#ccc';
+        this.style.backgroundColor = '#f9f9f9';
+    });
+
+    dropArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#ccc';
+        this.style.backgroundColor = '#f9f9f9';
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].type.startsWith('image/')) {
+            document.getElementById('fileInput').files = files;
+            previewImage(document.getElementById('fileInput'));
+        }
+    });
+    // end preview image box
+
+</script>
