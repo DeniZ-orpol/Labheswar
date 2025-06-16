@@ -290,6 +290,15 @@
                         </label>
                         <input id="gst_active" type="checkbox" name="gst_active" class="form-check-input mr-0 ml-3">
                     </div>
+
+                    {{-- <form data-file-types="image/jpeg|image/png|image/jpg" class="dropzone"> --}}
+                    <div class="input-form col-span-3 mt-3 dropzone dz-clickable">
+                        <div class="fallback"> <input name="product_image" type="file" /> </div>
+                        <div class="dz-message" data-dz-message>
+                            <div class="text-lg font-medium">Drop Product image file here or click to upload.</div>
+                        </div>
+                    </div>
+                    {{-- </form> --}}
                 </div>
             </div>
             <a onclick="goBack()" class="btn btn-outline-primary shadow-md mr-2">Back</a>

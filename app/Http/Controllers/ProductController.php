@@ -16,7 +16,7 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = Product::with(['company','category','hsnCode'])->get();
+        $products = Product::with(['company', 'category', 'hsnCode'])->get();
 
         return view('products.index', compact('products'));
     }
@@ -35,10 +35,10 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         try {
-            //code...
             $validate = $request->validate([
                 'product_barcode' => 'required|string|max:255',
                 'product_name' => 'required|string|max:255',
+                'product_image' => 'file|mimes:jpg,jpeg,png',
                 'search_option' => 'nullable|string',
                 'unit_type' => 'nullable|string',
                 'product_company' => 'nullable|string',
@@ -67,6 +67,11 @@ class ProductController extends Controller
                 'sale_online' => 'nullable',
                 'gst_active' => 'nullable'
             ]);
+
+            // upload product image
+            $file = $request->file('product_image');
+            $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
+            $path = $file->storeAs('products', $filename, 'public');
     
             $companyId = null;
             if (!empty($validate['product_company'])) {
@@ -90,14 +95,21 @@ class ProductController extends Controller
             if (!empty($validate['hsn_code'])) {
                 $hsnCode = HsnCode::firstOrCreate(
                     ['hsn_code' => $validate['hsn_code']],
-                    ['hsn_code' => $validate['hsn_code'], ]
+                    ['hsn_code' => $validate['hsn_code'],]
                 );
                 $hsnCodeId = $hsnCode->id;
             }
+
+            // return response()->json([
+            //     'success' => true,
+            //     'path' => $path,
+            //     'filename' => $filename,
+            // ]);
     
             $data = [
                 'product_name' => $validate['product_name'],
                 'barcode' => $validate['product_barcode'],
+                'image' => $path,
                 'search_option' => $validate['search_option'],
                 'unit_types' => $validate['unit_type'],
                 'decimal_btn' => isset($validate['decimal_btn']) ? 1 : 0,

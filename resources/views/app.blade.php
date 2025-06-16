@@ -20,6 +20,7 @@ License: You must have a valid license purchased only from themeforest(the above
     <meta name="keywords"
         content="admin template, Enigma Admin Template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="LEFT4CODE">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Dashboard - Midone - Tailwind HTML Admin Template</title>
     <!-- BEGIN: CSS Assets-->
     <link rel="stylesheet" href="{{ asset('css/app.css') }}" />
@@ -74,10 +75,10 @@ License: You must have a valid license purchased only from themeforest(the above
                         </li>
                     </ul>
                 </li>
-                {{-- @php
-                    $user = Auth::user();
+                @php
+                    // $user = Auth::user();
                     $userMenuOpen = request()->routeIs('users.*') || request()->routeIs('roles.*');
-                @endphp --}}
+                @endphp
 
                 {{-- @if ($user && $user->role === 'Superadmin') --}}
                 <li>
@@ -1053,10 +1054,10 @@ License: You must have a valid license purchased only from themeforest(the above
                         </li>
                     </ul>
                 </li>
-                {{-- @php
-                    $user = Auth::user();
+                @php
+                    // $user = Auth::user();
                     $userMenuOpen = request()->routeIs('users.*') || request()->routeIs('roles.*');
-                @endphp --}}
+                @endphp
 
                 {{-- @if ($user && $user->role === 'Superadmin') --}}
                     <li>
