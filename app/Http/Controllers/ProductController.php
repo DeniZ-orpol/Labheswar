@@ -167,7 +167,7 @@ class ProductController extends Controller
             $product = Product::on($branchConnection)->create($data);
 
             // Redirect to product index with success message and product data
-            return redirect()->route('product.index')
+            return redirect()->route('products.index')
                 ->with('success', 'Product created successfully!');
             // ->with('product', $product);
         } catch (Exception $ex) {
