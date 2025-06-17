@@ -89,10 +89,14 @@ License: You must have a valid license purchased only from themeforest(the above
                 </li>
                 @php
                     // $user = Auth::user();
+                    $userType = session('user_type');
+                    $userRole = session('user_role');
+                    $userBranchId = session('branch_id');
+                    // {{ dd($userRole) }}
                     $userMenuOpen = request()->routeIs('users.*') || request()->routeIs('roles.*');
                 @endphp
 
-                {{-- @if ($user && $user->role === 'Superadmin') --}}
+                @if ($userRole === 'Superadmin')
                 <li>
                     <a href="javascript:;"
                         class="menu {{ request()->routeIs('User Mangement.*') ? 'side-menu--active side-menu--opensss' : '' }}{{ request()->routeIs('items.*') ? 'side-menu--active side-menu--opensss' : '' }}">
@@ -1069,10 +1073,13 @@ License: You must have a valid license purchased only from themeforest(the above
                 </li>
                 @php
                     // $user = Auth::user();
+                    $userType = session('user_type');
+                    $userRole = session('user_role');
+                    $userBranchId = session('branch_id');
                     $userMenuOpen = request()->routeIs('users.*') || request()->routeIs('roles.*');
                 @endphp
 
-                {{-- @if ($user && $user->role === 'Superadmin') --}}
+                @if ($userRole === 'Superadmin')
                 <li>
                     <a href="javascript:;"
                         class="side-menu {{ $userMenuOpen ? 'side-menu--active side-menu--opensss' : '' }}">
@@ -1107,6 +1114,24 @@ License: You must have a valid license purchased only from themeforest(the above
                         <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
                         <div class="side-menu__title"> Branch </div>
                     </a>
+</li>
+
+                    <ul class="{{ $userMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
+                        <li>
+                            <a href="{{ route('users.index') }}"
+                                class="side-menu {{ request()->routeIs('users.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="users"></i> </div>
+                                <div class="side-menu__title"> Users </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('roles.index') }}"
+                                class="side-menu {{ request()->routeIs('roles.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Role </div>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
                 <li>
@@ -1123,7 +1148,7 @@ License: You must have a valid license purchased only from themeforest(the above
                     <ul class="">
                         {{-- <ul class="{{ $productMenuOpen ? 'side-menu__sub-open' : 'hidden' }}"> --}}
                         <li>
-                            <a href="{{ route('products.index') }}"
+                            <a href="{{ route('product.index') }}"
                                 class="side-menu {{ request()->routeIs('products.*') ? 'side-menu--active' : '' }}">
                                 <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                 <div class="side-menu__title"> Products </div>
