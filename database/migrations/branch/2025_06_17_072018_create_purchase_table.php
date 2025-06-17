@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('purchase', function (Blueprint $table) {
             $table->id();
+            // $table->unsignedBigInteger('purchase_receipt_id')->after('id');
             $table->date('bill_date')->nullable();
-            $table->string('party_name')->nullable();
+            $table->unsignedBigInteger('purchase_party_id')->nullable();
             $table->string('bill_no')->nullable(); // Purchase Bill number
             $table->date('delivery_date')->nullable();
             $table->string('gst')->nullable();
