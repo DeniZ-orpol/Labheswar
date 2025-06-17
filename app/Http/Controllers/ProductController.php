@@ -16,7 +16,16 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = Product::with(['company', 'category', 'hsnCode'])->get();
+        // Check if user is logged in as branch
+        if (session('user_type') !== 'branch' || !session('branch_connection')) {
+            return redirect()->route('login')->with('error', 'Please login as branch user.');
+        }
+
+        $branchConnection = session('branch_connection');
+
+        $products = Product::on($branchConnection)
+            ->with(['category', 'company', 'hsnCode'])
+            ->paginate(10);
 
         return view('products.index', compact('products'));
     }
@@ -35,6 +44,15 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         try {
+
+            // Check if user is logged in as branch
+            if (session('user_type') !== 'branch' || !session('branch_connection')) {
+                return redirect()->back()->with('error', 'Branch session not found. Please login again.');
+            }
+
+            // Get branch connection name from session
+            $branchConnection = session('branch_connection');
+
             $validate = $request->validate([
                 'product_barcode' => 'required|string|max:255',
                 'product_name' => 'required|string|max:255',
@@ -69,33 +87,39 @@ class ProductController extends Controller
             ]);
 
             // upload product image
-            $file = $request->file('product_image');
-            $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
-            $path = $file->storeAs('products', $filename, 'public');
-    
+            $path = null;
+            if ($request->hasFile('product_image')) {
+                $file = $request->file('product_image');
+                $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
+                $path = $file->storeAs('products', $filename, 'public');
+            }
+
+            // Handle Company - use branch connection
             $companyId = null;
             if (!empty($validate['product_company'])) {
-                $company = Company::firstOrCreate(
+                $company = Company::on($branchConnection)->firstOrCreate(
                     ['name' => $validate['product_company']],
                     ['name' => $validate['product_company'], 'status' => 1]
                 );
                 $companyId = $company->id;
             }
-    
+
+            // Handle Category - use branch connection
             $categoryId = null;
-            if (!empty($validate['product_category'])) { // Add category_name to validation
-                $category = Category::firstOrCreate(
+            if (!empty($validate['product_category'])) {
+                $category = Category::on($branchConnection)->firstOrCreate(
                     ['name' => $validate['product_category']],
                     ['name' => $validate['product_category'], 'status' => 1]
                 );
                 $categoryId = $category->id;
             }
-    
+
+            // Handle HSN Code - use branch connection
             $hsnCodeId = null;
             if (!empty($validate['hsn_code'])) {
-                $hsnCode = HsnCode::firstOrCreate(
+                $hsnCode = HsnCode::on($branchConnection)->firstOrCreate(
                     ['hsn_code' => $validate['hsn_code']],
-                    ['hsn_code' => $validate['hsn_code'],]
+                    ['hsn_code' => $validate['hsn_code']]
                 );
                 $hsnCodeId = $hsnCode->id;
             }
@@ -138,13 +162,14 @@ class ProductController extends Controller
                 'discount_scheme' => $validate['discount_scheme'],
                 'bonus_use' => $validate['bonus_use'] == 'yes' ? 1 : 0
             ];
-            // Create the product
-            $product = Product::create($data);
-    
+
+            // Create the product using branch connection
+            $product = Product::on($branchConnection)->create($data);
+
             // Redirect to product index with success message and product data
             return redirect()->route('product.index')
                 ->with('success', 'Product created successfully!');
-                // ->with('product', $product);
+            // ->with('product', $product);
         } catch (Exception $ex) {
             dd($ex->getMessage());
         }

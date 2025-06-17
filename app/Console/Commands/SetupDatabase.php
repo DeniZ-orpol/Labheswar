@@ -66,7 +66,7 @@ class SetupDatabase extends Command
             // $this->createSuperAdmin();
 
             // Insert branch records
-            $this->seedMasterData();
+            // $this->seedMasterData();
 
             $this->info('✅ Master database setup completed');
 

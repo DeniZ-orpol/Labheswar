@@ -20,7 +20,7 @@
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             Create User
         </h2>
-        <form action="{{route('product.store')}}" method="POST" class="form-updated validate-form">
+        <form action="{{ route('product.store') }}" method="POST" enctype="multipart/form-data" class="form-updated validate-form">
             @csrf <!-- CSRF token for security -->
             <div class="row">
                 <div class="column">
@@ -291,6 +291,7 @@
                         <input id="gst_active" type="checkbox" name="gst_active" class="form-check-input mr-0 ml-3">
                     </div>
 
+                    <!-- Product Image -->
                     <div class="input-form col-span-3 mt-3">
                         <label for="fileInput" class="form-label w-full flex flex-col sm:flex-row">
                             Product Image
