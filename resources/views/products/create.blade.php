@@ -51,7 +51,7 @@
     </style>
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
-            Create User
+            Create Product
         </h2>
         <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data" class="form-updated validate-form">
             @csrf <!-- CSRF token for security -->

@@ -40,7 +40,7 @@
                             <p><strong>Discount:</strong> {{ $product->discount ?? 'N/A' }}</p>
                             <p><strong>Max Discount:</strong> {{ $product->max_discount }}%</p>
                             <p><strong>Discount Scheme:</strong> {{ $product->discount_scheme ?? 'N/A' }}</p>
-                            <p><strong>Bonus Use:</strong> {{ $product->bonus_use ? 'Yes' : 'No' }}</p>
+                            <p><strong>Bonus Use:</strong> {{ $product->bonus_use ? 'Yes' : 'No' }}</p>php 
                         </div>
 
                         <!-- RIGHT COLUMN -->

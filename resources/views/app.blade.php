@@ -24,6 +24,18 @@ License: You must have a valid license purchased only from themeforest(the above
     <title>Dashboard - Midone - Tailwind HTML Admin Template</title>
     <!-- BEGIN: CSS Assets-->
     <link rel="stylesheet" href="{{ asset('css/app.css') }}" />
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    @stack('styles')
+
+
     <!-- END: CSS Assets-->
 </head>
 <!-- END: Head -->
@@ -110,28 +122,28 @@ License: You must have a valid license purchased only from themeforest(the above
                         <div class="menu__title"> Branches </div>
                     </a>
                 </li>
-                    <li>
-                        <a href="javascript:;"
-                            class="menu {{ request()->routeIs('Product.*') ? 'side-menu--active side-menu--opensss' : '' }}{{ request()->routeIs('items.*') ? 'side-menu--active side-menu--opensss' : '' }}">
-                            <div class="menu__icon"> <i data-lucide="box"></i> </div>
-                            <div class="menu__title"> Product <i data-lucide="chevron-down" class="menu__sub-icon "></i>
-                            </div>
-                        </a>
-                        <ul class="">
-                            <li>
-                                <a href="#" class="menu menu--active">
-                                    <div class="menu__icon"> <i data-lucide="users"></i> </div>
-                                    <div class="menu__title"> Product </div>
-                                </a>
-                            </li>
-                            {{-- <li>
+                <li>
+                    <a href="javascript:;"
+                        class="menu {{ request()->routeIs('Product.*') ? 'side-menu--active side-menu--opensss' : '' }}{{ request()->routeIs('items.*') ? 'side-menu--active side-menu--opensss' : '' }}">
+                        <div class="menu__icon"> <i data-lucide="box"></i> </div>
+                        <div class="menu__title"> Product <i data-lucide="chevron-down" class="menu__sub-icon "></i>
+                        </div>
+                    </a>
+                    <ul class="">
+                        <li>
+                            <a href="#" class="menu menu--active">
+                                <div class="menu__icon"> <i data-lucide="users"></i> </div>
+                                <div class="menu__title"> Product </div>
+                            </a>
+                        </li>
+                        {{-- <li>
                                 <a href="{{ Route('roles.index') }}" class="menu menu--active">
                                     <div class="menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="menu__title"> Role </div>
                                 </a>
                             </li> --}}
-                        </ul>
-                    </li>
+                    </ul>
+                </li>
                 {{-- @endif --}}
                 {{-- <li>
                     <a href="javascript:;" class="menu">
@@ -742,7 +754,8 @@ License: You must have a valid license purchased only from themeforest(the above
         <div class="h-full flex items-center">
             <!-- BEGIN: Logo -->
             <a href="{{ route('dashboard') }}" class="logo -intro-x hidden md:flex xl:w-[180px] block">
-                <img alt="Midone - HTML Admin Template" class="logo__image w-6" src="{{ asset('images/logo.svg') }}">
+                <img alt="Midone - HTML Admin Template" class="logo__image w-6"
+                    src="{{ asset('images/logo.svg') }}">
                 <span class="logo__text text-white text-lg ml-3"> Enigma </span>
             </a>
             <!-- END: Logo -->
@@ -1060,72 +1073,72 @@ License: You must have a valid license purchased only from themeforest(the above
                 @endphp
 
                 {{-- @if ($user && $user->role === 'Superadmin') --}}
-                    <li>
-                        <a href="javascript:;"
-                            class="side-menu {{ $userMenuOpen ? 'side-menu--active side-menu--opensss' : '' }}">
-                            <div class="side-menu__icon"> <i data-lucide="user"></i> </div>
-                            <div class="side-menu__title">
-                                User Management
-                                <i data-lucide="chevron-down"
-                                    class="side-menu__sub-icon {{ $userMenuOpen ? 'transform rotate-180' : '' }}"></i>
-                            </div>
-                        </a>
+                <li>
+                    <a href="javascript:;"
+                        class="side-menu {{ $userMenuOpen ? 'side-menu--active side-menu--opensss' : '' }}">
+                        <div class="side-menu__icon"> <i data-lucide="user"></i> </div>
+                        <div class="side-menu__title">
+                            User Management
+                            <i data-lucide="chevron-down"
+                                class="side-menu__sub-icon {{ $userMenuOpen ? 'transform rotate-180' : '' }}"></i>
+                        </div>
+                    </a>
 
-                        <ul class="{{ $userMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
-                            <li>
-                                <a href="{{ route('users.index') }}"
-                                    class="side-menu {{ request()->routeIs('users.*') ? 'side-menu--active' : '' }}">
-                                    <div class="side-menu__icon"> <i data-lucide="users"></i> </div>
-                                    <div class="side-menu__title"> Users </div>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('roles.index') }}"
-                                    class="side-menu {{ request()->routeIs('roles.*') ? 'side-menu--active' : '' }}">
-                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                    <div class="side-menu__title"> Role </div>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-
-                    <li>
-                        <a href="{{ Route('branch.index') }}" class="side-menu">
-                            <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
-                            <div class="side-menu__title"> Branch </div>
-                        </a>
-                    </li>
-
+                    <ul class="{{ $userMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
                         <li>
-                            <a href="javascript:;" class="side-menu">
-                                {{-- class="side-menu {{ $productMenuOpen ? 'side-menu--active side-menu--opensss' : '' }}"> --}}
-                                <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
-                                <div class="side-menu__title">
-                                    Products
-                                    <i data-lucide="chevron-down" class="side-menu__sub-icon"></i>
-                                    {{-- class="side-menu__sub-icon {{ $productMenuOpen ? 'transform rotate-180' : '' }}"></i> --}}
-                                </div>
+                            <a href="{{ route('users.index') }}"
+                                class="side-menu {{ request()->routeIs('users.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="users"></i> </div>
+                                <div class="side-menu__title"> Users </div>
                             </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('roles.index') }}"
+                                class="side-menu {{ request()->routeIs('roles.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Role </div>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
 
-                            <ul class="">
-                                {{-- <ul class="{{ $productMenuOpen ? 'side-menu__sub-open' : 'hidden' }}"> --}}
-                                <li>
-                                    <a href="{{ route('products.index') }}"
-                                        class="side-menu {{ request()->routeIs('products.*') ? 'side-menu--active' : '' }}">
-                                        <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                        <div class="side-menu__title"> Products </div>
-                                    </a>
-                                </li>
-                                {{-- <li>
+                <li>
+                    <a href="{{ Route('branch.index') }}" class="side-menu">
+                        <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
+                        <div class="side-menu__title"> Branch </div>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="javascript:;" class="side-menu">
+                        {{-- class="side-menu {{ $productMenuOpen ? 'side-menu--active side-menu--opensss' : '' }}"> --}}
+                        <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
+                        <div class="side-menu__title">
+                            Products
+                            <i data-lucide="chevron-down" class="side-menu__sub-icon"></i>
+                            {{-- class="side-menu__sub-icon {{ $productMenuOpen ? 'transform rotate-180' : '' }}"></i> --}}
+                        </div>
+                    </a>
+
+                    <ul class="">
+                        {{-- <ul class="{{ $productMenuOpen ? 'side-menu__sub-open' : 'hidden' }}"> --}}
+                        <li>
+                            <a href="{{ route('products.index') }}"
+                                class="side-menu {{ request()->routeIs('products.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Products </div>
+                            </a>
+                        </li>
+                        {{-- <li>
                                     <a href="{{ route('roles.index') }}"
                                         class="side-menu {{ request()->routeIs('roles.*') ? 'side-menu--active' : '' }}">
                                         <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                         <div class="side-menu__title"> Role </div>
                                     </a>
                                 </li> --}}
-                            </ul>
-                        </li>
-                    {{-- @endif --}}
+                    </ul>
+                </li>
+                {{-- @endif --}}
 
                 {{-- <li>
                         <a href="javascript:;" class="side-menu">
@@ -2575,6 +2588,8 @@ License: You must have a valid license purchased only from themeforest(the above
             window.history.back();
         }
     </script>
+    @stack('scripts')
+
     <!-- END: JS Assets-->
 </body>
 
