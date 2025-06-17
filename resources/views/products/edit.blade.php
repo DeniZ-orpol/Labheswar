@@ -90,7 +90,7 @@
                             Company
                         </label>
                         <input id="product_company" type="text" name="product_company" class="form-control field-new"
-                            value="{{ $product->company }}">
+                            value="{{ $product->company->name ?? '' }}">
                     </div>
 
                     <!-- category -->
@@ -108,7 +108,7 @@
                             HSN Code
                         </label>
                         <input id="hsn_code" type="text" name="hsn_code" class="form-control field-new"
-                            value="{{ $product->hsn_code_id }}">
+                            value="{{ $product->hsnCode->hsn_code ?? '' }}">
                     </div>
 
                     <!-- sgst -->

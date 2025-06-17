@@ -41,7 +41,8 @@ class ProductController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     */ public function store(Request $request)
+     */
+    public function store(Request $request)
     {
         try {
 
@@ -178,8 +179,19 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product $product)
+    public function show(string $id)
     {
+        // Check if user is logged in as branch
+        if (session('user_type') !== 'branch' || !session('branch_connection')) {
+            return redirect()->route('login')->with('error', 'Please login as branch user.');
+        }
+
+        $branchConnection = session('branch_connection');
+
+        $product = Product::on($branchConnection)
+            ->with(['category', 'company', 'hsnCode'])
+            ->where('id', $id)->first();
+
         return view('products.show', compact('product'));
     }
 
@@ -188,16 +200,35 @@ class ProductController extends Controller
      */
     public function edit($id)
     {
-        $product = Product::findOrFail($id);
+        // Check if user is logged in as branch
+        if (session('user_type') !== 'branch' || !session('branch_connection')) {
+            return redirect()->route('login')->with('error', 'Please login as branch user.');
+        }
+
+        $branchConnection = session('branch_connection');
+
+        $product = Product::on($branchConnection)
+            ->with(['category', 'company', 'hsnCode'])
+            ->where('id', $id)->first();
+
+        // $product = Product::findOrFail($id);
         return view('products.edit', compact('product'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Product $product)
+    public function update(Request $request, string $id)
     {
         try {
+
+            // Check if user is logged in as branch
+            if (session('user_type') !== 'branch' || !session('branch_connection')) {
+                return redirect()->route('login')->with('error', 'Please login as branch user.');
+            }
+
+            $branchConnection = session('branch_connection');
+
             $validate = $request->validate([
                 'product_barcode' => 'required|string|max:255',
                 'product_name' => 'required|string|max:255',
@@ -231,7 +262,12 @@ class ProductController extends Controller
                 'gst_active' => 'nullable'
             ]);
 
-            // ✅ Upload new image if available
+            $product = Product::on($branchConnection)
+                ->with(['category', 'company', 'hsnCode'])
+                ->find($id);
+
+            // Upload new image if available
+            $path = $product->image; // Keep existing image by default
             if ($request->hasFile('product_image')) {
                 $file = $request->file('product_image');
                 $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
@@ -241,41 +277,49 @@ class ProductController extends Controller
                 if ($product->image && \Storage::disk('public')->exists($product->image)) {
                     \Storage::disk('public')->delete($product->image);
                 }
-
-                $product->image = $path;
             }
 
-            // ✅ Resolve or create foreign keys
+            // Handle Company - use branch connection
+            $companyId = $product->company; // Keep existing company by default
             if (!empty($validate['product_company'])) {
-                $company = Company::firstOrCreate(
+                $company = Company::on($branchConnection)->firstOrCreate(
                     ['name' => $validate['product_company']],
-                    ['status' => 1]
+                    ['name' => $validate['product_company'], 'status' => 1]
                 );
-                $product->company = $company->id;
+                $companyId = $company->id;
             }
 
+            // Handle Category - use branch connection
+            $categoryId = $product->category_id; // Keep existing category by default
             if (!empty($validate['product_category'])) {
-                $category = Category::firstOrCreate(
+                $category = Category::on($branchConnection)->firstOrCreate(
                     ['name' => $validate['product_category']],
-                    ['status' => 1]
+                    ['name' => $validate['product_category'], 'status' => 1]
                 );
-                $product->category_id = $category->id;
+                $categoryId = $category->id;
             }
 
+            // Handle HSN Code - use branch connection
+            $hsnCodeId = $product->hsn_code_id; // Keep existing HSN code by default
             if (!empty($validate['hsn_code'])) {
-                $hsnCode = HsnCode::firstOrCreate(
+                $hsnCode = HsnCode::on($branchConnection)->firstOrCreate(
+                    ['hsn_code' => $validate['hsn_code']],
                     ['hsn_code' => $validate['hsn_code']]
                 );
-                $product->hsn_code_id = $hsnCode->id;
+                $hsnCodeId = $hsnCode->id;
             }
 
-            // ✅ Update fields
-            $product->fill([
+            // Prepare update data
+            $data = [
                 'product_name' => $validate['product_name'],
                 'barcode' => $validate['product_barcode'],
+                'image' => $path,
                 'search_option' => $validate['search_option'] ?? null,
                 'unit_types' => $validate['unit_type'] ?? null,
                 'decimal_btn' => isset($validate['decimal_btn']) ? 1 : 0,
+                'company' => $companyId,
+                'category_id' => $categoryId,
+                'hsn_code_id' => $hsnCodeId,
                 'sgst' => $validate['sgst'] ?? 0,
                 'cgst1' => $validate['cgst_1'] ?? 0,
                 'cgst2' => $validate['cgst_2'] ?? 0,
@@ -296,10 +340,12 @@ class ProductController extends Controller
                 'discount' => $validate['discount'] ?? null,
                 'max_discount' => $validate['max_discount'] ?? 0,
                 'discount_scheme' => $validate['discount_scheme'] ?? null,
-                'bonus_use' => ($validate['bonus_use'] ?? '') === 'yes' ? 1 : 0
-            ]);
+                'bonus_use' => $validate['bonus_use'] == 'yes' ? 1 : 0,
+                'updated_by' => session('branch_user_id'), // Track who updated the product
+            ];
 
-            $product->save();
+            // Update the product using branch connection
+            $product->update($data);
 
             return redirect()->route('products.index')->with('success', 'Product updated successfully!');
         } catch (Exception $ex) {
@@ -311,9 +357,26 @@ class ProductController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Product $product)
+    public function destroy(string $id)
     {
+        // Check if user is logged in as branch
+        if (session('user_type') !== 'branch' || !session('branch_connection')) {
+            return redirect()->route('login')->with('error', 'Please login as branch user.');
+        }
+
+        $branchConnection = session('branch_connection');
+
+        // Find the product using branch connection
+        $product = Product::on($branchConnection)->findOrFail($id);
+
+        // Delete product image if exists
+        if ($product->image && \Storage::disk('public')->exists($product->image)) {
+            \Storage::disk('public')->delete($product->image);
+        }
+
+        // Delete the product
         $product->delete();
+
         return redirect()->route('products.index')->with('success', 'Product deleted successfully!');
     }
 }
