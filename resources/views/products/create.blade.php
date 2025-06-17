@@ -53,7 +53,7 @@
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             Create Product
         </h2>
-        <form action="{{ route('product.store') }}" method="POST" enctype="multipart/form-data" class="form-updated validate-form">
+        <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data" class="form-updated validate-form">
             @csrf <!-- CSRF token for security -->
             <div class="row">
                 <div class="column">
@@ -220,12 +220,12 @@
                     </div>
 
                     <!-- Converse pcs -->
-                    <div class="input-form col-span-3 mt-3">
+                    {{-- <div class="input-form col-span-3 mt-3">
                         <label for="converse_pcs" class="form-label w-full flex flex-col sm:flex-row">
                             Converse PCS
                         </label>
                         <input id="converse_pcs" type="number" name="converse_pcs" class="form-control field-new">
-                    </div>
+                    </div> --}}
 
                     <!-- Negative Billing -->
                     <div class="input-form col-span-3 mt-3">
@@ -319,12 +319,12 @@
                     </div>
 
                     <!-- GST active toggle -->
-                    <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
+                    {{-- <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
                         <label for="gst_active" class="form-label w-full flex flex-col sm:flex-row">
                             GST
                         </label>
                         <input id="gst_active" type="checkbox" name="gst_active" class="form-check-input mr-0 ml-3">
-                    </div>
+                    </div> --}}
 
                     <!-- Product Image -->
                     <div class="input-form col-span-3 mt-3">

@@ -5,6 +5,8 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\PurchasePartyController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -65,11 +67,20 @@ Route::group(['middleware' => 'custom.auth','check.remember'], function () {
 
     Route::resource('roles', RoleController::class);
 
+    // Products
     Route::resource('products', ProductController::class);
 
-    // Route::get('/products', [ProductController::class, 'index'])->name('product.index');
-    // Route::get('/products/create', [ProductController::class, 'create'])->name('product.create');
-    // Route::post('/products/create', [ProductController::class, 'store'])->name('product.store');
+    // Purchase
+    Route::get('/purchase', [PurchaseController::class, 'index'])->name('purchase.index');
+    Route::get('/purchase/create', [PurchaseController::class, 'create'])->name('purchase.create');
+    Route::post('/purchase/create', [PurchaseController::class, 'store'])->name('purchase.store');
+
+    // Purchase party
+    Route::get('/purchase/party', [PurchasePartyController::class, 'index'])->name('purchase.party.index');
+    Route::get('/purchase/party/create', [PurchasePartyController::class, 'create'])->name('purchase.party.create');
+    Route::post('/purchase/party/store', [PurchasePartyController::class, 'store'])->name('purchase.party.store');
+    Route::get('/purchase/party/{id}/edit', [PurchasePartyController::class, 'edit'])->name('purchase.party.edit');
+    Route::put('/purchase/party/{id}/update', [PurchasePartyController::class, 'update'])->name('purchase.party.update');
 });
 
 
