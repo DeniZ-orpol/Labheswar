@@ -1110,7 +1110,7 @@ License: You must have a valid license purchased only from themeforest(the above
                             <ul class="">
                                 {{-- <ul class="{{ $productMenuOpen ? 'side-menu__sub-open' : 'hidden' }}"> --}}
                                 <li>
-                                    <a href="{{ route('product.index') }}"
+                                    <a href="{{ route('products.index') }}"
                                         class="side-menu {{ request()->routeIs('products.*') ? 'side-menu--active' : '' }}">
                                         <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                         <div class="side-menu__title"> Products </div>

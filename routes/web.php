@@ -30,7 +30,7 @@ Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'
 
 Route::group(['middleware' => 'custom.auth','check.remember'], function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     Route::get('/branch', [BranchController::class, 'index'])->name('branch.index');
     // Route::get('/branch/create', [BranchController::class, 'create'])->name('branch.create');
     // Route::post('/branch/store', [BranchController::class, 'store'])->name('branch.store');
@@ -47,9 +47,11 @@ Route::group(['middleware' => 'custom.auth','check.remember'], function () {
 
     Route::resource('roles', RoleController::class);
 
-    Route::get('/products', [ProductController::class, 'index'])->name('product.index');
-    Route::get('/products/create', [ProductController::class, 'create'])->name('product.create');
-    Route::post('/products/create', [ProductController::class, 'store'])->name('product.store');
+    Route::resource('products', ProductController::class);
+
+    // Route::get('/products', [ProductController::class, 'index'])->name('product.index');
+    // Route::get('/products/create', [ProductController::class, 'create'])->name('product.create');
+    // Route::post('/products/create', [ProductController::class, 'store'])->name('product.store');
 });
 
 

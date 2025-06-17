@@ -3,11 +3,11 @@
     <!-- BEGIN: Content -->
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
-            Users
+            Products
         </h2>
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
-                <a href="{{ Route('product.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add Product</a>
+                <a href="{{ Route('products.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add Product</a>
             </div>
 
             <!-- BEGIN: Users Layout -->
@@ -16,11 +16,11 @@
                 <thead>
                     <tr class="bg-primary font-bold text-white">
                         <th>Id</th>
+                        <th>Image</th>
                         <th>Product</th>
                         <th>Category</th>
                         <th>HSN</th>
                         <th>MRP</th>
-                        {{-- <th>Status</th> --}}
                         {{-- <th>Edit</th>
                         <th>Delete</th> --}}
                         <th style="TEXT-ALIGN: left;">Actions</th>
@@ -31,7 +31,15 @@
                         @foreach ($products as $product)
                             <tr>
                                 {{-- {{ dd($product) }} --}}
-                                <td> {{ $product->id }} </td>
+                                <td> {{ $loop->iteration }} </td>
+                                <td>
+                                    @if ($product->image)
+                                        <img src="{{ asset('storage/' . $product->image) }}" alt="Product Image"
+                                            width="100">
+                                    @else
+                                        No Image
+                                    @endif
+                                </td>
                                 <td> {{ $product->product_name }} </td>
                                 <td>{{ $product->category->name }}</td>
                                 <td>{{ $product->hsnCode->hsn_code }}</td>
@@ -45,19 +53,16 @@
                                     <!-- Add buttons for actions like 'View', 'Edit' etc. -->
                                     <!-- <button class="btn btn-primary">Message</button> -->
                                     <div class="flex gap-2 justify-content-left">
-                                        <a href="#"
-                                            class="btn btn-primary mr-1 mb-2">View
+                                        <a href="{{ route('products.show', $product->id) }}" class="btn btn-primary mr-1 mb-2">View
                                         </a>
-                                        <form
-                                            action="#"
-                                            method="POST"
+                                        <form action="{{ route('products.destroy', $product->id) }}" method="POST"
                                             onsubmit="return confirm('Are you sure you want to delete this product?');"
                                             style="display: inline-block;">
                                             @csrf
                                             @method('DELETE') <!-- Add this line -->
                                             <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
                                         </form>
-                                        <a href="#"
+                                        <a href="{{ route('products.edit', $product->id) }}"
                                             class="btn btn-primary mr-1 mb-2">
                                             Edit
                                         </a>
