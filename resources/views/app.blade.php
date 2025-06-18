@@ -1198,9 +1198,11 @@ License: You must have a valid license purchased only from themeforest(the above
                     </li>
                 @endif
                 @if ($userRole === 'Admin')
-
                     @php
-                        $productMenuOpen = request()->routeIs('products.*') || request()->routeIs('categories.*') || request()->routeIs('inventory.*');
+                        $productMenuOpen =
+                            request()->routeIs('products.*') ||
+                            request()->routeIs('categories.*') ||
+                            request()->routeIs('inventory.*');
                     @endphp
                     <li>
                         <a href="javascript:;" class="side-menu">
@@ -1214,7 +1216,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         </a>
 
                         {{-- <ul class=""> --}}
-                            <ul class="{{ $productMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
+                        <ul class="{{ $productMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
                             <li>
                                 <a href="{{ route('products.index') }}"
                                     class="side-menu {{ request()->routeIs('products.*') ? 'side-menu--active' : '' }}">
@@ -1238,14 +1240,14 @@ License: You must have a valid license purchased only from themeforest(the above
                             </li>
                         </ul>
                     </li>
-                    {{-- <li>
-                            <a href="javascript:;" class="side-menu">
-                                <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
-                                <div class="side-menu__title">
-                                    category
-                                    <i data-lucide="chevron-down" class="side-menu__sub-icon"></i>
-                                </div>
-                            </a>
+                    <li>
+                        <a href="javascript:;" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
+                            <div class="side-menu__title">
+                                Purchase
+                                <i data-lucide="chevron-down" class="side-menu__sub-icon"></i>
+                            </div>
+                        </a>
 
                         <ul class="">
                             <li>

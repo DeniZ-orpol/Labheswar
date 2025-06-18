@@ -20,7 +20,7 @@
                             <th>Product Name</th>
                             <th>Qty</th>
                             <th>Unit</th>
-                            <th>Status</th>
+                            {{-- <th>Status</th> --}}
                         </tr>
                     </thead>
                     <tbody>
@@ -41,7 +41,7 @@
                                     {{ $inventory->quantity }}
                                 </td>
                                 <td>{{ $inventory->product->unit_types ?? '-' }}</td>
-                                <td>
+                                {{-- <td>
                                     <span class="text-success flex items-center">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2"
                                             viewBox="0 0 24 24">
@@ -49,7 +49,7 @@
                                         </svg>
                                         Active
                                     </span>
-                                </td>
+                                </td> --}}
                             </tr>
                         @endforeach
                     </tbody>
