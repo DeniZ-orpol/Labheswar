@@ -85,7 +85,7 @@ class ProductController extends Controller
                 'bonus_use' => 'nullable',
                 'decimal_btn' => 'nullable',
                 'sale_online' => 'nullable',
-                'gst_active' => 'nullable'
+                // 'gst_active' => 'nullable'
             ]);
 
             // upload product image
@@ -151,7 +151,7 @@ class ProductController extends Controller
                 'sale_rate_b' => $validate['sale_rate_b'] ?? 0,
                 'sale_rate_c' => $validate['sale_rate_c'] ?? 0,
                 'sale_online' => isset($validate['sale_online']) ? 1 : 0,
-                'gst_active' => isset($validate['gst_active']) ? 1 : 0,
+                // 'gst_active' => isset($validate['gst_active']) ? 1 : 0,
                 'converse_carton' => $validate['converse_carton'] ?? 0,
                 'converse_box' => $validate['converse_boc'] ?? 0,
                 'converse_pcs' => $validate['converse_pcs'] ?? 0,
@@ -240,8 +240,8 @@ class ProductController extends Controller
                 'product_category' => 'nullable|string',
                 'hsn_code' => 'nullable|string',
                 'sgst' => 'nullable|numeric|min:0',
-                'cgst_1' => 'nullable|numeric|min:0',
-                'cgst_2' => 'nullable|numeric|min:0',
+                'cgst1' => 'nullable|numeric|min:0',
+                'cgst2' => 'nullable|numeric|min:0',
                 'cess' => 'nullable|numeric|min:0',
                 'mrp' => 'nullable|numeric|min:0',
                 'purchase_rate' => 'nullable|numeric|min:0',
@@ -260,7 +260,7 @@ class ProductController extends Controller
                 'bonus_use' => 'nullable',
                 'decimal_btn' => 'nullable',
                 'sale_online' => 'nullable',
-                'gst_active' => 'nullable'
+                // 'gst_active' => 'nullable'
             ]);
 
             $product = Product::on($branchConnection)
@@ -322,8 +322,8 @@ class ProductController extends Controller
                 'category_id' => $categoryId,
                 'hsn_code_id' => $hsnCodeId,
                 'sgst' => $validate['sgst'] ?? 0,
-                'cgst1' => $validate['cgst_1'] ?? 0,
-                'cgst2' => $validate['cgst_2'] ?? 0,
+                'cgst1' => $validate['cgst1'] ?? 0,
+                'cgst2' => $validate['cgst2'] ?? 0,
                 'cess' => $validate['cess'] ?? 0,
                 'mrp' => $validate['mrp'] ?? 0,
                 'purchase_rate' => $validate['purchase_rate'] ?? 0,
@@ -331,7 +331,7 @@ class ProductController extends Controller
                 'sale_rate_b' => $validate['sale_rate_b'] ?? 0,
                 'sale_rate_c' => $validate['sale_rate_c'] ?? 0,
                 'sale_online' => isset($validate['sale_online']) ? 1 : 0,
-                'gst_active' => isset($validate['gst_active']) ? 1 : 0,
+                // 'gst_active' => isset($validate['gst_active']) ? 1 : 0,
                 'converse_carton' => $validate['converse_carton'] ?? 0,
                 'converse_box' => $validate['converse_boc'] ?? 0,
                 'converse_pcs' => $validate['converse_pcs'] ?? 0,

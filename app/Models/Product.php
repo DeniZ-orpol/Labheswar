@@ -26,7 +26,7 @@ class Product extends Model
         'sale_rate_b',
         'sale_rate_c',
         'sale_online',
-        'gst_active',
+        // 'gst_active',
         'converse_carton',
         'converse_box',
         'converse_pcs',

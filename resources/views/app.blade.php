@@ -1001,7 +1001,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 <div class="font-medium">{{ $userName }}</div>
                             </div>
                             @if ($userType === 'branch')
-                            <div class="text-xs text-white/60 mt-0.5 dark:text-slate-500">
+                                <div class="text-xs text-white/60 mt-0.5 dark:text-slate-500">
                                     {{ $branchName }}</div>
                             @endif
                         </li>
@@ -1201,32 +1201,32 @@ License: You must have a valid license purchased only from themeforest(the above
                                     </li> --}}
                         </ul>
                     </li>
-                    {{-- <li>
-                            <a href="javascript:;" class="side-menu">
-                                <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
-                                <div class="side-menu__title">
-                                    Purchase
-                                    <i data-lucide="chevron-down" class="side-menu__sub-icon"></i>
-                                </div>
-                            </a>
+                    <li>
+                        <a href="javascript:;" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
+                            <div class="side-menu__title">
+                                Purchase
+                                <i data-lucide="chevron-down" class="side-menu__sub-icon"></i>
+                            </div>
+                        </a>
 
-                            <ul class="">
-                                    <li>
-                                        <a href="{{ route('purchase.index') }}"
-                                            class="side-menu {{ request()->routeIs('purchase.*') ? 'side-menu--active' : '' }}">
-                                            <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                            <div class="side-menu__title"> Purchase List </div>
-                                        </a>
-                                    </li>
-                                <li>
-                                    <a href="{{ route('purchase.party.index') }}"
-                                        class="side-menu {{ request()->routeIs('products.*') ? 'side-menu--active' : '' }}">
-                                        <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                        <div class="side-menu__title"> Purchase Party </div>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li> --}}
+                        <ul class="">
+                            <li>
+                                <a href="{{ route('purchase.index') }}"
+                                    class="side-menu {{ request()->routeIs('purchase.*') ? 'side-menu--active' : '' }}">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Purchase List </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('purchase.party.index') }}"
+                                    class="side-menu {{ request()->routeIs('products.*') ? 'side-menu--active' : '' }}">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Purchase Party </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                 @endif
 
                 {{-- <li>
