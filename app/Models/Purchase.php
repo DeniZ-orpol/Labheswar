@@ -60,12 +60,12 @@ class Purchase extends Model
     }
 
     // Accessor to get total pieces (box * conversion + pcs)
-    public function getTotalPcsAttribute()
-    {
-        $product = $this->product;
-        $boxToPcs = $product ? $product->converse_box : 1;
-        return ($this->box * $boxToPcs) + $this->pcs;
-    }
+    // public function getTotalPcsAttribute()
+    // {
+    //     $product = $this->product;
+    //     $boxToPcs = $product ? $product->converse_box : 1;
+    //     return ($this->box * $boxToPcs) + $this->pcs;
+    // }
 
     // Accessor to calculate amount with discount
     public function getCalculatedAmountAttribute()

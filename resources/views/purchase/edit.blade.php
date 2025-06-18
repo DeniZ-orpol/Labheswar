@@ -2,10 +2,12 @@
 @section('content')
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
-            New Purchase
+            Update Purchase
         </h2>
-        <form action="{{ route('purchase.store') }}" method="POST" class="form-updated validate-form box rounded-md mt-5 p-5">
-            @csrf <!-- CSRF token for security -->
+        <form action="{{ route('purchase.update', $purchaseReceipt->id) }}" method="POST"
+            class="form-updated validate-form box rounded-md mt-5 p-5">
+            @csrf
+            @method('PUT')
             <div class="grid grid-cols-12 gap-2 grid-updated">
                 <!-- Name -->
                 <div class="input-form col-span-8 mt-3">
@@ -13,9 +15,13 @@
                         Purchase Party<span style="color: red;margin-left: 3px;"> *</span>
                     </label>
                     <select id="modal-form-6" name="party_name" class="form-select">
-                        <option value="">Select Party...</option>
+                        <option value="" disabled {{ !$purchaseReceipt->purchase_party_id ? 'selected' : '' }}>Select
+                            Party...</option>
                         @foreach ($parties as $party)
-                            <option value="{{ $party->id }} "> {{ $party->party_name }} </option>
+                            <option value="{{ $party->id }}"
+                                {{ $party->id == $purchaseReceipt->purchase_party_id ? 'selected' : '' }}>
+                                {{ $party->party_name }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -25,7 +31,8 @@
                     <label for="bill_date" class="form-label w-full flex flex-col sm:flex-row">
                         Bill Date
                     </label>
-                    <input id="bill_date" type="date" name="bill_date" class="form-control field-new">
+                    <input id="bill_date" type="date" name="bill_date" class="form-control field-new"
+                        value="{{ old('bill_date', $purchaseReceipt->bill_date) }}">
                 </div>
 
                 <!-- Bill No -->
@@ -34,7 +41,7 @@
                         Bill No.
                     </label>
                     <input id="bill_no" type="text" name="bill_no" class="form-control field-new"
-                        placeholder="Enter Purchase Bill NO" maxlength="255">
+                        placeholder="Enter Purchase Bill NO" value="{{ $purchaseReceipt->bill_no }}" maxlength="255">
                 </div>
 
                 <!-- Delivery Date -->
@@ -42,7 +49,8 @@
                     <label for="delivery_date" class="form-label w-full flex flex-col sm:flex-row">
                         Delivery Date
                     </label>
-                    <input id="delivery_date" type="date" name="delivery_date" class="form-control field-new">
+                    <input id="delivery_date" type="date" name="delivery_date" class="form-control field-new"
+                        value="{{ old('delivery_date', $purchaseReceipt->delivery_date) }}">
                 </div>
 
                 <!-- GST ON/OFF -->
@@ -51,8 +59,8 @@
                         GST
                     </label>
                     <select id="gst" name="gst" class="form-control field-new" onchange="calculateAllTotals()">
-                        <option value="on" selected>ON</option>
-                        <option value="off">OFF</option>
+                        <option value="on" {{ $purchaseReceipt->gst_status == 'on' ? 'selected' : '' }}>ON</option>
+                        <option value="off" {{ $purchaseReceipt->gst_status == 'off' ? 'selected' : '' }}>OFF</option>
                     </select>
                 </div>
             </div>
@@ -70,94 +78,112 @@
                             <th scope="col" class="required">free</th>
                             <th scope="col" class="required">p.rate</th>
                             <th scope="col" class="text-end">dis(%)</th>
-                            <th scope="col" class="text-end">dis(lungsum)</th>
+                            <th scope="col" class="text-end">dis(lumpsum)</th>
                             <th scope="col" class="text-end">amount</th>
                             <th scope="col" class="text-end">Action</th>
                         </tr>
                     </thead>
                     <tbody id="product-table-body">
-                        <tr class="text-center">
-                            <!-- Product -->
-                            <td class="table__item-desc w-1/4">
-                                <select name="product[]" id="product"
-                                    class="form-select text-sm w-full rounded-md py-2 px-3"
-                                    onchange="loadProductDetails(this)">
-                                    <option value="">Please Select product</option>
-                                    @foreach ($products as $product)
-                                        <option value="{{ $product->id }}" data-mrp="{{ $product->mrp ?? 0 }}"
-                                            data-name="{{ $product->product_name }}"
-                                            {{-- data-box-pcs="{{ $product->converse_box ?? 1 }}" --}}
-                                            data-sgst="{{ $product->sgst ?? 0 }}" data-cgst="{{ $product->cgst1 ?? 0 }}"
-                                            data-purchase-rate="{{ $product->purchase_rate ?? 0 }}"
-                                            data-barcode="{{ $product->barcode ?? '' }}"
-                                            data-category="{{ $product->category_id ?? '' }}"
-                                            data-unit-type="{{ $product->unit_types ?? '' }}">{{ $product->product_name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </td>
+                        @foreach ($purchaseItems as $index => $item)
+                            <tr class="text-center">
+                                <!-- Product -->
+                                <td class="table__item-desc w-1/4">
+                                    <select name="product[]" class="form-select text-sm w-full rounded-md py-2 px-3"
+                                        onchange="loadProductDetails(this)">
+                                        <option value="">Please Select product</option>
+                                        @foreach ($products as $product)
+                                            <option value="{{ $product->id }}" data-mrp="{{ $product->mrp ?? 0 }}"
+                                                data-name="{{ $product->product_name }}"
+                                                data-box-pcs="{{ $product->converse_box ?? 1 }}"
+                                                data-sgst="{{ $product->sgst ?? 0 }}"
+                                                data-cgst="{{ $product->cgst1 ?? 0 }}"
+                                                data-purchase-rate="{{ $product->purchase_rate ?? 0 }}"
+                                                data-barcode="{{ $product->barcode ?? '' }}"
+                                                data-category="{{ $product->category_id ?? '' }}"
+                                                data-unit-type="{{ $product->unit_types ?? '' }}"
+                                                {{ $product->id == $item->product_id ? 'selected' : '' }}>
+                                                {{ $product->product_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </td>
 
-                            <!-- Box -->
-                            <td>
-                                <input type="number" name="box[]" class="form-control field-new" maxlength="255"
-                                    onchange="calculateRowAmount(this)">
-                            </td>
+                                <!-- Box -->
+                                <td>
+                                    <input type="number" name="box[]" class="form-control field-new" maxlength="255"
+                                        onchange="calculateRowAmount(this)" value="{{ $item->box ?? 0 }}">
+                                </td>
 
-                            <!-- Pcs -->
-                            <td>
-                                <input type="number" name="pcs[]" class="form-control field-new" maxlength="255"
-                                    onchange="calculateRowAmount(this)">
-                            </td>
+                                <!-- Pcs -->
+                                <td>
+                                    <input type="number" name="pcs[]" class="form-control field-new" maxlength="255"
+                                        onchange="calculateRowAmount(this)" value="{{ $item->pcs ?? 0 }}">
+                                </td>
 
-                            <!-- Free -->
-                            <td>
-                                <input type="number" name="free[]" class="form-control field-new" maxlength="255">
-                            </td>
+                                <!-- Free -->
+                                <td>
+                                    <input type="number" name="free[]" class="form-control field-new" maxlength="255"
+                                        value="{{ $item->free ?? 0 }}">
+                                </td>
 
-                            <!-- Purchase Rate -->
-                            <td>
-                                <input type="number" name="purchase_rate[]" class="form-control field-new"
-                                    maxlength="255" onchange="calculateRowAmount(this)" step="0.01">
-                            </td>
+                                <!-- Purchase Rate -->
+                                <td>
+                                    <input type="number" name="purchase_rate[]" class="form-control field-new"
+                                        maxlength="255" onchange="calculateRowAmount(this)" step="0.01"
+                                        value="{{ $item->p_rate ?? 0 }}">
+                                </td>
 
-                            <!-- Discount (%) -->
-                            <td>
-                                <input type="number" name="discount_percent[]" class="form-control field-new text-end"
-                                    maxlength="255" onchange="calculateRowAmount(this)" step="0.01">
-                            </td>
+                                <!-- Discount (%) -->
+                                <td>
+                                    <input type="number" name="discount_percent[]"
+                                        class="form-control field-new text-end" maxlength="255"
+                                        onchange="calculateRowAmount(this)" step="0.01"
+                                        value="{{ $item->discount ?? 0 }}">
+                                </td>
 
-                            <!-- Discount (Lumpsum) -->
-                            <td>
-                                <input type="number" name="discount_lumpsum[]" class="form-control field-new text-end"
-                                    maxlength="255" onchange="calculateRowAmount(this)" step="0.01">
-                            </td>
+                                <!-- Discount (Lumpsum) -->
+                                <td>
+                                    <input type="number" name="discount_lumpsum[]"
+                                        class="form-control field-new text-end" maxlength="255"
+                                        onchange="calculateRowAmount(this)" step="0.01"
+                                        value="{{ $item->lumpsum ?? 0 }}">
+                                </td>
 
-                            <!-- Amount -->
-                            <td>
-                                <input type="number" name="amount[]" class="form-control field-new text-end"
-                                    maxlength="255" readonly step="0.01">
-                                <!-- Hidden fields for calculated data -->
-                                <input type="hidden" name="total_pcs[]" class="total-pcs-hidden">
-                                <input type="hidden" name="base_amount[]" class="base-amount-hidden">
-                                <input type="hidden" name="discount_amount[]" class="discount-amount-hidden">
-                                <input type="hidden" name="sgst_rate[]" class="sgst-rate-hidden">
-                                <input type="hidden" name="cgst_rate[]" class="cgst-rate-hidden">
-                                <input type="hidden" name="sgst_amount[]" class="sgst-amount-hidden">
-                                <input type="hidden" name="cgst_amount[]" class="cgst-amount-hidden">
-                                <input type="hidden" name="final_amount[]" class="final-amount-hidden">
-                            </td>
+                                <!-- Amount -->
+                                <td>
+                                    <input type="number" name="amount[]" class="form-control field-new text-end"
+                                        maxlength="255" readonly step="0.01" value="{{ $item->amount ?? 0 }}">
+                                    <!-- Hidden fields for calculated data -->
+                                    <input type="hidden" name="purchase_item_ids[]" value="{{ $item->id ?? '' }}">
+                                    <input type="hidden" name="total_pcs[]" class="total-pcs-hidden"
+                                        value="{{ $item->total_pcs ?? ($item->box ?? 0) + ($item->pcs ?? 0) }}">
+                                    <input type="hidden" name="base_amount[]" class="base-amount-hidden"
+                                        value="{{ $item->base_amount ?? 0 }}">
+                                    <input type="hidden" name="discount_amount[]" class="discount-amount-hidden"
+                                        value="{{ $item->discount_amount ?? 0 }}">
+                                    <input type="hidden" name="sgst_rate[]" class="sgst-rate-hidden"
+                                        value="{{ $item->sgst_rate ?? 0 }}">
+                                    <input type="hidden" name="cgst_rate[]" class="cgst-rate-hidden"
+                                        value="{{ $item->cgst_rate ?? 0 }}">
+                                    <input type="hidden" name="sgst_amount[]" class="sgst-amount-hidden"
+                                        value="{{ $item->sgst_amount ?? 0 }}">
+                                    <input type="hidden" name="cgst_amount[]" class="cgst-amount-hidden"
+                                        value="{{ $item->cgst_amount ?? 0 }}">
+                                    <input type="hidden" name="final_amount[]" class="final-amount-hidden"
+                                        value="{{ $item->final_amount ?? $item->amount }}">
+                                </td>
 
-                            <!-- Action (Trash Icon) -->
-                            <td class="text-center">
-                                <button type="button" onclick="removeRow(this)"
-                                    class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-red-100">
-                                    <i data-lucide="trash" class="w-5 h-5 text-red-600"></i>
-                                </button>
-                            </td>
-                        </tr>
+                                <!-- Action (Trash Icon) -->
+                                <td class="text-center">
+                                    <button type="button" onclick="removeRow(this)"
+                                        class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-red-100">
+                                        <i data-lucide="trash" class="w-5 h-5 text-red-600"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforeach
                     </tbody>
                 </table>
-
             </div>
             <hr>
 
@@ -191,19 +217,24 @@
             <div class="grid grid-cols-1 gap-5">
                 <div class="p-5 row">
                     <div class="column font-medium text-lg">TOTAL INVOICE VALUE</div>
-                    <div class="column font-medium text-lg" id="total-invoice-value">0.00</div>
+                    <div class="column font-medium text-lg" id="total-invoice-value">
+                        {{ number_format($purchaseReceipt->total_amount, 2) }}</div>
                 </div>
             </div>
 
             <!-- Hidden fields for purchase receipt totals -->
-            <input type="hidden" name="receipt_subtotal" id="receipt-subtotal-hidden">
-            <input type="hidden" name="receipt_total_discount" id="receipt-total-discount-hidden">
-            <input type="hidden" name="receipt_total_gst_amount" id="receipt-total-gst-amount-hidden">
-            <input type="hidden" name="receipt_total_amount" id="receipt-total-amount-hidden">
+            <input type="hidden" name="receipt_subtotal" id="receipt-subtotal-hidden"
+                value="{{ $purchaseReceipt->subtotal }}">
+            <input type="hidden" name="receipt_total_discount" id="receipt-total-discount-hidden"
+                value="{{ $purchaseReceipt->total_discount }}">
+            <input type="hidden" name="receipt_total_gst_amount" id="receipt-total-gst-amount-hidden"
+                value="{{ $purchaseReceipt->total_gst_amount }}">
+            <input type="hidden" name="receipt_total_amount" id="receipt-total-amount-hidden"
+                value="{{ $purchaseReceipt->total_amount }}">
 
             <div>
                 <a onclick="goBack()" class="btn btn-outline-primary shadow-md mr-2">Cancel</a>
-                <button type="submit" class="btn btn-primary mt-5 btn-hover">Submit</button>
+                <button type="submit" class="btn btn-primary mt-5 btn-hover">Update</button>
             </div>
         </form>
 
@@ -221,14 +252,13 @@
             }
         </style>
 
-
         <!-- END: Validation Form -->
         <!-- BEGIN: Success Notification Content -->
         <div id="success-notification-content" class="toastify-content hidden flex">
             <i class="text-success" data-lucide="check-circle"></i>
             <div class="ml-4 mr-4">
-                <div class="font-medium">Registration success!</div>
-                <div class="text-slate-500 mt-1"> Please check your e-mail for further info! </div>
+                <div class="font-medium">Update success!</div>
+                <div class="text-slate-500 mt-1"> Purchase has been updated successfully! </div>
             </div>
         </div>
         <!-- END: Success Notification Content -->
@@ -236,8 +266,8 @@
         <div id="failed-notification-content" class="toastify-content hidden flex">
             <i class="text-danger" data-lucide="x-circle"></i>
             <div class="ml-4 mr-4">
-                <div class="font-medium">Registration failed!</div>
-                <div class="text-slate-500 mt-1"> Please check the fileld form. </div>
+                <div class="font-medium">Update failed!</div>
+                <div class="text-slate-500 mt-1"> Please check the form fields. </div>
             </div>
         </div>
         <!-- END: Failed Notification Content -->
@@ -256,28 +286,17 @@
             });
         }
 
-        // Set current date for delivery date
-        const today = new Date();
-        const todayString = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
-        document.getElementById('delivery_date').value = todayString;
-
         // Set current date for display
+        const today = new Date();
         const todayDisplay = today.toLocaleDateString();
         document.getElementById('current-date').textContent = todayDisplay;
 
-        // Initialize calculations
+        // Initialize calculations with existing data
+        initializeExistingData();
         calculateAllTotals();
 
         // Disable delete button if only one row exists initially
-        const initialTableBody = document.getElementById('product-table-body');
-        if (initialTableBody.children.length === 1) {
-            const deleteButton = initialTableBody.querySelector('button[onclick*="removeRow"]');
-            if (deleteButton) {
-                deleteButton.disabled = true;
-                deleteButton.classList.add('opacity-50', 'cursor-not-allowed');
-                deleteButton.classList.remove('hover:bg-red-100');
-            }
-        }
+        updateDeleteButtonStates();
 
         // Disable arrow key functionality for number inputs
         function disableArrowKeys(event) {
@@ -292,13 +311,38 @@
         document.addEventListener('keydown', disableArrowKeys);
     });
 
+    function initializeExistingData() {
+        const tableBody = document.getElementById('product-table-body');
+        const rows = tableBody.querySelectorAll('tr');
+
+        rows.forEach(row => {
+            // Trigger calculation for each existing row to set up data attributes
+            const firstInput = row.querySelector('input[name="purchase_rate[]"]');
+            if (firstInput) {
+                calculateRowAmount(firstInput);
+            }
+
+            // Load product details for selected product
+            const productSelect = row.querySelector('select[name="product[]"]');
+            if (productSelect && productSelect.value) {
+                loadProductDetails(productSelect);
+            }
+        });
+    }
+
     function addProductRow() {
         const tableBody = document.getElementById('product-table-body');
         const existingRow = tableBody.querySelector('tr');
         const newRow = existingRow.cloneNode(true);
 
         // Clear all input values
-        newRow.querySelectorAll('input').forEach(input => input.value = '');
+        newRow.querySelectorAll('input').forEach(input => {
+            if (input.name === 'purchase_item_ids[]') {
+                input.value = ''; // Clear item ID for new row
+            } else {
+                input.value = '';
+            }
+        });
         newRow.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
 
         // Update event handlers for new row
@@ -313,6 +357,7 @@
         });
 
         tableBody.appendChild(newRow);
+        updateDeleteButtonStates();
     }
 
     function removeRow(button) {
@@ -322,8 +367,26 @@
         if (tableBody.children.length > 1) {
             row.remove();
             calculateAllTotals();
+            updateDeleteButtonStates();
+        }
+    }
+
+    function updateDeleteButtonStates() {
+        const tableBody = document.getElementById('product-table-body');
+        const deleteButtons = tableBody.querySelectorAll('button[onclick*="removeRow"]');
+
+        if (tableBody.children.length === 1) {
+            deleteButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btn.classList.remove('hover:bg-red-100');
+            });
         } else {
-            alert('At least one product row is required.');
+            deleteButtons.forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.classList.add('hover:bg-red-100');
+            });
         }
     }
 
@@ -334,17 +397,33 @@
         const productPurchaseRate = selectedOption.getAttribute('data-purchase-rate') || '0.00';
         const sgstRate = selectedOption.getAttribute('data-sgst') || '0';
         const cgstRate = selectedOption.getAttribute('data-cgst') || '0';
+        const boxToPcs = selectedOption.getAttribute('data-box-pcs') || '1';
+        const barcode = selectedOption.getAttribute('data-barcode') || '';
+        const unitType = selectedOption.getAttribute('data-unit-type') || '';
 
         // Update current item details
         document.getElementById('current-item').textContent = productName;
         document.getElementById('current-mrp').textContent = parseFloat(productMrp).toFixed(2);
 
-        // Auto-fill purchase rate if available
+        // Auto-fill purchase rate if available and field is empty
         const row = selectElement.closest('tr');
         const purchaseRateInput = row.querySelector('input[name="purchase_rate[]"]');
-        if (purchaseRateInput && productPurchaseRate > 0) {
+        if (purchaseRateInput && productPurchaseRate > 0 && !purchaseRateInput.value) {
             purchaseRateInput.value = parseFloat(productPurchaseRate).toFixed(2);
+            calculateRowAmount(purchaseRateInput);
         }
+
+        // Log product details for debugging
+        console.log('Selected Product Details:', {
+            name: productName,
+            mrp: productMrp,
+            purchaseRate: productPurchaseRate,
+            sgstRate: sgstRate,
+            cgstRate: cgstRate,
+            boxToPcs: boxToPcs,
+            barcode: barcode,
+            unitType: unitType
+        });
 
         calculateAllTotals();
     }
@@ -485,7 +564,7 @@
         document.getElementById('total-cgst').textContent = totalCgstAmount.toFixed(2);
 
         document.getElementById('total-balance').textContent = Math.round(totalFinalAmount - totalBaseAmount).toFixed(
-            0);
+        0);
 
         document.getElementById('value-of-goods').textContent = totalBaseAmount.toFixed(2);
         document.getElementById('total-discount').textContent = totalDiscountAmount.toFixed(2);

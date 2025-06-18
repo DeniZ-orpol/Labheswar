@@ -1247,23 +1247,23 @@ License: You must have a valid license purchased only from themeforest(the above
                                 </div>
                             </a>
 
-                            <ul class="">
-                                    <li>
-                                        <a href="{{ route('purchase.index') }}"
-                                            class="side-menu {{ request()->routeIs('purchase.*') ? 'side-menu--active' : '' }}">
-                                            <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                            <div class="side-menu__title"> Purchase List </div>
-                                        </a>
-                                    </li>
-                                <li>
-                                    <a href="{{ route('purchase.party.index') }}"
-                                        class="side-menu {{ request()->routeIs('products.*') ? 'side-menu--active' : '' }}">
-                                        <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                        <div class="side-menu__title"> Purchase Party </div>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li> --}}
+                        <ul class="">
+                            <li>
+                                <a href="{{ route('purchase.index') }}"
+                                    class="side-menu {{ request()->routeIs('purchase.*') ? 'side-menu--active' : '' }}">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Purchase List </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('purchase.party.index') }}"
+                                    class="side-menu {{ request()->routeIs('products.*') ? 'side-menu--active' : '' }}">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Purchase Party </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                 @endif
 
                 {{-- <li>

@@ -83,6 +83,9 @@ Route::group(['middleware' => 'custom.auth', 'check.remember'], function () {
     Route::get('/purchase', [PurchaseController::class, 'index'])->name('purchase.index');
     Route::get('/purchase/create', [PurchaseController::class, 'create'])->name('purchase.create');
     Route::post('/purchase/create', [PurchaseController::class, 'store'])->name('purchase.store');
+    Route::get('/purchase/{id}/edit', [PurchaseController::class, 'edit'])->name('purchase.edit');
+    Route::put('/purchase/{id}/update', [PurchaseController::class, 'update'])->name('purchase.update');
+    Route::delete('/purchase/{id}/delete', [PurchaseController::class, 'destroy'])->name('purchase.destroy');
 
     // Purchase party
     Route::get('/purchase/party', [PurchasePartyController::class, 'index'])->name('purchase.party.index');
