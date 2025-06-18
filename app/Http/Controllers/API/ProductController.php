@@ -28,6 +28,44 @@ class ProductController extends Controller
     {
         //
     }
+    public function findProductByBarcode($barcode)
+    {
+        $matchingProducts = [];
+        $branches = Branch::where('status', 'active')->get();
+
+        foreach ($branches as $branch) {
+            try {
+                $product = Product::on($branch->connection_name)
+                    ->where('barcode', $barcode)
+                    ->value('id');
+
+                if ($product) {
+                    $matchingProducts[] = [
+                        'branch' => $branch->name,
+                        'branch_connection' => $branch->connection_name,
+                        'product' => $product
+                    ];
+                }
+            } catch (\Exception $e) {
+                $matchingProducts[] = [
+                    'branch' => $branch->name,
+                    'error' => $e->getMessage()
+                ];
+            }
+        }
+
+        if (empty($matchingProducts)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found in any branch.'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $matchingProducts
+        ]);
+    }
 
     /**
      * Store a newly created resource in storage.
@@ -168,32 +206,32 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      */
-   public function showAllProducts()
-{
-    $allProducts = [];
-    $branches = Branch::where('status', 'active')->get();
+    public function showAllProducts()
+    {
+        $allProducts = [];
+        $branches = Branch::where('status', 'active')->get();
 
-    foreach ($branches as $branch) {
-        try {
-            $products = Product::on($branch->connection_name)->get();
+        foreach ($branches as $branch) {
+            try {
+                $products = Product::on($branch->connection_name)->get();
 
-            $allProducts[] = [
-                'branch' => $branch->name,
-                'products' => $products
-            ];
-        } catch (\Exception $e) {
-            $allProducts[] = [
-                'branch' => $branch->name,
-                'error' => $e->getMessage()
-            ];
+                $allProducts[] = [
+                    'branch' => $branch->name,
+                    'products' => $products
+                ];
+            } catch (\Exception $e) {
+                $allProducts[] = [
+                    'branch' => $branch->name,
+                    'error' => $e->getMessage()
+                ];
+            }
         }
-    }
 
-    return response()->json([
-        'success' => true,
-        'data' => $allProducts
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'data' => $allProducts
+        ]);
+    }
 
 
     public function showCategoriesFromAllBranches()

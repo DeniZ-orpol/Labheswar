@@ -2,13 +2,16 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ForgotPasswordController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PurchasePartyController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Request;
@@ -48,7 +51,7 @@ Route::get('/reset-password', [ForgotPasswordController::class, 'showResetForm']
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'])->name('password.update');
 
 
-Route::group(['middleware' => 'custom.auth','check.remember'], function () {
+Route::group(['middleware' => 'custom.auth', 'check.remember'], function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/branch', [BranchController::class, 'index'])->name('branch.index');
@@ -69,6 +72,12 @@ Route::group(['middleware' => 'custom.auth','check.remember'], function () {
 
     // Products
     Route::resource('products', ProductController::class);
+    Route::resource('categories', CategoryController::class);
+
+    Route::resource('inventory', InventoryController::class);
+
+
+
 
     // Purchase
     Route::get('/purchase', [PurchaseController::class, 'index'])->name('purchase.index');

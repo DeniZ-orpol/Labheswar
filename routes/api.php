@@ -20,6 +20,7 @@ Route::post('/products/store', [ProductController::class, 'store']);
 // Route::get('/products', [ProductController::class, 'show']);
 Route::get('/all-products', [ProductController::class, 'showAllProducts']);
 Route::get('/all-branch-categories', [ProductController::class, 'showCategoriesFromAllBranches']);
+Route::get('/product-by-barcode/{barcode}', [ProductController::class, 'findProductByBarcode']);
 
 
 

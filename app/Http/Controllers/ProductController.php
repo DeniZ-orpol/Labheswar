@@ -19,9 +19,9 @@ class ProductController extends Controller
     public function index()
     {
         // Check if user is logged in as branch
-        if (session('user_type') !== 'branch' || !session('branch_connection')) {
-            return redirect()->route('login')->with('error', 'Please login as branch user.');
-        }
+        // if (session('user_type') !== 'branch' || !session('branch_connection')) {
+        //     return redirect()->route('login')->with('error', 'Please login as branch user.');
+        // }
 
         $branchConnection = session('branch_connection');
 
