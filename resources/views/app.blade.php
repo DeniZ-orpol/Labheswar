@@ -21,7 +21,7 @@ License: You must have a valid license purchased only from themeforest(the above
         content="admin template, Enigma Admin Template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="LEFT4CODE">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Dashboard - Midone - Tailwind HTML Admin Template</title>
+    <title>Labheswar</title>
     <!-- BEGIN: CSS Assets-->
     <link rel="stylesheet" href="{{ asset('css/app.css') }}" />
     <!-- DataTables CSS -->
@@ -93,7 +93,8 @@ License: You must have a valid license purchased only from themeforest(the above
                     $userType = session('user_type');
                     $userRole = session('user_role');
                     $userBranchId = session('branch_id');
-                    // {{ dd($userRole) }}
+                    $userName = session('user_name');
+                    $branchName = session('branch_name');
                     $userMenuOpen = request()->routeIs('users.*') || request()->routeIs('roles.*');
                 @endphp
 
@@ -996,16 +997,13 @@ License: You must have a valid license purchased only from themeforest(the above
                     <ul
                         class="dropdown-content bg-primary/80 before:block before:absolute before:bg-black before:inset-0 before:rounded-md before:z-[-1] text-white">
                         <li class="p-2">
-                            {{-- {{ dd($user) }} --}}
-                            <div class="font-medium">@auth
-                                    <div class="font-medium">{{ Auth::user()->name }}</div>
-                                @else
-                                    <div class="font-medium">Guest</div>
-                                @endauth
-
+                            <div class="font-medium">
+                                <div class="font-medium">{{ $userName }}</div>
                             </div>
+                            @if ($userType === 'branch')
                             <div class="text-xs text-white/60 mt-0.5 dark:text-slate-500">
-                                {{ Auth::user()->branch_name }}</div>
+                                    {{ $branchName }}</div>
+                            @endif
                         </li>
                         <li>
                             <hr class="dropdown-divider border-white/[0.08]">
@@ -1055,25 +1053,25 @@ License: You must have a valid license purchased only from themeforest(the above
                     </a>
                     <ul class="side-menu__sub-open">
                         <li>
-                            <a href="side-menu-light-dashboard-overview-1.html" class="side-menu side-menu--active">
+                            <a href="{{route('dashboard')}}" class="side-menu side-menu--active">
                                 <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                 <div class="side-menu__title"> Overview 1 </div>
                             </a>
                         </li>
                         <li>
-                            <a href="side-menu-light-dashboard-overview-2.html" class="side-menu">
+                            <a href="#" class="side-menu">
                                 <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                 <div class="side-menu__title"> Overview 2 </div>
                             </a>
                         </li>
                         <li>
-                            <a href="side-menu-light-dashboard-overview-3.html" class="side-menu">
+                            <a href="#" class="side-menu">
                                 <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                 <div class="side-menu__title"> Overview 3 </div>
                             </a>
                         </li>
                         <li>
-                            <a href="index.html" class="side-menu">
+                            <a href="#" class="side-menu">
                                 <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                 <div class="side-menu__title"> Overview 4 </div>
                             </a>
@@ -1082,9 +1080,9 @@ License: You must have a valid license purchased only from themeforest(the above
                 </li>
                 @php
                     // $user = Auth::user();
-                    $userType = session('user_type');
-                    $userRole = session('user_role');
-                    $userBranchId = session('branch_id');
+                    // $userType = session('user_type');
+                    // $userRole = session('user_role');
+                    // $userBranchId = session('branch_id');
                     $userMenuOpen = request()->routeIs('users.*') || request()->routeIs('roles.*');
                 @endphp
 

@@ -12,11 +12,11 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        $user= Auth::user();
-        $branch = $user->branch;
-        // dd(Auth::check(), Auth::user());
+        return view('dashboard');
+        // $user= Auth::user();
+        // $branch = $user->branch;
 
-        return view('dashboard', compact('user','branch'));
+        // return view('dashboard', compact('user','branch'));
     }
 
     /**
