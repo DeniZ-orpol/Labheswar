@@ -46,7 +46,7 @@
             <table id="DataTable" class="display table table-bordered intro-y col-span-12">
                 <thead>
                     <tr class="bg-primary font-bold text-white">
-                        <th>Id</th>
+                        <th>#</th>
                         <th>Party Name</th>
                         <th>Bill Date</th>
                         <th>Delivery Date</th>
@@ -57,17 +57,17 @@
                 </thead>
                 <tbody>
                     @if ($purchaseReceipt && $purchaseReceipt->count())
-                        @foreach ($purchaseReceipt as $purchase)
+                        @foreach ($purchaseReceipt as $purchaseRec)
                             <tr>
-                                <td>{{ $purchase->id }}</td>
-                                <td>{{ $purchase->purchaseParty->party_name }}</td>
-                                <td>{{ $purchase->bill_date }}</td>
-                                <td>{{ $purchase->delivery_date }}</td>
-                                <td>{{ $purchase->gst_status }}</td>
-                                <td>{{ $purchase->total_amount }}</td>
+                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $purchaseRec->purchaseParty->party_name }}</td>
+                                <td>{{ $purchaseRec->bill_date }}</td>
+                                <td>{{ $purchaseRec->delivery_date }}</td>
+                                <td>{{ $purchaseRec->gst_status }}</td>
+                                <td>{{ $purchaseRec->total_amount }}</td>
                                 <td>
                                     <div class="flex gap-2 justify-content-left">
-                                        <form action="#" method="POST"
+                                        <form action="{{ route('purchase.destroy', $purchaseRec->id) }}" method="POST"
                                             onsubmit="return confirm('Are you sure you want to delete this role?');"
                                             style="display: inline-block;">
                                             @csrf
@@ -75,7 +75,7 @@
                                             <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
                                         </form>
                                     </div>
-                                    <a href="#"
+                                    <a href="{{route('purchase.edit', $purchaseRec->id)}}"
                                         class="btn btn-primary mr-1 mb-2">
                                         Edit
                                     </a>
