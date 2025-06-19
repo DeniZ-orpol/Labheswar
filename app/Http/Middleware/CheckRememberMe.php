@@ -19,7 +19,7 @@ class CheckRememberMe
     public function handle(Request $request, Closure $next)
     {
         // Skip if user is already authenticated
-        if (Auth::check() || session('user_type') === 'branch') {
+        if (Auth::check() || session('user_type')) {
             return $next($request);
         }
 
@@ -45,13 +45,13 @@ class CheckRememberMe
 
         try {
             // Find the branch user
-            $branchUser = BranchUsers::on($branchConnection)
+            $branchUser = BranchUsers::forDatabase($branchConnection)
                 ->where('id', $branchUserId)
                 ->where('is_active', true)
                 ->first();
 
             // Verify the remember token
-            if (!$branchUser || hash('sha256', $rememberToken) !== $branchUser->remember_token) {
+            if (!$branchUser || !hash_equals($branchUser->remember_token, hash('sha256', $rememberToken))) {
                 $this->clearRememberCookies();
                 return;
             }
@@ -65,7 +65,7 @@ class CheckRememberMe
             }
 
             // Get role information
-            $role = Role::on($branchConnection)->find($branchUser->role_id);
+            $role = Role::forDatabase($branchConnection)->find($branchUser->role_id);
 
             // Auto login branch user by setting session
             session([

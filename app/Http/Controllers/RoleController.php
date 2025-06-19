@@ -20,7 +20,7 @@ class RoleController extends Controller
 
         foreach ($branches as $branch) {
             try {
-                $branchRoles = Role::on($branch->connection_name)
+                $branchRoles = Role::forDatabase($branch->getDatabaseName())
                     ->where('role_name', '!=', 'Superadmin')
                     ->get();
 
@@ -32,7 +32,7 @@ class RoleController extends Controller
         }
 
         // $roles = Role::where('role_name', '!=', 'Superadmin')->get(); // Exclude Superadmin
-        $roles = $allRoles->unique('role_name')->sortBy('role_name')->values();
+        $roles = $allRoles->unique('role_name')->sortByDesc('created_at')->values();
         return view('roles.index', compact('roles'));
     }
 
@@ -59,7 +59,7 @@ class RoleController extends Controller
 
         foreach ($branches as $branch) {
             try {
-                Role::on($branch->connection_name)->firstOrCreate(['role_name' => $roleName]);
+                Role::forDatabase($branch->getDatabaseName())->firstOrCreate(['role_name' => $roleName]);
             } catch (\Exception $e) {
                 return redirect()->back()->with('error', 'Role creation failed.');
             }
@@ -86,7 +86,7 @@ class RoleController extends Controller
 
         foreach ($branches as $branch) {
             try {
-                $role = Role::on($branch->connection_name)->findOrFail($id);
+                $role = Role::forDatabase($branch->getDatabaseName())->findOrFail($id);
                 break;
             } catch (\Exception $e) {
                 continue;
@@ -108,7 +108,7 @@ class RoleController extends Controller
         $branches = Branch::all();
         foreach ($branches as $branch) {
             try {
-                Role::on($branch->connection_name)->where('id', $id)->update(['role_name' => $roleName]);
+                Role::forDatabase($branch->getDatabaseName())->where('id', $id)->update(['role_name' => $roleName]);
             } catch (\Exception $e) {
                 return redirect()->route('roles.index')->with('error', 'Role update failed.');
             }
@@ -126,7 +126,7 @@ class RoleController extends Controller
 
         foreach ($branches as $branch) {
             try {
-                Role::on($branch->connection_name)->where('id', $id)->delete();
+                Role::forDatabase($branch->getDatabaseName())->where('id', $id)->delete();
             } catch (\Exception $e) {
                 return redirect()->route('roles.index')->with('error', 'Role deletion failed.');
             }

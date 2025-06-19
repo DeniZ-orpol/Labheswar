@@ -34,21 +34,24 @@ class UserController extends Controller
 
         // Get all branch users only
         $branches = Branch::all();
+        
         foreach ($branches as $branch) {
             try {
-                // $branch->setupConnection();
-                $branchUsers = BranchUsers::on($branch->connection_name)->with('role')->get();
+                $databaseName = $branch->getDatabaseName();
+                
+                $branchUsers = BranchUsers::forDatabase($databaseName)->get();
 
-                $formattedBranchUsers = $branchUsers->map(function ($user) use ($branch) {
+                $formattedBranchUsers = $branchUsers->map(function ($user) use ($branch, $databaseName) {
 
-                    $role = Role::on($branch->connection_name)->find($user->role_id);
+                    $role = Role::forDatabase($databaseName)->find($user->role_id);
+                    
                     return (object) [
                         'id' => $user->id,
                         'name' => $user->name,
                         'email' => $user->email,
                         'role' => $role, // This will be the role object if with('role') works, or role field if not
                         'mobile' => $user->mobile,
-                        'dob' => $user->dob->format('d-m-Y'),
+                        'dob' => $user->dob ? $user->dob->format('d-m-Y') : null,
                         'is_active' => $user->is_active,
                         'database_type' => 'branch',
                         'branch_name' => $branch->name,
@@ -81,7 +84,7 @@ class UserController extends Controller
 
         foreach ($branches as $branch) {
             try {
-                $branchRoles = Role::on($branch->connection_name)
+                $branchRoles = Role::forDatabase($branch->getDatabaseName())
                     ->where('role_name', '!=', 'Superadmin')
                     ->get();
 
@@ -121,9 +124,10 @@ class UserController extends Controller
         // dd(211);
         $branch = Branch::findOrFail($request->branch_id);
 
-        $existingUser = BranchUsers::on($branch->connection_name)
+        $existingUser = BranchUsers::forDatabase($branch->getDatabaseName())
             ->where('email', $request->email)
             ->first();
+        // dd($existingUser)
 
         if ($existingUser) {
             return redirect()->back()
@@ -143,7 +147,7 @@ class UserController extends Controller
         ];
 
         // Create user in selected branch database
-        BranchUsers::on($branch->connection_name)->create($userData);
+        BranchUsers::forDatabase($branch->getDatabaseName())->create($userData);
 
         return redirect()->route('users.index')->with('success', 'User added successfully!');
     }
@@ -155,8 +159,8 @@ class UserController extends Controller
     public function show(string $branchId, string $id)
     {
         $branch = Branch::findOrFail($branchId);
-        $user = BranchUsers::on($branch->connection_name)->with('role')->findOrFail($id);
-        $user->role = Role::on($branch->connection_name)->find($user->role_id);
+        $user = BranchUsers::forDatabase($branch->getDatabaseName())->findOrFail($id);
+        $user->role = Role::forDatabase($branch->getDatabaseName())->find($user->role_id);
 
         return view('users.show', compact('user', 'branch'));
     }
@@ -171,10 +175,10 @@ class UserController extends Controller
         // return view('users.edit', compact('user', 'roles'));
         $branches = Branch::all();
         $branch = Branch::findOrFail($branchId);
-        $user = BranchUsers::on($branch->connection_name)->findOrFail($id);
+        $user = BranchUsers::forDatabase($branch->getDatabaseName())->findOrFail($id);
         $user->branch = $branch;
         // Get roles from this branch
-        $roles = Role::on($branch->connection_name)
+        $roles = Role::forDatabase($branch->getDatabaseName())
             ->where('role_name', '!=', 'Superadmin')
             ->get();
 
@@ -202,9 +206,9 @@ class UserController extends Controller
             dd($e->errors()); // Check what is failing
         }
         $branch = Branch::findOrFail($branchId);
-        $user = BranchUsers::on($branch->connection_name)->findOrFail($id);
+        $user = BranchUsers::forDatabase($branch->getDatabaseName())->findOrFail($id);
 
-        $existingUser = BranchUsers::on($branch->connection_name)
+        $existingUser = BranchUsers::forDatabase($branch->getDatabaseName())
             ->where('email', $request->email)
             ->where('id', '!=', $id)
             ->first();
@@ -239,7 +243,7 @@ class UserController extends Controller
     public function destroy(string $branchId, string $id)
     {
         $branch = Branch::findOrFail($branchId);
-        $user = BranchUsers::on($branch->connection_name)->findOrFail($id);
+        $user = BranchUsers::forDatabase($branch->getDatabaseName())->findOrFail($id);
 
         // $user = User::findOrFail($id);
         $user->delete();

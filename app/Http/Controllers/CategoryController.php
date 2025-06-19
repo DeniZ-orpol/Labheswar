@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +16,7 @@ class CategoryController extends Controller
     {
         $branchConnection = session('branch_connection');
 
-        $categories = DB::connection($branchConnection)->table('categories')->orderBy('created_at', 'desc')->get();
+        $categories = Category::forDatabase($branchConnection)->orderBy('created_at', 'desc')->get();
 
         return view('categories.index', compact('categories'));
     }
@@ -48,13 +49,13 @@ class CategoryController extends Controller
         ];
 
         // Insert into branch DB
-        DB::connection($branchConnection)->table('categories')->insert($data);
+        Category::forDatabase($branchConnection)->insert($data);
 
         // Insert into labheswar (master) only if category name not exists
-        $exists = DB::connection('master')->table('categories')->where('name', $request->name)->exists();
+        $exists = Category::where('name', $request->name)->exists();
 
         if (!$exists) {
-            DB::connection('master')->table('categories')->insert($data);
+            Category::insert($data);
         }
 
         return redirect()->route('categories.index')->with('success', 'Category created successfully!');
@@ -71,7 +72,7 @@ class CategoryController extends Controller
             return redirect()->route('categories.index')->with('error', 'No branch connection found.');
         }
         $branchConnection = session('branch_connection');
-        $category = DB::connection($branchConnection)->table('categories')->where('id', $id)->first();
+        $category = Category::forDatabase($branchConnection)->where('id', $id)->first();
         if (!$category) {
             return redirect()->route('categories.index')->with('error', 'Category not found.');
         }
@@ -85,7 +86,7 @@ class CategoryController extends Controller
     {
         $branchConnection = session('branch_connection');
 
-        $category = DB::connection($branchConnection)->table('categories')->where('id', $id)->first();
+        $category = Category::forDatabase($branchConnection)->where('id', $id)->first();
 
         if (!$category) {
             return redirect()->route('categories.index')->with('error', 'Category not found.');
@@ -106,7 +107,7 @@ class CategoryController extends Controller
 
         $branchConnection = session('branch_connection');
 
-        $category = DB::connection($branchConnection)->table('categories')->where('id', $id)->first();
+        $category = Category::forDatabase($branchConnection)->where('id', $id)->first();
 
         if (!$category) {
             return redirect()->route('categories.index')->with('error', 'Category not found.');
@@ -119,7 +120,7 @@ class CategoryController extends Controller
             $imagePath = $request->file('image')->store('category', 'public');
         }
 
-        DB::connection($branchConnection)->table('categories')->where('id', $id)->update([
+        Category::forDatabase($branchConnection)->where('id', $id)->update([
             'name' => $request->name,
             'image' => $imagePath,
             'updated_at' => now(),
@@ -136,7 +137,7 @@ class CategoryController extends Controller
         $branchConnection = session('branch_connection');
 
         // Delete the category from the current branch connection
-        DB::connection($branchConnection)->table('categories')->where('id', $id)->delete();
+        Category::forDatabase($branchConnection)->where('id', $id)->delete();
 
         return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
     }

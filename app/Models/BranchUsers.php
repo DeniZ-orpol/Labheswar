@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasDynamicTable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -9,8 +10,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class BranchUsers extends Authenticatable
 {
-    use HasApiTokens, Notifiable;
-    protected $connection = null;
+    use HasApiTokens, Notifiable, HasDynamicTable;
+
     protected $table = 'branch_users';
     protected $fillable = [
         'name',
@@ -24,6 +25,7 @@ class BranchUsers extends Authenticatable
         'is_active',
         'last_login_at',
         'password_changed_at',
+        'remember_token',
         'role_id'
     ];
 
@@ -36,25 +38,19 @@ class BranchUsers extends Authenticatable
         'last_login_at' => 'datetime'
     ];
 
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
+    // public function __construct(array $attributes = [])
+    // {
+    //     parent::__construct($attributes);
         
-        // Set connection based on current branch context
-        if (session()->has('current_branch_connection')) {
-            $this->connection = session('current_branch_connection');
-        }
-    }
+    //     // Set connection based on current branch context
+    //     if (session()->has('current_branch_connection')) {
+    //         $this->connection = session('current_branch_connection');
+    //     }
+    // }
 
     public function role()
     {
         return $this->belongsTo(Role::class, 'role_id');
-    }
-
-    public function setConnection($name)
-    {
-        $this->connection = $name;
-        return $this;
     }
 
     public function isBranchAdmin()
@@ -68,6 +64,11 @@ class BranchUsers extends Authenticatable
                isset($this->permissions[$permission]) && 
                $this->permissions[$permission];
     }
+    // public function setConnection($name)
+    // {
+    //     $this->connection = $name;
+    //     return $this;
+    // }
 
     public function updateLastLogin()
     {
@@ -95,7 +96,7 @@ class BranchUsers extends Authenticatable
     public function tokens()
     {
         $tokenService = app(\App\Services\BranchTokenService::class);
-        return $tokenService->getUserTokens($this->id, $this->getConnectionName());
+        return $tokenService->getUserTokens($this->id, $this->getTable());
     }
 
     /**

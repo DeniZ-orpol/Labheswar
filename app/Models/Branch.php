@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Branch extends Model
 {
     use HasFactory;
-    protected $connection = 'master';
+    // protected $connection = 'master';
     protected $fillable = [
         'user_id',
         'name',
@@ -24,6 +24,15 @@ class Branch extends Model
         'longitude' => 'decimal:8'
     ];
 
+    /**
+     * Get the database name for this branch
+     */
+    public function getDatabaseName()
+    {
+        // Use the database_name field from your branches table
+        return $this->connection_name;
+    }
+
     public function user()
     {
         return $this->belongsTo(BranchUsers::class);
@@ -31,17 +40,19 @@ class Branch extends Model
 
     public function getBranchUsers()
     {
-        return BranchUsers::on($this->connection_name)->get();
+        return BranchUsers::forDatabase($this->getDatabaseName())->get();
     }
 
     public function getBranchUsersCount()
     {
-        return BranchUsers::on($this->connection_name)->count();
+        return BranchUsers::forDatabase($this->getDatabaseName())->count();
     }
 
     public function getActiveBranchUsersCount()
     {
-        return BranchUsers::on($this->connection_name)->where('is_active', true)->count();
+        return BranchUsers::forDatabase($this->getDatabaseName())
+            ->where('is_active', true)
+            ->count();
     }
 
 }

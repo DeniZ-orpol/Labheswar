@@ -66,9 +66,23 @@ class InventoryController extends Controller
 
         $branchConnection = session('branch_connection');
 
-        $inventories = Inventory::on($branchConnection)
-            ->with('product') // Eloquent relationship
-            ->get();
+        $inventories = Inventory::forDatabase($branchConnection)->get();
+
+        if ($inventories->isNotEmpty()) {
+            $productIds = $inventories->pluck('product_id')->unique()->filter();
+
+            if ($productIds->isNotEmpty()) {
+                $products = Product::forDatabase($branchConnection)
+                    ->whereIn('id', $productIds)
+                    ->get()
+                    ->keyBy('id');
+
+                // Attach products to inventories using Laravel's setRelation method
+                $inventories->each(function ($inventory) use ($products) {
+                    $inventory->setRelation('product', $products->get($inventory->product_id));
+                });
+            }
+        }
 
         return view('inventory.index', compact('inventories'));
     }
@@ -79,17 +93,10 @@ class InventoryController extends Controller
             return redirect()->route('login')->with('error', 'Please login as branch user.');
         }
 
-        // $request->validate([
-        //     'product_id' => 'required|integer',
-        //     'type' => 'required|in:IN,OUT',
-        //     'quantity' => 'required|numeric|min:0',
-        //     'reason' => 'nullable|string|max:255',
-        // ]);
-
         $branchConnection = session('branch_connection');
 
         try {
-            $existing = DB::connection($branchConnection)->table('inventory')
+            $existing = Inventory::forDatabase($branchConnection)
                 ->where('product_id', $request->product_id)
                 ->first();
 
@@ -102,7 +109,7 @@ class InventoryController extends Controller
                     $newQty -= $request->quantity;
                 }
 
-                DB::connection($branchConnection)->table('inventory')
+                Inventory::forDatabase($branchConnection)
                     ->where('product_id', $request->product_id)
                     ->update([
                         'quantity' => $newQty,
@@ -111,9 +118,9 @@ class InventoryController extends Controller
                     ]);
             } else {
                 // Insert new inventory row
-                DB::connection($branchConnection)->table('inventory')->insert([
+                Inventory::forDatabase($branchConnection)->insert([
                     'product_id' => $request->product_id,
-                    'quantity' => $request->type == 'IN' ? $request->quantity : -$request->quantity,
+                    'quantity' => strtoupper($request->type) == 'IN' ? $request->quantity : -$request->quantity,
                     'type' => $request->type,
                     'reason' => $request->reason,
                     'created_at' => now(),
@@ -140,7 +147,7 @@ class InventoryController extends Controller
         $branchConnection = session('branch_connection');
 
         // Fetch branch-wise products
-        $products = Product::on($branchConnection)->get();
+        $products = Product::forDatabase($branchConnection)->get();
 
         return view('inventory.create', compact('products'));
     }

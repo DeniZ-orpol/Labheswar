@@ -2,10 +2,15 @@
 
 namespace App\Models;
 
+use App\Traits\HasDynamicTable;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
+    use HasDynamicTable;
+
+    protected $table = 'products';
+
     protected $fillable = [
         'product_name',
         'barcode',
@@ -39,15 +44,18 @@ class Product extends Model
         'bonus_use',
     ];
 
-    public function company() {
+    public function company()
+    {
         return $this->belongsTo(Company::class);
     }
 
-    public function category() {
+    public function category()
+    {
         return $this->belongsTo(Category::class);
     }
 
-    public function hsnCode() {
+    public function hsnCode()
+    {
         return $this->belongsTo(HsnCode::class);
     }
 }

@@ -53,7 +53,7 @@ class AuthController extends Controller
 
         foreach ($branches as $branch) {
             try {
-                $branchUser = BranchUsers::on($branch->connection_name)
+                $branchUser = BranchUsers::forDatabase($branch->getDatabaseName())
                     ->where('email', $email)
                     ->where('is_active', true)
                     ->first();
@@ -62,13 +62,13 @@ class AuthController extends Controller
                     if (Hash::check($password, $branchUser->password)) {
                         // if ($branchUser && password_verify($password, $branchUser->password)) {
                         // Get role info
-                        $role = Role::on($branch->connection_name)->find($branchUser->role_id);
+                        $role = Role::forDatabase($branch->getDatabaseName())->find($branchUser->role_id);
 
                         // Handle remember me for branch users
                         if ($remember) {
                             $rememberToken = Str::random(60);
                             $branchUser->update([
-                                'remember_token' => hash('sha256', $rememberToken),
+                                'remember_token' => hash('sha256', data: $rememberToken),
                                 'last_login_at' => now()
                             ]);
 
@@ -104,14 +104,6 @@ class AuthController extends Controller
                 continue;
             }
         }
-        // if (Auth::attempt($request->only('email', 'password'), $request->filled('remember'))) {
-        //     $user = Auth::user();
-
-        //     // Check if user is Superadmin
-
-        //     return redirect()->route('dashboard');
-        // }
-
 
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
@@ -150,7 +142,7 @@ class AuthController extends Controller
 
             if ($branchConnection && $branchUserId) {
                 try {
-                    BranchUsers::on($branchConnection)
+                    BranchUsers::forDatabase($branchConnection)
                         ->where('id', $branchUserId)
                         ->update(['remember_token' => null]);
                 } catch (\Exception $e) {
@@ -188,7 +180,7 @@ class AuthController extends Controller
 
             if ($branchConnection && $branchUserId) {
                 try {
-                    return BranchUsers::on($branchConnection)->find($branchUserId);
+                    return BranchUsers::forDatabase($branchConnection)->find($branchUserId);
                 } catch (\Exception $e) {
                     return null;
                 }

@@ -25,9 +25,11 @@ class ProductController extends Controller
 
         $branchConnection = session('branch_connection');
 
-        $products = Product::on($branchConnection)
+        $products = Product::forDatabase($branchConnection)
             ->with(['category', 'company', 'hsnCode'])
             ->paginate(10);
+
+        // dd($products);
 
         return view('products.index', compact('products'));
     }

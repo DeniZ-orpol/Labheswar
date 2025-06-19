@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasDynamicTable;
 use Illuminate\Database\Eloquent\Model;
 
 class Role extends Model
 {
+    use HasDynamicTable;
     protected $fillable = [
         'role_name',
     ];

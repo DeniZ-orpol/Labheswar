@@ -38,7 +38,7 @@ Route::get('/clear-cache', function () {
     return "Cache cleared successfully";
 });
 
-Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::get('login', [AuthController::class, 'showLoginForm'])->name('login')->middleware('check.remember');;
 Route::post('login', [AuthController::class, 'login']);
 Route::get('logout', [AuthController::class, 'logout'])->name('logout');
 
