@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasDynamicTable;
 use Illuminate\Database\Eloquent\Model;
 
 class Purchase extends Model
 {
+    use HasDynamicTable;
     protected $table = 'purchase';
 
     protected $fillable = [

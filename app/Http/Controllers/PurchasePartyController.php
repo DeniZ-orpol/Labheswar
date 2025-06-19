@@ -19,7 +19,7 @@ class PurchasePartyController extends Controller
         // Get branch connection name from session
         $branchConnection = session('branch_connection');
 
-        $parties = PurchaseParty::on($branchConnection)->paginate(10);
+        $parties = PurchaseParty::forDatabase($branchConnection)->orderBy('id', 'desc')->paginate(10);
 
         return view('purchase.party.index', compact('parties'));
     }
@@ -52,7 +52,7 @@ class PurchasePartyController extends Controller
             'party_name' => $validate['party_name']
         ];
 
-        PurchaseParty::on($branchConnection)->create($data);
+        PurchaseParty::forDatabase($branchConnection)->create($data);
 
         return redirect()->route('purchase.party.index')->with('success', 'Purchase Party Created Successfully!');
     }
@@ -77,7 +77,7 @@ class PurchasePartyController extends Controller
         // Get branch connection name from session
         $branchConnection = session('branch_connection');
 
-        $party = PurchaseParty::on($branchConnection)->where('id', $id)->first();
+        $party = PurchaseParty::forDatabase($branchConnection)->where('id', $id)->first();
 
         return view('purchase.party.edit', compact('party'));
     }
@@ -98,7 +98,7 @@ class PurchasePartyController extends Controller
             'party_name' => 'required|string'
         ]);
 
-        $party = PurchaseParty::on($branchConnection)->findOrFail($id);
+        $party = PurchaseParty::forDatabase($branchConnection)->findOrFail($id);
 
         $party->update($validate);
 
@@ -111,5 +111,19 @@ class PurchasePartyController extends Controller
     public function destroy(string $id)
     {
         //
+
+        if (session('user_type') !== 'branch' || !session('branch_connection')) {
+            return redirect()->route('login')->with('error', 'Please login as branch user.');
+        }
+
+        $branchConnection = session('branch_connection');
+
+        // Find the product using branch connection
+        $party = PurchaseParty::forDatabase($branchConnection)->findOrFail($id);
+
+        // Delete the purchase party
+        $party->delete();
+
+        return redirect()->route('purchase.party.index')->with('success', 'Product deleted successfully!');
     }
 }

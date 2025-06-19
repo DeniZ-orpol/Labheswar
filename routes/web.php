@@ -93,6 +93,7 @@ Route::group(['middleware' => 'custom.auth', 'check.remember'], function () {
     Route::post('/purchase/party/store', [PurchasePartyController::class, 'store'])->name('purchase.party.store');
     Route::get('/purchase/party/{id}/edit', [PurchasePartyController::class, 'edit'])->name('purchase.party.edit');
     Route::put('/purchase/party/{id}/update', [PurchasePartyController::class, 'update'])->name('purchase.party.update');
+    Route::delete('/purchase/party/{id}/delete', [PurchasePartyController::class, 'destroy'])->name('purchase.party.destroy');
 });
 
 

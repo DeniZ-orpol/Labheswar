@@ -16,7 +16,7 @@
             <table id="DataTable" class="display table table-bordered intro-y col-span-12">
                 <thead>
                     <tr class="bg-primary font-bold text-white">
-                        <th>Id</th>
+                        <th>#</th>
                         <th>Party Name</th>
                         <th style="TEXT-ALIGN: left;">Actions</th>
                     </tr>
@@ -25,11 +25,11 @@
                     @if ($parties && $parties->count())
                         @foreach ($parties as $party)
                             <tr>
-                                <td>{{ $party->id }}</td>
+                                <td>{{ $loop->iteration }}</td>
                                 <td>{{ $party->party_name }}</td>
                                 <td>
                                     <div class="flex gap-2 justify-content-left">
-                                        <form action="#" method="POST"
+                                        <form action=" {{route('purchase.party.destroy', $party->id)}} " method="POST"
                                             onsubmit="return confirm('Are you sure you want to delete this role?');"
                                             style="display: inline-block;">
                                             @csrf

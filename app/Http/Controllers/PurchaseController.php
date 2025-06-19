@@ -24,11 +24,17 @@ class PurchaseController extends Controller
         // Get branch connection name from session
         $branchConnection = session('branch_connection');
 
-        $parties = PurchaseParty::on($branchConnection)->get();
-        $purchaseReceipt = PurchaseReceipt::on($branchConnection)
-            ->with(['purchaseParty', 'createUser', 'updateUser'])
-            ->orderByDesc('id')
-            ->get();
+        $parties = PurchaseParty::forDatabase($branchConnection)->get();
+        $purchaseReceipt = PurchaseReceipt::forDatabase($branchConnection)->orderByDesc('id')->paginate(10);
+
+        if ($purchaseReceipt->isNotEmpty()) {
+            $purchaseReceiptModel = new PurchaseParty();
+            $purchaseReceiptModel->setDynamicTable($branchConnection);
+            $purchaseReceiptModel->loadRelationsForPaginator($purchaseReceipt, ['purchaseParty', 'createUser', 'updateUser']);
+        }
+        // ->withDynamic(['purchaseParty', 'createUser', 'updateUser'])
+        // ->orderByDesc('id')
+        // ->get();
         // dd($purchaseReceipt);
         // $purchase = Purchase::on($branchConnection)->with('purchaseReceipt')->paginate();
 
@@ -47,8 +53,8 @@ class PurchaseController extends Controller
         // Get branch connection name from session
         $branchConnection = session('branch_connection');
 
-        $parties = PurchaseParty::on($branchConnection)->get();
-        $products = Product::on($branchConnection)->get();
+        $parties = PurchaseParty::forDatabase($branchConnection)->get();
+        $products = Product::forDatabase($branchConnection)->get();
         // dd($products);
 
         return view('purchase.create', compact(['parties', 'products']));
@@ -123,7 +129,7 @@ class PurchaseController extends Controller
 
             try {
                 // Create purchase receipt with calculated totals from frontend
-                $purchaseReceiptId = \DB::connection($branchConnection)->table('purchase_receipt')->insertGetId([
+                $purchaseReceiptId = PurchaseReceipt::forDatabase($branchConnection)->insertGetId([
                     'bill_date' => $validate['bill_date'],
                     'purchase_party_id' => $validate['party_name'],
                     'bill_no' => $validate['bill_no'],
@@ -145,14 +151,14 @@ class PurchaseController extends Controller
                 // Loop through each product and create purchase records with calculated values
                 foreach ($validate['product'] as $index => $productId) {
                     // Get product details for reference
-                    $product = \DB::connection($branchConnection)->table('products')->find($productId);
+                    $product = Product::forDatabase($branchConnection)->find($productId);
 
                     if (!$product) {
                         continue; // Skip if product not found
                     }
 
                     // Create purchase record with calculated values from frontend
-                    \DB::connection($branchConnection)->table('purchase')->insert([
+                    Purchase::forDatabase($branchConnection)->insert([
                         'bill_date' => $validate['bill_date'],
                         'purchase_receipt_id' => $purchaseReceiptId,
                         // 'purchase_party_id' => $validate['party_name'],
@@ -234,13 +240,15 @@ class PurchaseController extends Controller
         // Get branch connection name from session
         $branchConnection = session('branch_connection');
 
-        $parties = PurchaseParty::on($branchConnection)->get();
-        $products = Product::on($branchConnection)->get();
-        $purchaseReceipt = PurchaseReceipt::on($branchConnection)
-            ->with(['purchaseParty', 'createUser', 'updateUser'])
+        $parties = PurchaseParty::forDatabase($branchConnection)->get();
+        $products = Product::forDatabase($branchConnection)->get();
+        
+        $purchaseReceipt = PurchaseReceipt::forDatabase($branchConnection)
+            ->withDynamic(['purchaseParty', 'createUser', 'updateUser'])
             ->where('id', $id)
             ->first();
-        $purchaseItems = Purchase::on($branchConnection)
+
+        $purchaseItems = Purchase::forDatabase($branchConnection)
             ->where('purchase_receipt_id', $id)->get();
 
         // dd($purchaseItems);
@@ -316,10 +324,11 @@ class PurchaseController extends Controller
             ]);
 
             // Check if purchase receipt exists
-            $purchaseReceipt = \DB::connection($branchConnection)
-                ->table('purchase_receipt')
+            // $purchaseReceipt = \DB::connection($branchConnection)
+            $purchaseReceipt = PurchaseReceipt::forDatabase($branchConnection)
                 ->where('id', $id)
                 ->first();
+            // ->table('purchase_receipt')
 
             if (!$purchaseReceipt) {
                 return redirect()->route('purchase.index')
@@ -330,7 +339,7 @@ class PurchaseController extends Controller
 
             try {
                 // Update purchase receipt with calculated totals from frontend
-                \DB::connection($branchConnection)->table('purchase_receipt')
+                PurchaseReceipt::forDatabase($branchConnection)
                     ->where('id', $id)
                     ->update([
                         'bill_date' => $validate['bill_date'],
@@ -350,7 +359,7 @@ class PurchaseController extends Controller
                     ]);
 
                 // Get existing purchase items
-                $existingItems = \DB::connection($branchConnection)->table('purchase')
+                $existingItems = Purchase::forDatabase($branchConnection)
                     ->where('purchase_receipt_id', $id)
                     ->get()
                     ->keyBy('id');
@@ -360,7 +369,7 @@ class PurchaseController extends Controller
                 // Process each product from the form
                 foreach ($validate['product'] as $index => $productId) {
                     // Get product details for reference
-                    $product = \DB::connection($branchConnection)->table('products')->find($productId);
+                    $product = Product::forDatabase($branchConnection)->find($productId);
 
                     if (!$product) {
                         continue; // Skip if product not found
@@ -402,7 +411,7 @@ class PurchaseController extends Controller
 
                     if ($itemId && isset($existingItems[$itemId])) {
                         // Update existing item
-                        \DB::connection($branchConnection)->table('purchase')
+                        Purchase::forDatabase($branchConnection)
                             ->where('id', $itemId)
                             ->where('purchase_receipt_id', $id)
                             ->update($purchaseData);
@@ -413,7 +422,7 @@ class PurchaseController extends Controller
                         $purchaseData['purchase_receipt_id'] = $id;
                         $purchaseData['created_at'] = now();
 
-                        $newItemId = \DB::connection($branchConnection)->table('purchase')->insertGetId($purchaseData);
+                        $newItemId = Purchase::forDatabase($branchConnection)->insertGetId($purchaseData);
                         $processedItemIds[] = $newItemId;
                     }
                 }
@@ -421,7 +430,7 @@ class PurchaseController extends Controller
                 // Delete items that were removed (not in the current form submission)
                 $itemsToDelete = $existingItems->keys()->diff($processedItemIds);
                 if ($itemsToDelete->isNotEmpty()) {
-                    \DB::connection($branchConnection)->table('purchase')
+                    Purchase::forDatabase($branchConnection)
                         ->whereIn('id', $itemsToDelete->toArray())
                         ->where('purchase_receipt_id', $id)
                         ->delete();
@@ -467,8 +476,7 @@ class PurchaseController extends Controller
             $branchConnection = session('branch_connection');
 
             // Check if purchase receipt exists
-            $purchaseReceipt = \DB::connection($branchConnection)
-                ->table('purchase_receipt')
+            $purchaseReceipt = PurchaseReceipt::forDatabase($branchConnection)
                 ->where('id', $id)
                 ->first();
 
@@ -481,12 +489,12 @@ class PurchaseController extends Controller
 
             try {
                 // Delete purchase items first
-                \DB::connection($branchConnection)->table('purchase')
+                Purchase::forDatabase($branchConnection)
                     ->where('purchase_receipt_id', $id)
                     ->delete();
 
                 // Delete purchase receipt
-                \DB::connection($branchConnection)->table('purchase_receipt')
+                PurchaseReceipt::forDatabase($branchConnection)
                     ->where('id', $id)
                     ->delete();
 
