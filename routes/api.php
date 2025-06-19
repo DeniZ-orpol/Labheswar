@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [BranchAuthController::class, 'login']);
 
-Route::middleware('branch.auth')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [BranchAuthController::class, 'profile']);
     Route::post('/logout', [BranchAuthController::class, 'logout']);
 });

@@ -19,4 +19,9 @@ class Role extends Model
     {
         return $this->hasMany(BranchUsers::class);
     }
+    
+    public function branchUsers()
+    {
+        return $this->hasMany(User::class);
+    }
 }

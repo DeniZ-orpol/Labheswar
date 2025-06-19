@@ -6,11 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens;
 
     // protected $connection = 'master';
 
@@ -27,7 +28,12 @@ class User extends Authenticatable
         'password',
         'role',
         'dob',
-        // 'role_id',
+        'role_id',
+        'permission',
+        'is_active',
+        'last_login_at',
+        'password_changed_at',
+        'branch_id'
     ];
 
     /**
@@ -54,6 +60,15 @@ class User extends Authenticatable
         ];
     }
 
+    public function branch()  {
+        return $this->belongsTo(Branch::class, 'branch_id');
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
     public function isSuperAdmin()
     {
         return $this->role === 'Superadmin';
@@ -67,10 +82,5 @@ class User extends Authenticatable
     public function role_data()
     {
         return $this->hasOne(Role::class, 'id', 'role_id');
-    }
-
-    public function role()
-    {
-        return $this->belongsTo(Role::class);
     }
 }
