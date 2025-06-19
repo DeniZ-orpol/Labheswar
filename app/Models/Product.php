@@ -44,18 +44,18 @@ class Product extends Model
         'bonus_use',
     ];
 
-    public function company()
+    public function pCompany()
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Company::class, 'company');
     }
 
     public function category()
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(Category::class, 'category_id');
     }
 
     public function hsnCode()
     {
-        return $this->belongsTo(HsnCode::class);
+        return $this->belongsTo(HsnCode::class, 'hsn_code_id');
     }
 }

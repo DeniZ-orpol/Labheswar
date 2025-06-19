@@ -25,11 +25,15 @@ class ProductController extends Controller
 
         $branchConnection = session('branch_connection');
 
-        $products = Product::forDatabase($branchConnection)
-            ->with(['category', 'company', 'hsnCode'])
-            ->paginate(10);
+        // Get product with pagination first
+        $products = Product::forDatabase($branchConnection)->paginate(10);
 
-        // dd($products);
+        // Load relationships using trait method to get related data for product(For pagination only)
+        if ($products->isNotEmpty()) {
+            $productModel = new Product();
+            $productModel->setDynamicTable($branchConnection);
+            $productModel->loadRelationsForPaginator($products, ['category', 'pCompany', 'hsnCode']);
+        }
 
         return view('products.index', compact('products'));
     }
@@ -105,7 +109,7 @@ class ProductController extends Controller
             // Get or create related company
             $companyId = null;
             if (!empty($validate['product_company'])) {
-                $company = Company::on($branchConnection)->firstOrCreate(
+                $company = Company::forDatabase($branchConnection)->firstOrCreate(
                     ['name' => $validate['product_company']],
                     ['name' => $validate['product_company'], 'status' => 1]
                 );
@@ -115,7 +119,7 @@ class ProductController extends Controller
             // Handle Category - use branch connection
             $categoryId = null;
             if (!empty($validate['product_category'])) {
-                $category = Category::on($branchConnection)->firstOrCreate(
+                $category = Category::forDatabase($branchConnection)->firstOrCreate(
                     ['name' => $validate['product_category']],
                     ['name' => $validate['product_category'], 'status' => 1]
                 );
@@ -125,7 +129,7 @@ class ProductController extends Controller
             // Handle HSN Code - use branch connection
             $hsnCodeId = null;
             if (!empty($validate['hsn_code'])) {
-                $hsnCode = HsnCode::on($branchConnection)->firstOrCreate(
+                $hsnCode = HsnCode::forDatabase($branchConnection)->firstOrCreate(
                     ['hsn_code' => $validate['hsn_code']],
                     ['hsn_code' => $validate['hsn_code']]
                 );
@@ -167,7 +171,7 @@ class ProductController extends Controller
             ];
 
             // Create the product using branch connection
-            $product = Product::on($branchConnection)->create($data);
+            $product = Product::forDatabase($branchConnection)->create($data);
 
             // Redirect to product index with success message and product data
             return redirect()->route('products.index')
@@ -191,9 +195,11 @@ class ProductController extends Controller
 
         $branchConnection = session('branch_connection');
 
-        $product = Product::on($branchConnection)
-            ->with(['category', 'company', 'hsnCode'])
-            ->where('id', $id)->first();
+        // get single product data
+        $product = Product::forDatabase($branchConnection)
+            ->withDynamic(['category', 'pCompany', 'hsnCode'])
+            ->where('id', $id)
+            ->first();
 
         return view('products.show', compact('product'));
     }
@@ -210,9 +216,11 @@ class ProductController extends Controller
 
         $branchConnection = session('branch_connection');
 
-        $product = Product::on($branchConnection)
-            ->with(['category', 'company', 'hsnCode'])
-            ->where('id', $id)->first();
+        // get single product data
+        $product = Product::forDatabase($branchConnection)
+            ->withDynamic(['category', 'pCompany', 'hsnCode'])
+            ->where('id', $id)
+            ->first();
 
         // $product = Product::findOrFail($id);
         return view('products.edit', compact('product'));
@@ -265,9 +273,11 @@ class ProductController extends Controller
                 // 'gst_active' => 'nullable'
             ]);
 
-            $product = Product::on($branchConnection)
-                ->with(['category', 'company', 'hsnCode'])
-                ->find($id);
+            // get single product data
+            $product = Product::forDatabase($branchConnection)
+                ->withDynamic(['category', 'pCompany', 'hsnCode'])
+                ->where('id', $id)
+                ->first();
 
             // Upload new image if available
             $path = $product->image; // Keep existing image by default
@@ -285,7 +295,7 @@ class ProductController extends Controller
             // Handle Company - use branch connection
             $companyId = $product->company; // Keep existing company by default
             if (!empty($validate['product_company'])) {
-                $company = Company::on($branchConnection)->firstOrCreate(
+                $company = Company::forDatabase($branchConnection)->firstOrCreate(
                     ['name' => $validate['product_company']],
                     ['name' => $validate['product_company'], 'status' => 1]
                 );
@@ -295,7 +305,7 @@ class ProductController extends Controller
             // Handle Category - use branch connection
             $categoryId = $product->category_id; // Keep existing category by default
             if (!empty($validate['product_category'])) {
-                $category = Category::on($branchConnection)->firstOrCreate(
+                $category = Category::forDatabase($branchConnection)->firstOrCreate(
                     ['name' => $validate['product_category']],
                     ['name' => $validate['product_category'], 'status' => 1]
                 );
@@ -305,7 +315,7 @@ class ProductController extends Controller
             // Handle HSN Code - use branch connection
             $hsnCodeId = $product->hsn_code_id; // Keep existing HSN code by default
             if (!empty($validate['hsn_code'])) {
-                $hsnCode = HsnCode::on($branchConnection)->firstOrCreate(
+                $hsnCode = HsnCode::forDatabase($branchConnection)->firstOrCreate(
                     ['hsn_code' => $validate['hsn_code']],
                     ['hsn_code' => $validate['hsn_code']]
                 );
@@ -370,7 +380,7 @@ class ProductController extends Controller
         $branchConnection = session('branch_connection');
 
         // Find the product using branch connection
-        $product = Product::on($branchConnection)->findOrFail($id);
+        $product = Product::forDatabase($branchConnection)->findOrFail($id);
 
         // Delete product image if exists
         if ($product->image && \Storage::disk('public')->exists($product->image)) {

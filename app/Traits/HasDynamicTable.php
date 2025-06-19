@@ -2,9 +2,13 @@
 
 namespace App\Traits;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+
 trait HasDynamicTable
 {
     protected $baseTableName;
+    protected $currentDatabaseName; // Make sure this property exists
 
     /**
      * Initialize the trait
@@ -26,8 +30,7 @@ trait HasDynamicTable
         }
 
         if ($databaseName) {
-            $this->currentDatabaseName = $databaseName;
-            
+            $this->currentDatabaseName = $databaseName; // Store database name
             $this->setTable($databaseName . '.' . $this->baseTableName);
         }
         return $this;
@@ -59,60 +62,153 @@ trait HasDynamicTable
         return $this;
     }
 
+    // ADD ALL THE RELATIONSHIP METHODS FROM ABOVE HERE
+    // (Copy all the methods from the first part of this artifact)
+
     /**
-     * Override belongsTo to use dynamic database
+     * Load relationships for paginated results
      */
-    public function belongsTo($related, $foreignKey = null, $ownerKey = null, $relation = null)
+    public function loadRelationsForPaginator($paginator, $relations)
     {
-        $relation = parent::belongsTo($related, $foreignKey, $ownerKey, $relation);
-
-        if (isset($this->currentDatabaseName) && $this->currentDatabaseName) {
-            $relatedModel = $relation->getRelated();
-
-            if (method_exists($relatedModel, 'setDynamicTable')) {
-                $relatedModel->setDynamicTable($this->currentDatabaseName);
-                $relation->getQuery()->from($relatedModel->getTable());
-            }
+        if ($paginator->isEmpty()) {
+            return $paginator;
         }
 
-        return $relation;
+        $this->loadRelationsForModels($paginator->items(), $relations);
+        return $paginator;
     }
 
     /**
-     * Override hasOne to use dynamic database
+     * Load relations for a collection of models
      */
-    public function hasOne($related, $foreignKey = null, $localKey = null)
+    public function loadRelationsForModels($models, $relations)
     {
-        $relation = parent::hasOne($related, $foreignKey, $localKey);
+        $relations = is_string($relations) ? [$relations] : $relations;
 
-        if (isset($this->currentDatabaseName) && $this->currentDatabaseName) {
-            $relatedModel = $relation->getRelated();
-
-            if (method_exists($relatedModel, 'setDynamicTable')) {
-                $relatedModel->setDynamicTable($this->currentDatabaseName);
-                $relation->getQuery()->from($relatedModel->getTable());
-            }
+        foreach ($relations as $relationName) {
+            $this->loadSingleRelation($models, $relationName);
         }
-
-        return $relation;
     }
 
     /**
-     * Override hasMany to use dynamic database
+     * Load a single relation for all models
      */
-    public function hasMany($related, $foreignKey = null, $localKey = null)
+    protected function loadSingleRelation($models, $relationName)
     {
-        $relation = parent::hasMany($related, $foreignKey, $localKey);
+        $firstModel = collect($models)->first();
 
-        if (isset($this->currentDatabaseName) && $this->currentDatabaseName) {
-            $relatedModel = $relation->getRelated();
-
-            if (method_exists($relatedModel, 'setDynamicTable')) {
-                $relatedModel->setDynamicTable($this->currentDatabaseName);
-                $relation->getQuery()->from($relatedModel->getTable());
-            }
+        if (!$firstModel || !method_exists($firstModel, $relationName)) {
+            return;
         }
 
-        return $relation;
+        $relation = $firstModel->$relationName();
+
+        if ($relation instanceof \Illuminate\Database\Eloquent\Relations\BelongsTo) {
+            $this->loadBelongsToForCollection($models, $relationName, $relation);
+        } elseif ($relation instanceof \Illuminate\Database\Eloquent\Relations\HasMany) {
+            $this->loadHasManyForCollection($models, $relationName, $relation);
+        } elseif ($relation instanceof \Illuminate\Database\Eloquent\Relations\HasOne) {
+            $this->loadHasOneForCollection($models, $relationName, $relation);
+        }
+    }
+
+    /**
+     * Load belongsTo relation for collection
+     */
+    protected function loadBelongsToForCollection($models, $relationName, $relation)
+    {
+        $foreignKey = $relation->getForeignKeyName();
+        $ownerKey = $relation->getOwnerKeyName();
+        $relatedModel = $relation->getRelated();
+
+        $foreignKeys = collect($models)->pluck($foreignKey)->unique()->filter();
+
+        if ($foreignKeys->isEmpty()) {
+            return;
+        }
+
+        if (method_exists($relatedModel, 'setDynamicTable') && isset($this->currentDatabaseName)) {
+            $relatedModel->setDynamicTable($this->currentDatabaseName);
+        }
+
+        $relatedRecords = $relatedModel->whereIn($ownerKey, $foreignKeys)
+            ->get()
+            ->keyBy($ownerKey);
+
+        collect($models)->each(function ($model) use ($relationName, $foreignKey, $relatedRecords) {
+            $model->setRelation($relationName, $relatedRecords->get($model->$foreignKey));
+        });
+    }
+
+    /**
+     * Load hasMany relation for collection
+     */
+    protected function loadHasManyForCollection($models, $relationName, $relation)
+    {
+        $foreignKey = $relation->getForeignKeyName();
+        $localKey = $relation->getLocalKeyName();
+        $relatedModel = $relation->getRelated();
+
+        $localKeys = collect($models)->pluck($localKey)->unique()->filter();
+
+        if ($localKeys->isEmpty()) {
+            return;
+        }
+
+        if (method_exists($relatedModel, 'setDynamicTable') && isset($this->currentDatabaseName)) {
+            $relatedModel->setDynamicTable($this->currentDatabaseName);
+        }
+
+        $relatedRecords = $relatedModel->whereIn($foreignKey, $localKeys)->get();
+        $groupedRecords = $relatedRecords->groupBy($foreignKey);
+
+        collect($models)->each(function ($model) use ($relationName, $localKey, $groupedRecords) {
+            $related = $groupedRecords->get($model->$localKey, collect());
+            $model->setRelation($relationName, $related);
+        });
+    }
+
+    /**
+     * Load hasOne relation for collection
+     */
+    protected function loadHasOneForCollection($models, $relationName, $relation)
+    {
+        $foreignKey = $relation->getForeignKeyName();
+        $localKey = $relation->getLocalKeyName();
+        $relatedModel = $relation->getRelated();
+
+        $localKeys = collect($models)->pluck($localKey)->unique()->filter();
+
+        if ($localKeys->isEmpty()) {
+            return;
+        }
+
+        if (method_exists($relatedModel, 'setDynamicTable') && isset($this->currentDatabaseName)) {
+            $relatedModel->setDynamicTable($this->currentDatabaseName);
+        }
+
+        $relatedRecords = $relatedModel->whereIn($foreignKey, $localKeys)
+            ->get()
+            ->keyBy($foreignKey);
+
+        collect($models)->each(function ($model) use ($relationName, $localKey, $relatedRecords) {
+            $model->setRelation($relationName, $relatedRecords->get($model->$localKey));
+        });
+    }
+
+    /**
+     * Scope for loading relations with pagination support
+     */
+    public function scopeWithDynamic($query, $relations)
+    {
+        // For get() - return collection with relations
+        $models = $query->get();
+
+        if ($models->isEmpty()) {
+            return $models;
+        }
+
+        $this->loadRelationsForModels($models, $relations);
+        return $models;
     }
 }

@@ -17,7 +17,7 @@
                             <p><strong>Barcode:</strong> {{ $product->barcode }}</p>
                             <p><strong>Unit Type:</strong> {{ $product->unit_types }}</p>
                             <p><strong>Category:</strong> {{ $product->category->name ?? 'N/A' }}</p>
-                            <p><strong>Company:</strong> {{ $product->company_name ?? 'N/A' }}</p>
+                            <p><strong>Company:</strong> {{ $product->pCompany->name ?? 'N/A' }}</p>
                             <p><strong>HSN Code:</strong> {{ $product->hsnCode->hsn_code ?? 'N/A' }}</p>
                             <p><strong>Decimal Button:</strong> {{ $product->decimal_btn ? 'Yes' : 'No' }}</p>
                             <p><strong>Sale Online:</strong> {{ $product->sale_online ? 'Yes' : 'No' }}</p>
@@ -40,7 +40,7 @@
                             <p><strong>Discount:</strong> {{ $product->discount ?? 'N/A' }}</p>
                             <p><strong>Max Discount:</strong> {{ $product->max_discount }}%</p>
                             <p><strong>Discount Scheme:</strong> {{ $product->discount_scheme ?? 'N/A' }}</p>
-                            <p><strong>Bonus Use:</strong> {{ $product->bonus_use ? 'Yes' : 'No' }}</p>php 
+                            <p><strong>Bonus Use:</strong> {{ $product->bonus_use ? 'Yes' : 'No' }}</p>
                         </div>
 
                         <!-- RIGHT COLUMN -->

@@ -90,7 +90,7 @@
                             Company
                         </label>
                         <input id="product_company" type="text" name="product_company" class="form-control field-new"
-                            value="{{ $product->company->name ?? '' }}">
+                            value="{{ $product->pCompany->name ?? '' }}">
                     </div>
 
                     <!-- category -->
