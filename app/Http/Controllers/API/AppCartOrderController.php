@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppCartsOrderBill;
 use App\Models\AppCartsOrders;
 use App\Models\Branch;
 use App\Models\Cart;
@@ -367,6 +368,226 @@ class AppCartOrderController extends Controller
                     'cart_items' => $cartItems,
                     'total_items' => $totalItems,
                     'cart_total' => $cartTotal,
+                    'branch' => $branch->name
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Create Cart order bill
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function createCartOrderReceipt(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            // Validate request
+            $request->validate([
+                'cart_id' => 'required|integer',
+                // 'bill_due_date' => 'sometimes|date',
+                // 'payment_status' => 'sometimes|in:pending,paid,failed',
+                // 'discount_rs' => 'sometimes|numeric|min:0',
+                // 'discount_percentage' => 'sometimes|numeric|min:0|max:100',
+                // 'is_delivery' => 'sometimes|boolean',
+                // 'address_id' => 'sometimes|integer',
+                // 'ship_to_name' => 'sometimes|string|max:255',
+                // 'expected_delivery_date' => 'sometimes|date',
+                // 'razorpay_payment_id' => 'sometimes|string'
+            ]);
+
+            $branch = Branch::where('id', $user->branch_id)
+                ->where('status', 'active')
+                ->first();
+
+            if (!$branch) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No accessible branch found'
+                ], 404);
+            }
+
+            configureBranchConnection($branch);
+
+            DB::connection($branch->connection_name)->beginTransaction();
+
+            try {
+                $cartId = $request->input('cart_id');
+
+                // Get cart and verify it exists
+                $cart = Cart::on($branch->connection_name)
+                    ->where('id', $cartId)
+                    ->first();
+
+                if (!$cart) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cart not found'
+                    ], 404);
+                }
+
+                // Get cart items to calculate totals
+                $cartItems = AppCartsOrders::on($branch->connection_name)
+                    ->where('cart_id', $cartId)
+                    ->get();
+
+                if ($cartItems->isEmpty()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cart is empty, cannot create bill'
+                    ], 400);
+                }
+
+                // Calculate totals
+                $subTotal = $cartItems->sum('sub_total');
+                $totalTaxes = $cartItems->sum('gst');
+                $discountRs = $request->input('discount_rs', 0);
+                $discountPercentage = $request->input('discount_percentage', 0);
+
+                // Apply percentage discount to subtotal
+                if ($discountPercentage > 0) {
+                    $discountRs += ($subTotal * $discountPercentage) / 100;
+                }
+
+                $total = $subTotal + $totalTaxes - $discountRs;
+
+                // Create order bill
+                $orderBill = AppCartsOrderBill::on($branch->connection_name)->create([
+                    'cart_id' => $cartId,
+                    'total_texes' => $totalTaxes,
+                    'sub_total' => $subTotal,
+                    'total' => $total,
+                    'customer_name' => $request->input('customer_name'),
+                    'customer_contact' => $request->input('customer_contact'),
+                    'razorpay_payment_id' => $request->input('razorpay_payment_id'),
+                    'bill_due_date' => $request->input('bill_due_date'),
+                    'payment_status' => $request->input('payment_status', 'pending'),
+                    'status' => 'active',
+                    'user_id' => $user->id,
+                    'discount_rs' => $discountRs,
+                    'discount_percentage' => $request->input('discount_percentage', 0),
+                    'return_order' => 0,
+                    'is_delivery' => $request->input('is_delivery', false),
+                    'address_id' => $request->input('address_id'),
+                    'ship_to_name' => $request->input('ship_to_name'),
+                    'expected_delivery_date' => $request->input('expected_delivery_date')
+                ]);
+
+                // Optional: Clear cart after bill creation
+                if ($request->input('clear_cart', true)) { // Default to true
+                    // Make cart available again
+                    $cart->update([
+                        'user_id' => null,
+                        'status' => 'available'
+                    ]);
+                }
+
+                DB::connection($branch->connection_name)->commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Order bill created successfully',
+                    'data' => [
+                        'bill_id' => $orderBill->id,
+                        'cart_id' => $cartId,
+                        'customer_name' => $orderBill->customer_name,
+                        'sub_total' => $orderBill->sub_total,
+                        'total_taxes' => $orderBill->total_texes,
+                        'discount_rs' => $orderBill->discount_rs,
+                        'total' => $orderBill->total,
+                        'payment_status' => $orderBill->payment_status,
+                        'is_delivery' => $orderBill->is_delivery,
+                        'branch' => $branch->name
+                    ]
+                ]);
+
+            } catch (Exception $e) {
+                DB::connection($branch->connection_name)->rollback();
+                throw $e;
+            }
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get List of occupied carts
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function getCartList(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            $branch = Branch::where('id', $user->branch_id)
+                ->where('status', 'active')
+                ->first();
+
+            if (!$branch) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No accessible branch found'
+                ], 404);
+            }
+
+            configureBranchConnection($branch);
+
+            // Get all unavailable carts with user details and cart items count
+            $unavailableCarts = Cart::on($branch->connection_name)
+                ->with(['user:id,name,email'])
+                ->where('status', 'unavailable')
+                ->get();
+
+            // Add cart items count and total amount for each cart
+            $cartsWithDetails = $unavailableCarts->map(function ($cart) use ($branch) {
+                $cartItems = AppCartsOrders::on($branch->connection_name)
+                    ->where('cart_id', $cart->id)
+                    ->get();
+
+                return [
+                    'cart_id' => $cart->id,
+                    'user_id' => $cart->user_id,
+                    'user_name' => $cart->user ? $cart->user->name : null,
+                    'user_email' => $cart->user ? $cart->user->email : null,
+                    'status' => $cart->status,
+                    'total_items' => $cartItems->sum('product_quantity'),
+                    'total_amount' => $cartItems->sum('total_amount'),
+                    'items_count' => $cartItems->count(),
+                    'created_at' => $cart->created_at,
+                    'updated_at' => $cart->updated_at
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'cart_list' => $cartsWithDetails,
+                    'total_carts' => $cartsWithDetails->count(),
                     'branch' => $branch->name
                 ]
             ]);
