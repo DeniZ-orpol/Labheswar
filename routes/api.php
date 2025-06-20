@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Cart API
     Route::post('/add-to-cart', [AppCartOrderController::class,'addProductToCart']);
+    Route::post('/get-cart-items', [AppCartOrderController::class, 'getCartItems']);
 });
 
 // Route::post('/products/store', [ProductController::class, 'store']);

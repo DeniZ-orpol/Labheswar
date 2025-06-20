@@ -285,4 +285,97 @@ class AppCartOrderController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get selected cart items
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function getCartItems(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            // Validate request
+            $request->validate([
+                'cart_id' => 'required|integer'
+            ]);
+
+            $cartId = $request->input('cart_id');
+
+            $branch = Branch::where('id', $user->branch_id)
+                ->where('status', 'active')
+                ->first();
+
+            if (!$branch) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No accessible branch found'
+                ], 404);
+            }
+
+            configureBranchConnection($branch);
+
+            // Get selected cart
+            $cart = Cart::on($branch->connection_name)
+                ->where('id', $cartId)
+                ->first();
+
+            if (!$cart) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cart not found'
+                ], 404);
+            }
+
+            // Get cart items with product details
+            $cartItems = AppCartsOrders::on($branch->connection_name)
+                ->with(['product'])
+                ->where('cart_id', $cartId)
+                ->get();
+
+            if ($cartItems->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cart is empty',
+                    'data' => [
+                        'cart_id' => $cart->id,
+                        'cart_status' => $cart->status,
+                        'cart_items' => [],
+                        'total_items' => 0,
+                        'cart_total' => 0,
+                        'branch' => $branch->name
+                    ]
+                ]);
+            }
+
+            $cartTotal = $cartItems->sum('total_amount');
+            $totalItems = $cartItems->sum('product_quantity');
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'cart_id' => $cart->id,
+                    'cart_status' => $cart->status,
+                    'user_id' => $cart->user_id,
+                    'cart_items' => $cartItems,
+                    'total_items' => $totalItems,
+                    'cart_total' => $cartTotal,
+                    'branch' => $branch->name
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
