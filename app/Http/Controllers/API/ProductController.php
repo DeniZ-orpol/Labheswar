@@ -10,6 +10,7 @@ use App\Models\HsnCode;
 use App\Models\Product;
 use Carbon\Exceptions\Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -28,44 +29,44 @@ class ProductController extends Controller
     {
         //
     }
-    public function findProductByBarcode($barcode)
-    {
-        $matchingProducts = [];
-        $branches = Branch::where('status', 'active')->get();
+    // public function findProductByBarcode($barcode)
+    // {
+    //     $matchingProducts = [];
+    //     $branches = Branch::where('status', 'active')->get();
 
-        foreach ($branches as $branch) {
-            try {
-                $product = Product::on($branch->connection_name)
-                    ->where('barcode', $barcode)
-                    ->value('id');
+    //     foreach ($branches as $branch) {
+    //         try {
+    //             $product = Product::on($branch->connection_name)
+    //                 ->where('barcode', $barcode)
+    //                 ->value('id');
 
-                if ($product) {
-                    $matchingProducts[] = [
-                        'branch' => $branch->name,
-                        'branch_connection' => $branch->connection_name,
-                        'product' => $product
-                    ];
-                }
-            } catch (\Exception $e) {
-                $matchingProducts[] = [
-                    'branch' => $branch->name,
-                    'error' => $e->getMessage()
-                ];
-            }
-        }
+    //             if ($product) {
+    //                 $matchingProducts[] = [
+    //                     'branch' => $branch->name,
+    //                     'branch_connection' => $branch->connection_name,
+    //                     'product' => $product
+    //                 ];
+    //             }
+    //         } catch (\Exception $e) {
+    //             $matchingProducts[] = [
+    //                 'branch' => $branch->name,
+    //                 'error' => $e->getMessage()
+    //             ];
+    //         }
+    //     }
 
-        if (empty($matchingProducts)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Product not found in any branch.'
-            ], 404);
-        }
+    //     if (empty($matchingProducts)) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Product not found in any branch.'
+    //         ], 404);
+    //     }
 
-        return response()->json([
-            'success' => true,
-            'data' => $matchingProducts
-        ]);
-    }
+    //     return response()->json([
+    //         'success' => true,
+    //         'data' => $matchingProducts
+    //     ]);
+    // }
 
     /**
      * Store a newly created resource in storage.
@@ -73,14 +74,28 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         try {
+            $user = auth()->user();
 
-            // Check if user is logged in as branch
-            if (session('user_type') !== 'branch' || !session('branch_connection')) {
-                return redirect()->back()->with('error', 'Branch session not found. Please login again.');
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
             }
 
-            // Get branch connection name from session
-            $branchConnection = session('branch_connection');
+            // Check if user is active
+            if ($user->is_active == '0') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User account is not active'
+                ], 403);
+            }
+
+            $userBranch = Branch::where('id', $user->branch_id)
+                ->where('status', 'active')
+                ->first();
+
+            configureBranchConnection($userBranch);
 
             $validate = $request->validate([
                 'product_barcode' => 'required|string|max:255',
@@ -115,9 +130,6 @@ class ProductController extends Controller
                 'gst_active' => 'nullable'
             ]);
 
-            // upload product image
-            // dd($validate);
-
             // Upload product image (optional)
             $path = null;
             if ($request->hasFile('product_image')) {
@@ -130,7 +142,7 @@ class ProductController extends Controller
             // Get or create related company
             $companyId = null;
             if (!empty($validate['product_company'])) {
-                $company = Company::on($branchConnection)->firstOrCreate(
+                $company = Company::on($userBranch->connection_name)->firstOrCreate(
                     ['name' => $validate['product_company']],
                     ['name' => $validate['product_company'], 'status' => 1]
                 );
@@ -140,7 +152,7 @@ class ProductController extends Controller
             // Handle Category - use branch connection
             $categoryId = null;
             if (!empty($validate['product_category'])) {
-                $category = Category::on($branchConnection)->firstOrCreate(
+                $category = Category::on($userBranch->connection_name)->firstOrCreate(
                     ['name' => $validate['product_category']],
                     ['name' => $validate['product_category'], 'status' => 1]
                 );
@@ -150,7 +162,7 @@ class ProductController extends Controller
             // Handle HSN Code - use branch connection
             $hsnCodeId = null;
             if (!empty($validate['hsn_code'])) {
-                $hsnCode = HsnCode::on($branchConnection)->firstOrCreate(
+                $hsnCode = HsnCode::on($userBranch->connection_name)->firstOrCreate(
                     ['hsn_code' => $validate['hsn_code']],
                     ['hsn_code' => $validate['hsn_code']]
                 );
@@ -192,74 +204,471 @@ class ProductController extends Controller
             ];
 
             // Create the product using branch connection
-            $product = Product::on($branchConnection)->create($data);
+            $product = Product::on($userBranch->connection_name)->create($data);
 
-            // Redirect to product index with success message and product data
-            return redirect()->route('products.index')
-                ->with('success', 'Product created successfully!');
-            // ->with('product', $product);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Product created successfully',
+                'data' => $product
+            ], 200);
+
         } catch (Exception $ex) {
-            // dd($ex->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => $ex->getMessage()
+            ]);
         }
     }
 
     /**
      * Display the specified resource.
      */
-    public function showAllProducts()
-    {
-        $allProducts = [];
-        $branches = Branch::where('status', 'active')->get();
+    // public function showAllProducts()
+    // {
+    //     $allProducts = [];
+    //     $branches = Branch::where('status', 'active')->get();
 
-        foreach ($branches as $branch) {
+    //     foreach ($branches as $branch) {
+    //         try {
+    //             $this->configureBranchConnection($branch);
+    //             $products = Product::on($branch->connection_name)->get();
+
+    //             $allProducts[] = [
+    //                 'branch' => $branch->name,
+    //                 'products' => $products
+    //             ];
+    //         } catch (\Exception $e) {
+    //             $allProducts[] = [
+    //                 'branch' => $branch->name,
+    //                 'error' => $e->getMessage()
+    //             ];
+    //         }
+    //     }
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'data' => $allProducts
+    //     ]);
+    // }
+
+    /**
+     * Show all Products for login branch
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function showAllProducts(Request $request)
+    {
+        try {
+            // Get authenticated user from token
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            // Check if user is active
+            if ($user->is_active == '0') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User account is not active'
+                ], 403);
+            }
+
+            // Get user's branch from master database
+            $userBranch = Branch::where('id', $user->branch_id)
+                ->where('status', 'active')
+                ->first();
+
+            // If user has no branch or branch is inactive
+            if (!$userBranch) {
+                return response()->json([
+                    'success' => false,
+                    'data' => [],
+                    'message' => 'No accessible branch found for user'
+                ]);
+            }
+
+            $allProducts = [];
+
             try {
-                $products = Product::on($branch->connection_name)->get();
+                // Dynamically configure branch database connection
+                configureBranchConnection($userBranch);
+
+                // Fetch products from branch database
+                $products = Product::on($userBranch->connection_name)->get();
 
                 $allProducts[] = [
-                    'branch' => $branch->name,
+                    'branch' => $userBranch->name,
+                    'connection' => $userBranch->connection_name,
                     'products' => $products
                 ];
             } catch (\Exception $e) {
                 $allProducts[] = [
-                    'branch' => $branch->name,
+                    'branch' => $userBranch->name,
+                    'connection' => $userBranch->connection_name,
                     'error' => $e->getMessage()
                 ];
             }
-        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $allProducts
-        ]);
+            return response()->json([
+                'status' => 'success',
+                'data' => $allProducts,
+                'user' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ]
+            ]);
+
+        } catch (\Exception $ex) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Server error: ' . $ex->getMessage()
+            ], 500);
+        }
     }
 
-
-    public function showCategoriesFromAllBranches()
+    /**
+     * Summary of getCategories
+     * @return mixed|\Illuminate\Http\JsonResponse
+     * Get All categories from login branch
+     */
+    public function getCategories()
     {
-        $allCategories = [];
-        $branches = Branch::where('status', 'active')->get();
+        try {
+            // Get authenticated user from token
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
 
-        foreach ($branches as $branch) {
+            // Check if user is active
+            if ($user->is_active == '0') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User account is not active'
+                ], 403);
+            }
+
+            // Get user's branch from master database
+            $userBranch = Branch::where('id', $user->branch_id)
+                ->where('status', 'active')
+                ->first();
+
+            // If user has no branch or branch is inactive
+            if (!$userBranch) {
+                return response()->json([
+                    'success' => false,
+                    'data' => [],
+                    'message' => 'No accessible branch found for user'
+                ]);
+            }
+
+            $allCategories = [];
+
             try {
-                $categories = Category::on($branch->connection_name)->get();
+                // Dynamically configure branch database connection
+                configureBranchConnection($userBranch);
+
+                // Fetch products from branch database
+                $categories = Category::on($userBranch->connection_name)->get();
 
                 $allCategories[] = [
-                    'branch' => $branch->name,
-                    'connection' => $branch->connection_name,
+                    'branch' => $userBranch->name,
+                    'connection' => $userBranch->connection_name,
                     'categories' => $categories
                 ];
             } catch (\Exception $e) {
-                \Log::error("Error in branch '{$branch->name}' (conn: {$branch->connection_name}): " . $e->getMessage());
-
                 $allCategories[] = [
-                    'branch' => $branch->name,
+                    'branch' => $userBranch->name,
+                    'connection' => $userBranch->connection_name,
                     'error' => $e->getMessage()
                 ];
             }
+
+            return response()->json([
+                'success' => true,
+                'data' => $allCategories,
+                'user' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Summary of getCompanies
+     * @return mixed|\Illuminate\Http\JsonResponse
+     * Get all companies from login branch
+     */
+    public function getCompanies()
+    {
+        try {
+            // Get authenticated user from token
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            // Check if user is active
+            if ($user->is_active == '0') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User account is not active'
+                ], 403);
+            }
+
+            // Get user's branch from master database
+            $userBranch = Branch::where('id', $user->branch_id)
+                ->where('status', 'active')
+                ->first();
+
+            // If user has no branch or branch is inactive
+            if (!$userBranch) {
+                return response()->json([
+                    'success' => false,
+                    'data' => [],
+                    'message' => 'No accessible branch found for user'
+                ]);
+            }
+
+            $allCompanies = [];
+
+            try {
+                // Dynamically configure branch database connection
+                configureBranchConnection($userBranch);
+
+                // Fetch products from branch database
+                $companies = Company::on($userBranch->connection_name)->get();
+
+                $allCompanies[] = [
+                    'branch' => $userBranch->name,
+                    'connection' => $userBranch->connection_name,
+                    'companies' => $companies
+                ];
+            } catch (\Exception $e) {
+                $allCompanies[] = [
+                    'branch' => $userBranch->name,
+                    'connection' => $userBranch->connection_name,
+                    'error' => $e->getMessage()
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $allCompanies,
+                'user' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Summary of getHsnCode
+     * @return mixed|\Illuminate\Http\JsonResponse
+     * Get HSN Code from login branch
+     */
+    public function getHsnCode()
+    {
+        try {
+            // Get authenticated user from token
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            // Check if user is active
+            if ($user->is_active == '0') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User account is not active'
+                ], 403);
+            }
+
+            // Get user's branch from master database
+            $userBranch = Branch::where('id', $user->branch_id)
+                ->where('status', 'active')
+                ->first();
+
+            // If user has no branch or branch is inactive
+            if (!$userBranch) {
+                return response()->json([
+                    'success' => false,
+                    'data' => [],
+                    'message' => 'No accessible branch found for user'
+                ]);
+            }
+
+            $allHsnCode = [];
+
+            try {
+                // Dynamically configure branch database connection
+                configureBranchConnection($userBranch);
+
+                // Fetch products from branch database
+                $hsnCodes = HsnCode::on($userBranch->connection_name)->get();
+
+                $allHsnCode[] = [
+                    'branch' => $userBranch->name,
+                    'connection' => $userBranch->connection_name,
+                    'companies' => $hsnCodes
+                ];
+            } catch (\Exception $e) {
+                $allHsnCode[] = [
+                    'branch' => $userBranch->name,
+                    'connection' => $userBranch->connection_name,
+                    'error' => $e->getMessage()
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $allHsnCode,
+                'user' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    /**
+     * Search product by barcode, product_name or search_option
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function searchProduct(Request $request)
+    {
+        try {
+            // Get authenticated user from token
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            // Check if user is active
+            if ($user->is_active == '0') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User account is not active'
+                ], 403);
+            }
+
+            // Get user's branch from master database
+            $userBranch = Branch::where('id', $user->branch_id)
+                ->where('status', 'active')
+                ->first();
+
+            // If user has no branch or branch is inactive
+            if (!$userBranch) {
+                return response()->json([
+                    'success' => false,
+                    'data' => [],
+                    'message' => 'No accessible branch found for user'
+                ]);
+            }
+
+            // Configure branch database connection
+            configureBranchConnection($userBranch);
+
+            $request->validate([
+                'search_keyword' => 'required|string|min:1',
+                'search_type' => 'nullable'
+            ]);
+
+            $searchKeyword = trim($request->input('search_keyword'));
+            $searchType = strtolower($request->input('search_type'));
+
+            // Build search query based on search type
+            $query = Product::on($userBranch->connection_name);
+
+            if ($searchType === 'barcode') {
+                $query->where('barcode', $searchKeyword);
+            } else {
+                $query->where('product_name', 'LIKE', '%' . $searchKeyword . '%')
+                    ->orWhere('search_option', 'LIKE', '%' . $searchKeyword . '%');
+            }
+
+            $products = $query->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'branch' => $userBranch->name,
+                    'branch_code' => $userBranch->code,
+                    'search_query' => $searchKeyword,
+                    'search_type' => $searchType,
+                    'total_found' => $products->count(),
+                    'products' => $products
+                ]
+            ]);
+        } catch (Exception $ex) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $ex->getMessage()
+            ], 500);
         }
 
-        return response()->json($allCategories);
     }
+
+    // public function showCategoriesFromAllBranches()
+    // {
+    //     $allCategories = [];
+    //     $branches = Branch::where('status', 'active')->get();
+
+    //     foreach ($branches as $branch) {
+    //         try {
+    //             $categories = Category::on($branch->connection_name)->get();
+
+    //             $allCategories[] = [
+    //                 'branch' => $branch->name,
+    //                 'connection' => $branch->connection_name,
+    //                 'categories' => $categories
+    //             ];
+    //         } catch (\Exception $e) {
+    //             \Log::error("Error in branch '{$branch->name}' (conn: {$branch->connection_name}): " . $e->getMessage());
+
+    //             $allCategories[] = [
+    //                 'branch' => $branch->name,
+    //                 'error' => $e->getMessage()
+    //             ];
+    //         }
+    //     }
+
+    //     return response()->json($allCategories);
+    // }
 
     /**
      * Show the form for editing the specified resource.
