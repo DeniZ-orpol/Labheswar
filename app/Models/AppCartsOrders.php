@@ -6,10 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class AppCartsOrders extends Model
 {
-    protected $table = 'app_carts_orders';
+    protected $table = 'app_cart_order';
 
     protected $fillable = [
-        'branch_user_id',
+        'user_id',
         'cart_id',
         'product_id',
         'firm_id',
@@ -21,17 +21,17 @@ class AppCartsOrders extends Model
         'total_amount',
         'gst',
         'gst_p',
-        'return_product'
+        'return_product',
     ];
 
-    public function branchUser()
+    public function user()
     {
-        return $this->belongsTo(BranchUsers::class, 'branch_user_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function cart()
     {
-        return $this->belongsTo(AppCarts::class, 'cart_id');
+        return $this->belongsTo(Cart::class, 'cart_id');
     }
 
     public function product()

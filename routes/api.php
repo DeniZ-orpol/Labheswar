@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\AppCartOrderController;
 use App\Http\Controllers\API\BranchAuthController;
 use App\Http\Controllers\API\ProductController;
 use Illuminate\Http\Request;
@@ -23,6 +24,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/hsn-code', [ProductController::class, 'getHsnCode']);
     Route::post('/search-product', [ProductController::class, 'searchProduct']);
 
+    // Cart API
+    Route::post('/add-to-cart', [AppCartOrderController::class,'addProductToCart']);
 });
 
 // Route::post('/products/store', [ProductController::class, 'store']);

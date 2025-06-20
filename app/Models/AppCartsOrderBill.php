@@ -14,24 +14,26 @@ class AppCartsOrderBill extends Model
         'sub_total',
         'total',
         'customer_name',
-        'customer_contact_number',
-        'type',
+        'customer_contact',
         'razorpay_payment_id',
         'bill_due_date',
         'payment_status',
         'status',
-        'admin_client_id',
         'user_id',
-        'discount',
-        'discount_in_percentage',
+        'discount_rs',
+        'discount_percentage',
         'return_order',
         'is_delivery',
         'address_id',
         'ship_to_name',
-        'expected_delivery_date'
+        'expected_delivery_date',
     ];
 
     public function cart(){
-        return $this->belongsTo(AppCarts::class, 'cart_id');
+        return $this->belongsTo(Cart::class, 'cart_id');
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class, 'cart_id');
     }
 }
