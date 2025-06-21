@@ -12,9 +12,9 @@ if (!function_exists('configureBranchConnection')) {
     function configureBranchConnection($branch)
     {
         $branchConfig = [
-            'driver' => env('DB_CONNECTION', 'mysql'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
+            'driver' => env('DB_CONNECTION'),
+            'host' => env('DB_HOST'),
+            'port' => env('DB_PORT'),
             'database' => $branch->database_name,
             'username' => env('DB_USERNAME'),
             'password' => env('DB_PASSWORD'),
