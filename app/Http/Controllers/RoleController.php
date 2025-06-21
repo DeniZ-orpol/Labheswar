@@ -13,26 +13,7 @@ class RoleController extends Controller
      */
     public function index()
     {
-        $allRoles = collect();
-
-        // Get all branches
-        $branches = Branch::all();
-
-        foreach ($branches as $branch) {
-            try {
-                $branchRoles = Role::forDatabase($branch->getDatabaseName())
-                    ->where('role_name', '!=', 'Superadmin')
-                    ->get();
-
-                $allRoles = $allRoles->merge($branchRoles);
-
-            } catch (\Exception $e) {
-                \Log::warning("Could not access roles from branch {$branch->name}: " . $e->getMessage());
-            }
-        }
-
-        // $roles = Role::where('role_name', '!=', 'Superadmin')->get(); // Exclude Superadmin
-        $roles = $allRoles->unique('role_name')->sortByDesc('created_at')->values();
+        $roles = Role::where('role_name', '!=', 'Super Admin')->get();
         return view('roles.index', compact('roles'));
     }
 
@@ -54,17 +35,12 @@ class RoleController extends Controller
         ]);
 
         $roleName = $validatedData['role_name'];
-
-        $branches = Branch::all();
-
-        foreach ($branches as $branch) {
-            try {
-                Role::forDatabase($branch->getDatabaseName())->firstOrCreate(['role_name' => $roleName]);
-            } catch (\Exception $e) {
-                return redirect()->back()->with('error', 'Role creation failed.');
-            }
+        try {
+            Role::create(['role_name' => $roleName]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Role creation failed.');
         }
-        // $branches = Branch::all();
+
         return redirect()->route('roles.index')->with('success', 'Role created successfully.');
     }
 
@@ -80,18 +56,9 @@ class RoleController extends Controller
      */
     public function edit(string $id)
     {
-        // $role = Role::findOrFail($id);
-        $branches = Branch::all();
-        $role = null;
+        $role = Role::findOrFail($id);
 
-        foreach ($branches as $branch) {
-            try {
-                $role = Role::forDatabase($branch->getDatabaseName())->findOrFail($id);
-                break;
-            } catch (\Exception $e) {
-                continue;
-            }
-        }
+
         return view('roles.edit', compact('role'));
     }
 
@@ -105,14 +72,8 @@ class RoleController extends Controller
         ]);
 
         $roleName = $validatedData['role_name'];
-        $branches = Branch::all();
-        foreach ($branches as $branch) {
-            try {
-                Role::forDatabase($branch->getDatabaseName())->where('id', $id)->update(['role_name' => $roleName]);
-            } catch (\Exception $e) {
-                return redirect()->route('roles.index')->with('error', 'Role update failed.');
-            }
-        }
+
+        Role::where('id', $id)->update(['role_name' => $roleName]);
 
         return redirect()->route('roles.index')->with('success', 'Role updated successfully.');
     }
@@ -122,15 +83,9 @@ class RoleController extends Controller
      */
     public function destroy(string $id)
     {
-        $branches = Branch::all();
 
-        foreach ($branches as $branch) {
-            try {
-                Role::forDatabase($branch->getDatabaseName())->where('id', $id)->delete();
-            } catch (\Exception $e) {
-                return redirect()->route('roles.index')->with('error', 'Role deletion failed.');
-            }
-        }
+        $role = Role::where('id', $id)->first();
+        $role->delete();
 
         return redirect()->route('roles.index')->with('success', 'role deleted successfully!');
     }

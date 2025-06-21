@@ -34,23 +34,23 @@
                                 <td>{{ $user->email }}</td>
                                 <td style="TEXT-ALIGN: left;">{{ $user->mobile }}</td>
                                 <td>{{ $user->dob }}</td>
-                                <td>{{ $user->role->role_name ?? '-' }}</td>
-                                <td>{{ $user->branch_name ?? '-' }}</td>
+                                <td>{{ $user->role_data->role_name ?? '-' }}</td>
+                                <td>{{ $user->branch->name ?? '-' }}</td>
                                 <td>
                                     <!-- Add buttons for actions like 'View', 'Edit' etc. -->
                                     <!-- <button class="btn btn-primary">Message</button> -->
                                     <div class="flex gap-2 justify-content-left">
-                                        <a href="{{ route('users.show', ['branchId' => $user->branch_id, 'id' => $user->id]) }}"
+                                        <a href="{{ route('users.show', $user->id) }}"
                                             class="btn btn-primary mr-1 mb-2">View
                                         </a>
-                                        <form action="{{ route('users.destroy', ['branchId' => $user->branch_id, 'id' => $user->id]) }}" method="POST"
+                                        <form action="{{ route('users.destroy', $user->id) }}" method="POST"
                                             onsubmit="return confirm('Are you sure you want to delete this user?');"
                                             style="display: inline-block;">
                                             @csrf
                                             @method('DELETE') <!-- Add this line -->
                                             <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
                                         </form>
-                                        <a href="{{ route('users.edit', ['branchId' => $user->branch_id, 'id' => $user->id]) }}" class="btn btn-primary mr-1 mb-2">
+                                        <a href="{{ route('users.edit', $user->id) }}" class="btn btn-primary mr-1 mb-2">
                                             Edit
                                         </a>
                                     </div>

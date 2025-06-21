@@ -6,7 +6,7 @@
             Edit User
         </h2>
 
-        <form action="{{ route('users.update', ['branchId' => $user->branch->id, 'id' => $user->id]) }}" method="POST" class="form-updated validate-form">
+        <form action="{{ route('users.update', $user->id) }}" method="POST" class="form-updated validate-form">
             @csrf
             @method('PUT')
 

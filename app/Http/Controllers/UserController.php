@@ -17,83 +17,64 @@ class UserController extends Controller
      */
     public function index()
     {
-        // $users = User::with('role')
-        //     ->whereHas('role', function ($query) {
-        //         $query->where('role_name', '!=', 'Superadmin');
-        //     })
-        //     ->get();
-        $users = $this->getAllUsersFromAllDatabases();
-        // dd($users); // Debugging line to check the users data
+        $users = User::with(['role_data','branch'])
+            ->whereHas('role_data', function ($query) {
+                $query->where('role_name', '!=', 'Super Admin');
+            })->orderByDesc('id')->get();
 
         return view('users.index', compact('users'));
     }
 
-    private function getAllUsersFromAllDatabases()
-    {
-        $allUsers = collect();
+    // private function getAllUsersFromAllDatabases()
+    // {
+    //     $allUsers = collect();
 
-        // Get all branch users only
-        $branches = Branch::all();
+    //     // Get all branch users only
+    //     $branches = Branch::all();
         
-        foreach ($branches as $branch) {
-            try {
-                $databaseName = $branch->getDatabaseName();
+    //     foreach ($branches as $branch) {
+    //         try {
+    //             $databaseName = $branch->getDatabaseName();
                 
-                $branchUsers = BranchUsers::forDatabase($databaseName)->get();
+    //             $branchUsers = BranchUsers::forDatabase($databaseName)->get();
 
-                $formattedBranchUsers = $branchUsers->map(function ($user) use ($branch, $databaseName) {
+    //             $formattedBranchUsers = $branchUsers->map(function ($user) use ($branch, $databaseName) {
 
-                    $role = Role::forDatabase($databaseName)->find($user->role_id);
+    //                 $role = Role::forDatabase($databaseName)->find($user->role_id);
                     
-                    return (object) [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'role' => $role, // This will be the role object if with('role') works, or role field if not
-                        'mobile' => $user->mobile,
-                        'dob' => $user->dob ? $user->dob->format('d-m-Y') : null,
-                        'is_active' => $user->is_active,
-                        'database_type' => 'branch',
-                        'branch_name' => $branch->name,
-                        'branch_id' => $branch->id,
-                        'branch_code' => $branch->code,
-                        'created_at' => $user->created_at,
-                    ];
-                });
+    //                 return (object) [
+    //                     'id' => $user->id,
+    //                     'name' => $user->name,
+    //                     'email' => $user->email,
+    //                     'role' => $role, // This will be the role object if with('role') works, or role field if not
+    //                     'mobile' => $user->mobile,
+    //                     'dob' => $user->dob ? $user->dob->format('d-m-Y') : null,
+    //                     'is_active' => $user->is_active,
+    //                     'database_type' => 'branch',
+    //                     'branch_name' => $branch->name,
+    //                     'branch_id' => $branch->id,
+    //                     'branch_code' => $branch->code,
+    //                     'created_at' => $user->created_at,
+    //                 ];
+    //             });
 
-                $allUsers = $allUsers->merge($formattedBranchUsers);
-            } catch (\Exception $e) {
-                // Skip if branch database connection fails
-                \Log::warning("Could not access branch {$branch->name}: " . $e->getMessage());
-            }
-        }
+    //             $allUsers = $allUsers->merge($formattedBranchUsers);
+    //         } catch (\Exception $e) {
+    //             // Skip if branch database connection fails
+    //             \Log::warning("Could not access branch {$branch->name}: " . $e->getMessage());
+    //         }
+    //     }
 
-        return $allUsers->sortByDesc('created_at');
-    }
+    //     return $allUsers->sortByDesc('created_at');
+    // }
 
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        // $roles = Role::where('role_name', '!=', 'Superadmin')->get();
+        $roles = Role::where('role_name', '!=', 'Super Admin')->get();
         $branches = Branch::all();
-
-        // Get unique roles from all branch databases
-        $allRoles = collect();
-
-        foreach ($branches as $branch) {
-            try {
-                $branchRoles = Role::forDatabase($branch->getDatabaseName())
-                    ->where('role_name', '!=', 'Superadmin')
-                    ->get();
-
-                $allRoles = $allRoles->merge($branchRoles);
-            } catch (\Exception $e) {
-                \Log::warning("Could not access roles from branch {$branch->name}: " . $e->getMessage());
-            }
-        }
-        $roles = $allRoles->unique('role_name')->sortBy('role_name')->values();
 
         return view('users.create', compact('roles', 'branches'));
     }
@@ -121,13 +102,8 @@ class UserController extends Controller
                 ->with('error', 'Failed to create user: ' . $e->getMessage())
                 ->withInput();
         }
-        // dd(211);
-        $branch = Branch::findOrFail($request->branch_id);
 
-        $existingUser = BranchUsers::forDatabase($branch->getDatabaseName())
-            ->where('email', $request->email)
-            ->first();
-        // dd($existingUser)
+        $existingUser = User::where('email', $request->email)->first();
 
         if ($existingUser) {
             return redirect()->back()
@@ -141,13 +117,14 @@ class UserController extends Controller
             'mobile' => $request->mobile,
             'role_id' => $request->role_id,
             'dob' => $request->dob,
+            'branch_id' => $request->branch_id,
             'password' => Hash::make($request->password),
             'is_active' => true,
             'email_verified_at' => now(),
         ];
 
         // Create user in selected branch database
-        BranchUsers::forDatabase($branch->getDatabaseName())->create($userData);
+        User::create($userData);
 
         return redirect()->route('users.index')->with('success', 'User added successfully!');
     }
@@ -156,11 +133,11 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $branchId, string $id)
+    public function show(string $id)
     {
-        $branch = Branch::findOrFail($branchId);
-        $user = BranchUsers::forDatabase($branch->getDatabaseName())->findOrFail($id);
-        $user->role = Role::forDatabase($branch->getDatabaseName())->find($user->role_id);
+        $user = User::findOrFail($id);
+        $branch = Branch::where('id', $user->branch_id)->first();
+        $user->role = Role::find($user->role_id);
 
         return view('users.show', compact('user', 'branch'));
     }
@@ -168,19 +145,12 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $branchId, string $id)
+    public function edit(string $id)
     {
-        // $user = User::findOrFail($id);
-        // $roles = Role::where('role_name', '!=', 'Superadmin')->select('id', 'role_name')->get();
-        // return view('users.edit', compact('user', 'roles'));
-        $branches = Branch::all();
-        $branch = Branch::findOrFail($branchId);
-        $user = BranchUsers::forDatabase($branch->getDatabaseName())->findOrFail($id);
-        $user->branch = $branch;
+        $user = User::findOrFail($id);
+        $branch = Branch::where('id', $user->branch_id)->first();
         // Get roles from this branch
-        $roles = Role::forDatabase($branch->getDatabaseName())
-            ->where('role_name', '!=', 'Superadmin')
-            ->get();
+        $roles = Role::where('role_name', '!=', 'Super Admin')->get();
 
         return view('users.edit', compact('user', 'roles'));
 
@@ -189,7 +159,7 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $branchId, string $id)
+    public function update(Request $request, string $id)
     {
         // dd($request->all()); // Debugging line to check the request data
         try {
@@ -205,11 +175,10 @@ class UserController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             dd($e->errors()); // Check what is failing
         }
-        $branch = Branch::findOrFail($branchId);
-        $user = BranchUsers::forDatabase($branch->getDatabaseName())->findOrFail($id);
+        // $branch = Branch::findOrFail($branchId);
+        $user = User::findOrFail($id);
 
-        $existingUser = BranchUsers::forDatabase($branch->getDatabaseName())
-            ->where('email', $request->email)
+        $existingUser = User::where('email', $request->email)
             ->where('id', '!=', $id)
             ->first();
 
@@ -240,10 +209,10 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $branchId, string $id)
+    public function destroy(string $id)
     {
-        $branch = Branch::findOrFail($branchId);
-        $user = BranchUsers::forDatabase($branch->getDatabaseName())->findOrFail($id);
+        // $branch = Branch::findOrFail($branchId);
+        $user = User::findOrFail($id);
 
         // $user = User::findOrFail($id);
         $user->delete();
