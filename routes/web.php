@@ -72,7 +72,7 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
 
     Route::resource('inventory', InventoryController::class);
 
-
+    Route::post('/product/import', [ProductController::class, 'importProducts'])->name('products.import');
 
 
     // Purchase

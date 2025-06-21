@@ -11,6 +11,8 @@ use App\Traits\BranchAuthTrait;
 use Exception;
 use GuzzleHttp\Handler\Proxy;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Shuchkin\SimpleXLSX;
 
 class ProductController extends Controller
 {
@@ -382,5 +384,89 @@ class ProductController extends Controller
         $product->delete();
 
         return redirect()->route('products.index')->with('success', 'Product deleted successfully!');
+    }
+
+    public function importProducts(Request $request)
+    {
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
+
+        $request->validate([
+            'excel_file' => 'required|file'
+        ]);
+
+        try {
+            // Get your branch database connection name
+
+            $file = $request->file('excel_file');
+            // $extension = $file->getClientOriginalExtension();
+
+            if ($xlsx = SimpleXLSX::parse($file->getRealPath())) {
+
+                $rows = $xlsx->rows();
+                array_shift($rows);
+
+                foreach ($rows as $row) {
+                    if (!empty($row[0]) || !empty($row[1])) { // Check if name exists
+                        $data = [
+                            'product_barcode' => $row[0] ?? '',
+                            'product_name' => $row[1],
+                            'price' => $row[11] ?? 0,
+                            'min_quantity' => $row[19] ?? 0,
+                            'category' => $row[5] ?? '',
+                            'unit_type' => $row[3] ?? '',
+                        ];
+                        // dd($data);
+                        // Product::on($branch->connection_name)->insert($data);
+                    }
+                }
+
+            }
+            // dd($file);
+
+            // if ($extension) {
+            // $this->importExcel($file, $branch->connection_name);
+            // } else {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Only CSV files are supported'
+            //     ]);
+            // }
+
+            return view('products.index');
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Import failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    private function importExcel($file, $branchDb)
+    {
+        if ($xlsx = SimpleXLSX::parse($file->getRealPath())) {
+
+            $rows = $xlsx->rows();
+            array_shift($rows);
+
+            foreach ($rows as $row) {
+                if (!empty($row[0]) || !empty($row[1])) { // Check if name exists
+                    $data = [
+                        'product_barcode' => $row[0] ?? '',
+                        'product_name' => $row[1],
+                        'price' => $row[11] ?? 0,
+                        'min_quantity' => $row[19] ?? 0,
+                        'category' => $row[5] ?? '',
+                        'unit_type' => $row[3] ?? '',
+                    ];
+                    dd($data);
+                    DB::connection($branchDb)->table('products')->insert($data);
+                }
+            }
+
+        }
+
     }
 }

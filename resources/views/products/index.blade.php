@@ -8,6 +8,13 @@
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
                 <a href="{{ Route('products.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add Product</a>
+                <form action="{{ route('products.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <label for="excel_file">Import Products (Excel):</label>
+                    <input type="file" name="excel_file" required accept=".csv, .xlsx, .xls">
+                    <button type="submit">Import</button>
+                </form>
+
             </div>
 
             <div class="intro-y col-span-12 overflow-auto">
