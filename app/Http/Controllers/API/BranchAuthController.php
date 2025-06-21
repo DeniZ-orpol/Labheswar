@@ -34,9 +34,10 @@ class BranchAuthController extends Controller
         // Find user in master database
         $user = User::where('email', $request->email)
             ->where('is_active', true)
-            ->with(['branch', 'role_data']) // Load branch relationship
+            ->with(['branch', 'role_data']) // Load relationships
             ->first();
 
+        // Validate user and password
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
@@ -44,11 +45,13 @@ class BranchAuthController extends Controller
             ], 401);
         }
 
+        // Revoke all old tokens (optional for security)
+        $user->tokens()->delete();
 
-        // Update last login
+        // Update last login time
         $user->update(['last_login_at' => now()]);
 
-        // Create token using Laravel Sanctum's default method
+        // Create a new token
         $tokenResult = $user->createToken('API Token')->plainTextToken;
 
         return response()->json([
@@ -61,17 +64,18 @@ class BranchAuthController extends Controller
                     'branch_id' => $user->branch_id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'role' => $user->role_data->role_name,
+                    'role' => $user->role_data->role_name ?? null,
                 ],
                 'branch' => [
-                    'id' => $user->branch->id,
-                    'name' => $user->branch->name,
-                    'code' => $user->branch->code,
-                    'connection' => $user->branch->connection_name,
+                    'id' => $user->branch->id ?? null,
+                    'name' => $user->branch->name ?? null,
+                    'code' => $user->branch->code ?? null,
+                    'connection' => $user->branch->connection_name ?? null,
                 ]
             ]
         ]);
     }
+
     // public function login(Request $request)
     // {
     //     $request->validate([
