@@ -89,16 +89,16 @@ License: You must have a valid license purchased only from themeforest(the above
                     </ul>
                 </li>
                 @php
-                    // $user = Auth::user();
-                    $userType = session('user_type');
-                    $userRole = session('user_role');
-                    $userBranchId = session('branch_id');
-                    $userName = session('user_name');
-                    $branchName = session('branch_name');
+                    $user = Auth::user();
+                    // $userType = session('user_type');
+                    // $userRole = session('user_role');
+                    // $userBranchId = session('branch_id');
+                    // $userName = session('user_name');
+                    // $branchName = session('branch_name');
                     $userMenuOpen = request()->routeIs('users.*') || request()->routeIs('roles.*');
                 @endphp
 
-                @if ($userRole === 'Superadmin')
+                @if ($user->role_data->role_name === 'Super Admin')
                     <li>
                         <a href="javascript:;"
                             class="menu {{ request()->routeIs('User Mangement.*') ? 'side-menu--active side-menu--opensss' : '' }}{{ request()->routeIs('items.*') ? 'side-menu--active side-menu--opensss' : '' }}">
@@ -1042,11 +1042,11 @@ License: You must have a valid license purchased only from themeforest(the above
                         class="dropdown-content bg-primary/80 before:block before:absolute before:bg-black before:inset-0 before:rounded-md before:z-[-1] text-white">
                         <li class="p-2">
                             <div class="font-medium">
-                                <div class="font-medium">{{ $userName }}</div>
+                                <div class="font-medium">{{ $user->name }}</div>
                             </div>
-                            @if ($userType === 'branch')
+                            @if ($user->role_data->role_name !== 'Super Admin')
                                 <div class="text-xs text-white/60 mt-0.5 dark:text-slate-500">
-                                    {{ $branchName }}</div>
+                                    {{ $user->branch->name }}</div>
                             @endif
                         </li>
                         <li>
@@ -1130,7 +1130,7 @@ License: You must have a valid license purchased only from themeforest(the above
                     $userMenuOpen = request()->routeIs('users.*') || request()->routeIs('roles.*');
                 @endphp
 
-                @if ($userRole === 'Superadmin')
+                @if ($user->role_data->role_name === 'Super Admin')
                     <li>
                         <a href="javascript:;"
                             class="side-menu {{ $userMenuOpen ? 'side-menu--active side-menu--opensss' : '' }}">
@@ -1197,7 +1197,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         </ul>
                     </li>
                 @endif
-                @if ($userRole === 'Admin')
+                @if ($user->role_data->role_name === 'Admin')
                     @php
                         $productMenuOpen =
                             request()->routeIs('products.*') ||

@@ -7,36 +7,48 @@ use App\Models\Category;
 use App\Models\Company;
 use App\Models\HsnCode;
 use App\Models\Product;
+use App\Traits\BranchAuthTrait;
 use Exception;
 use GuzzleHttp\Handler\Proxy;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    use BranchAuthTrait;
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        // Check if user is logged in as branch
-        // if (session('user_type') !== 'branch' || !session('branch_connection')) {
-        //     return redirect()->route('login')->with('error', 'Please login as branch user.');
-        // }
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
-        $branchConnection = session('branch_connection');
-
-        // Get product with pagination first
-        $products = Product::forDatabase($branchConnection)->paginate(10);
-
-        // Load relationships using trait method to get related data for product(For pagination only)
-        if ($products->isNotEmpty()) {
-            $productModel = new Product();
-            $productModel->setDynamicTable($branchConnection);
-            $productModel->loadRelationsForPaginator($products, ['category', 'pCompany', 'hsnCode']);
-        }
+        $products = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])->paginate(10);
 
         return view('products.index', compact('products'));
     }
+    // public function index()
+    // {
+    //     // Check if user is logged in as branch
+    //     // if (session('user_type') !== 'branch' || !session('branch_connection')) {
+    //     //     return redirect()->route('login')->with('error', 'Please login as branch user.');
+    //     // }
+
+    //     $branchConnection = session('branch_connection');
+
+    //     // Get product with pagination first
+    //     $products = Product::forDatabase($branchConnection)->paginate(10);
+
+    //     // Load relationships using trait method to get related data for product(For pagination only)
+    //     if ($products->isNotEmpty()) {
+    //         $productModel = new Product();
+    //         $productModel->setDynamicTable($branchConnection);
+    //         $productModel->loadRelationsForPaginator($products, ['category', 'pCompany', 'hsnCode']);
+    //     }
+
+    //     return view('products.index', compact('products'));
+    // }
 
     /**
      * Show the form for creating a new resource.
@@ -53,13 +65,9 @@ class ProductController extends Controller
     {
         try {
 
-            // Check if user is logged in as branch
-            if (session('user_type') !== 'branch' || !session('branch_connection')) {
-                return redirect()->back()->with('error', 'Branch session not found. Please login again.');
-            }
-
-            // Get branch connection name from session
-            $branchConnection = session('branch_connection');
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $branch = $auth['branch'];
 
             $validate = $request->validate([
                 'product_barcode' => 'required|string|max:255',
@@ -109,7 +117,7 @@ class ProductController extends Controller
             // Get or create related company
             $companyId = null;
             if (!empty($validate['product_company'])) {
-                $company = Company::forDatabase($branchConnection)->firstOrCreate(
+                $company = Company::on($branch->connection_name)->firstOrCreate(
                     ['name' => $validate['product_company']],
                     ['name' => $validate['product_company'], 'status' => 1]
                 );
@@ -119,7 +127,7 @@ class ProductController extends Controller
             // Handle Category - use branch connection
             $categoryId = null;
             if (!empty($validate['product_category'])) {
-                $category = Category::forDatabase($branchConnection)->firstOrCreate(
+                $category = Category::on($branch->connection_name)->firstOrCreate(
                     ['name' => $validate['product_category']],
                     ['name' => $validate['product_category'], 'status' => 1]
                 );
@@ -129,7 +137,7 @@ class ProductController extends Controller
             // Handle HSN Code - use branch connection
             $hsnCodeId = null;
             if (!empty($validate['hsn_code'])) {
-                $hsnCode = HsnCode::forDatabase($branchConnection)->firstOrCreate(
+                $hsnCode = HsnCode::on($branch->connection_name)->firstOrCreate(
                     ['hsn_code' => $validate['hsn_code']],
                     ['hsn_code' => $validate['hsn_code']]
                 );
@@ -171,7 +179,7 @@ class ProductController extends Controller
             ];
 
             // Create the product using branch connection
-            $product = Product::forDatabase($branchConnection)->create($data);
+            $product = Product::on($branch->connection_name)->create($data);
 
             // Redirect to product index with success message and product data
             return redirect()->route('products.index')
@@ -188,18 +196,13 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        // Check if user is logged in as branch
-        if (session('user_type') !== 'branch' || !session('branch_connection')) {
-            return redirect()->route('login')->with('error', 'Please login as branch user.');
-        }
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
-        $branchConnection = session('branch_connection');
-
-        // get single product data
-        $product = Product::forDatabase($branchConnection)
-            ->withDynamic(['category', 'pCompany', 'hsnCode'])
+        $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
             ->where('id', $id)
-            ->first();
+            ->firstOrFail();
 
         return view('products.show', compact('product'));
     }
@@ -209,20 +212,14 @@ class ProductController extends Controller
      */
     public function edit($id)
     {
-        // Check if user is logged in as branch
-        if (session('user_type') !== 'branch' || !session('branch_connection')) {
-            return redirect()->route('login')->with('error', 'Please login as branch user.');
-        }
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
-        $branchConnection = session('branch_connection');
-
-        // get single product data
-        $product = Product::forDatabase($branchConnection)
-            ->withDynamic(['category', 'pCompany', 'hsnCode'])
+        $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
             ->where('id', $id)
-            ->first();
+            ->firstOrFail();
 
-        // $product = Product::findOrFail($id);
         return view('products.edit', compact('product'));
     }
 
@@ -233,12 +230,9 @@ class ProductController extends Controller
     {
         try {
 
-            // Check if user is logged in as branch
-            if (session('user_type') !== 'branch' || !session('branch_connection')) {
-                return redirect()->route('login')->with('error', 'Please login as branch user.');
-            }
-
-            $branchConnection = session('branch_connection');
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $branch = $auth['branch'];
 
             $validate = $request->validate([
                 'product_barcode' => 'required|string|max:255',
@@ -274,8 +268,7 @@ class ProductController extends Controller
             ]);
 
             // get single product data
-            $product = Product::forDatabase($branchConnection)
-                ->withDynamic(['category', 'pCompany', 'hsnCode'])
+            $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
                 ->where('id', $id)
                 ->first();
 
@@ -295,7 +288,7 @@ class ProductController extends Controller
             // Handle Company - use branch connection
             $companyId = $product->company; // Keep existing company by default
             if (!empty($validate['product_company'])) {
-                $company = Company::forDatabase($branchConnection)->firstOrCreate(
+                $company = Company::on($branch->connection_name)->firstOrCreate(
                     ['name' => $validate['product_company']],
                     ['name' => $validate['product_company'], 'status' => 1]
                 );
@@ -305,7 +298,7 @@ class ProductController extends Controller
             // Handle Category - use branch connection
             $categoryId = $product->category_id; // Keep existing category by default
             if (!empty($validate['product_category'])) {
-                $category = Category::forDatabase($branchConnection)->firstOrCreate(
+                $category = Category::on($branch->connection_name)->firstOrCreate(
                     ['name' => $validate['product_category']],
                     ['name' => $validate['product_category'], 'status' => 1]
                 );
@@ -315,7 +308,7 @@ class ProductController extends Controller
             // Handle HSN Code - use branch connection
             $hsnCodeId = $product->hsn_code_id; // Keep existing HSN code by default
             if (!empty($validate['hsn_code'])) {
-                $hsnCode = HsnCode::forDatabase($branchConnection)->firstOrCreate(
+                $hsnCode = HsnCode::on($branch->connection_name)->firstOrCreate(
                     ['hsn_code' => $validate['hsn_code']],
                     ['hsn_code' => $validate['hsn_code']]
                 );
@@ -372,15 +365,13 @@ class ProductController extends Controller
      */
     public function destroy(string $id)
     {
-        // Check if user is logged in as branch
-        if (session('user_type') !== 'branch' || !session('branch_connection')) {
-            return redirect()->route('login')->with('error', 'Please login as branch user.');
-        }
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
-        $branchConnection = session('branch_connection');
-
-        // Find the product using branch connection
-        $product = Product::forDatabase($branchConnection)->findOrFail($id);
+        $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
+            ->where('id', $id)
+            ->first();
 
         // Delete product image if exists
         if ($product->image && \Storage::disk('public')->exists($product->image)) {

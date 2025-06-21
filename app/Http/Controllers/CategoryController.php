@@ -4,19 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\Category;
+use App\Traits\BranchAuthTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CategoryController extends Controller
 {
+    use BranchAuthTrait;
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $branchConnection = session('branch_connection');
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
-        $categories = Category::forDatabase($branchConnection)->orderBy('created_at', 'desc')->get();
+        $categories = Category::on($branch->connection_name)->orderBy('created_at', 'desc')->get();
 
         return view('categories.index', compact('categories'));
     }
@@ -34,7 +38,10 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        $branchConnection = session('branch_connection');
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
+
         $imagePath = null;
 
         if ($request->hasFile('image')) {
@@ -49,7 +56,7 @@ class CategoryController extends Controller
         ];
 
         // Insert into branch DB
-        Category::forDatabase($branchConnection)->insert($data);
+        Category::on($branch->connection_name)->insert($data);
 
         // Insert into labheswar (master) only if category name not exists
         $exists = Category::where('name', $request->name)->exists();
@@ -68,11 +75,11 @@ class CategoryController extends Controller
      */
     public function show(string $id)
     {
-        if (!session('branch_connection')) {
-            return redirect()->route('categories.index')->with('error', 'No branch connection found.');
-        }
-        $branchConnection = session('branch_connection');
-        $category = Category::forDatabase($branchConnection)->where('id', $id)->first();
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
+
+        $category = Category::on($branch->connection_name)->where('id', $id)->first();
         if (!$category) {
             return redirect()->route('categories.index')->with('error', 'Category not found.');
         }
@@ -84,9 +91,11 @@ class CategoryController extends Controller
      */
     public function edit(string $id)
     {
-        $branchConnection = session('branch_connection');
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
-        $category = Category::forDatabase($branchConnection)->where('id', $id)->first();
+        $category = Category::on($branch->connection_name)->where('id', $id)->first();
 
         if (!$category) {
             return redirect()->route('categories.index')->with('error', 'Category not found.');
@@ -100,14 +109,16 @@ class CategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
+
         $request->validate([
             'name' => 'required|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $branchConnection = session('branch_connection');
-
-        $category = Category::forDatabase($branchConnection)->where('id', $id)->first();
+        $category = Category::on($branch->connection_name)->where('id', $id)->first();
 
         if (!$category) {
             return redirect()->route('categories.index')->with('error', 'Category not found.');
@@ -120,7 +131,7 @@ class CategoryController extends Controller
             $imagePath = $request->file('image')->store('category', 'public');
         }
 
-        Category::forDatabase($branchConnection)->where('id', $id)->update([
+        Category::on($branch->connection_name)->where('id', $id)->update([
             'name' => $request->name,
             'image' => $imagePath,
             'updated_at' => now(),
@@ -134,10 +145,12 @@ class CategoryController extends Controller
      */
     public function destroy(string $id)
     {
-        $branchConnection = session('branch_connection');
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
         // Delete the category from the current branch connection
-        Category::forDatabase($branchConnection)->where('id', $id)->delete();
+        Category::on($branch->connection_name)->where('id', $id)->delete();
 
         return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
     }

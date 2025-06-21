@@ -3,23 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\PurchaseParty;
+use App\Traits\BranchAuthTrait;
 use Illuminate\Http\Request;
 
 class PurchasePartyController extends Controller
 {
+    use BranchAuthTrait;
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        if (session('user_type') !== 'branch' || !session('branch_connection')) {
-            return redirect()->back()->with('error', 'Branch session not found. Please login again.');
-        }
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
-        // Get branch connection name from session
-        $branchConnection = session('branch_connection');
-
-        $parties = PurchaseParty::forDatabase($branchConnection)->orderBy('id', 'desc')->paginate(10);
+        $parties = PurchaseParty::on($branch->connection_name)->orderBy('id', 'desc')->paginate(10);
 
         return view('purchase.party.index', compact('parties'));
     }
@@ -37,12 +36,9 @@ class PurchasePartyController extends Controller
      */
     public function store(Request $request)
     {
-        if (session('user_type') !== 'branch' || !session('branch_connection')) {
-            return redirect()->back()->with('error', 'Branch session not found. Please login again.');
-        }
-
-        // Get branch connection name from session
-        $branchConnection = session('branch_connection');
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
         $validate = $request->validate([
             'party_name' => 'required|string'
@@ -52,7 +48,7 @@ class PurchasePartyController extends Controller
             'party_name' => $validate['party_name']
         ];
 
-        PurchaseParty::forDatabase($branchConnection)->create($data);
+        PurchaseParty::on($branch->connection_name)->create($data);
 
         return redirect()->route('purchase.party.index')->with('success', 'Purchase Party Created Successfully!');
     }
@@ -70,14 +66,11 @@ class PurchasePartyController extends Controller
      */
     public function edit(string $id)
     {
-        if (session('user_type') !== 'branch' || !session('branch_connection')) {
-            return redirect()->back()->with('error', 'Branch session not found. Please login again.');
-        }
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
-        // Get branch connection name from session
-        $branchConnection = session('branch_connection');
-
-        $party = PurchaseParty::forDatabase($branchConnection)->where('id', $id)->first();
+        $party = PurchaseParty::on($branch->connection_name)->where('id', $id)->first();
 
         return view('purchase.party.edit', compact('party'));
     }
@@ -87,18 +80,15 @@ class PurchasePartyController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        if (session('user_type') !== 'branch' || !session('branch_connection')) {
-            return redirect()->back()->with('error', 'Branch session not found. Please login again.');
-        }
-
-        // Get branch connection name from session
-        $branchConnection = session('branch_connection');
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
         $validate = $request->validate([
             'party_name' => 'required|string'
         ]);
 
-        $party = PurchaseParty::forDatabase($branchConnection)->findOrFail($id);
+        $party = PurchaseParty::on($branch->connection_name)->findOrFail($id);
 
         $party->update($validate);
 
@@ -112,14 +102,12 @@ class PurchasePartyController extends Controller
     {
         //
 
-        if (session('user_type') !== 'branch' || !session('branch_connection')) {
-            return redirect()->route('login')->with('error', 'Please login as branch user.');
-        }
-
-        $branchConnection = session('branch_connection');
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
         // Find the product using branch connection
-        $party = PurchaseParty::forDatabase($branchConnection)->findOrFail($id);
+        $party = PurchaseParty::on($branch->connection_name)->findOrFail($id);
 
         // Delete the purchase party
         $party->delete();

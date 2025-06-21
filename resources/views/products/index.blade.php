@@ -36,8 +36,8 @@
                                     @endif
                                 </td>
                                 <td>{{ $product->product_name }}</td>
-                                <td>{{ $product->category->name }}</td>
-                                <td>{{ $product->hsnCode->hsn_code }}</td>
+                                <td>{{ $product->category->name ?? '-' }}</td>
+                                <td>{{ $product->hsnCode->hsn_code ?? '-' }}</td>
                                 <td>{{ $product->mrp }}</td>
                                 <td>
                                     <div class="flex gap-2">

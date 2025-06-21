@@ -39,71 +39,71 @@ class AuthController extends Controller
             $user = Auth::user();
 
             // Store user type in session
-            session([
-                'user_type' => 'master',
-                'user_role' => $user->role,
-                'user_name' => $user->name,
-                'user_email' => $user->email,
-            ]);
+            // session([
+            //     'user_type' => 'master',
+            //     'user_role' => $user->role,
+            //     'user_name' => $user->name,
+            //     'user_email' => $user->email,
+            // ]);
 
             return redirect()->route('dashboard')->with('success', 'Welcome back, ' . $user->name . '!');
         }
 
-        $branches = Branch::all();
+        // $branches = Branch::all();
 
-        foreach ($branches as $branch) {
-            try {
-                $branchUser = BranchUsers::forDatabase($branch->getDatabaseName())
-                    ->where('email', $email)
-                    ->where('is_active', true)
-                    ->first();
+        // foreach ($branches as $branch) {
+        //     try {
+        //         $branchUser = BranchUsers::forDatabase($branch->getDatabaseName())
+        //             ->where('email', $email)
+        //             ->where('is_active', true)
+        //             ->first();
 
-                if ($branchUser) {
-                    if (Hash::check($password, $branchUser->password)) {
-                        // if ($branchUser && password_verify($password, $branchUser->password)) {
-                        // Get role info
-                        $role = Role::forDatabase($branch->getDatabaseName())->find($branchUser->role_id);
+        //         if ($branchUser) {
+        //             if (Hash::check($password, $branchUser->password)) {
+        //                 // if ($branchUser && password_verify($password, $branchUser->password)) {
+        //                 // Get role info
+        //                 $role = Role::forDatabase($branch->getDatabaseName())->find($branchUser->role_id);
 
-                        // Handle remember me for branch users
-                        if ($remember) {
-                            $rememberToken = Str::random(60);
-                            $branchUser->update([
-                                'remember_token' => hash('sha256', data: $rememberToken),
-                                'last_login_at' => now()
-                            ]);
+        //                 // Handle remember me for branch users
+        //                 if ($remember) {
+        //                     $rememberToken = Str::random(60);
+        //                     $branchUser->update([
+        //                         'remember_token' => hash('sha256', data: $rememberToken),
+        //                         'last_login_at' => now()
+        //                     ]);
 
-                            // Set remember me cookie for branch user
-                            Cookie::queue('branch_remember_token', $rememberToken, 43200); // 30 days
-                            Cookie::queue('branch_user_id', $branchUser->id, 43200);
-                            Cookie::queue('branch_connection', $branch->connection_name, 43200);
-                        } else {
-                            // Update last login
-                            $branchUser->update(['last_login_at' => now()]);
-                        }
-                        // Store branch user info in session
-                        session([
-                            'user_type' => 'branch',
-                            'branch_user_id' => $branchUser->id,
-                            'branch_id' => $branch->id,
-                            'branch_name' => $branch->name,
-                            'branch_connection' => $branch->connection_name,
-                            'user_role' => $role ? $role->role_name : null,
-                            'user_name' => $branchUser->name,
-                            'user_email' => $branchUser->email,
-                        ]);
+        //                     // Set remember me cookie for branch user
+        //                     Cookie::queue('branch_remember_token', $rememberToken, 43200); // 30 days
+        //                     Cookie::queue('branch_user_id', $branchUser->id, 43200);
+        //                     Cookie::queue('branch_connection', $branch->connection_name, 43200);
+        //                 } else {
+        //                     // Update last login
+        //                     $branchUser->update(['last_login_at' => now()]);
+        //                 }
+        //                 // Store branch user info in session
+        //                 session([
+        //                     'user_type' => 'branch',
+        //                     'branch_user_id' => $branchUser->id,
+        //                     'branch_id' => $branch->id,
+        //                     'branch_name' => $branch->name,
+        //                     'branch_connection' => $branch->connection_name,
+        //                     'user_role' => $role ? $role->role_name : null,
+        //                     'user_name' => $branchUser->name,
+        //                     'user_email' => $branchUser->email,
+        //                 ]);
 
-                        return redirect()->route('dashboard')->with('success', 'Welcome back, ' . $branchUser->name . '!');
+        //                 return redirect()->route('dashboard')->with('success', 'Welcome back, ' . $branchUser->name . '!');
 
-                    } else {
-                        dd('password incorrect');
-                    }
-                }
-            } catch (Exception $e) {
-                dd($e->getMessage());
-                \Log::warning("Login attempt failed for branch {$branch->name}: " . $e->getMessage());
-                continue;
-            }
-        }
+        //             } else {
+        //                 dd('password incorrect');
+        //             }
+        //         }
+        //     } catch (Exception $e) {
+        //         dd($e->getMessage());
+        //         \Log::warning("Login attempt failed for branch {$branch->name}: " . $e->getMessage());
+        //         continue;
+        //     }
+        // }
 
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
@@ -136,26 +136,26 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         // Clear remember token for branch users
-        if (session('user_type') === 'branch') {
-            $branchConnection = session('branch_connection');
-            $branchUserId = session('branch_user_id');
+        // if (session('user_type') === 'branch') {
+        //     $branchConnection = session('branch_connection');
+        //     $branchUserId = session('branch_user_id');
 
-            if ($branchConnection && $branchUserId) {
-                try {
-                    BranchUsers::forDatabase($branchConnection)
-                        ->where('id', $branchUserId)
-                        ->update(['remember_token' => null]);
-                } catch (\Exception $e) {
-                    // Log error but continue logout
-                    \Log::error("Failed to clear remember token: " . $e->getMessage());
-                }
-            }
+        //     if ($branchConnection && $branchUserId) {
+        //         try {
+        //             BranchUsers::forDatabase($branchConnection)
+        //                 ->where('id', $branchUserId)
+        //                 ->update(['remember_token' => null]);
+        //         } catch (\Exception $e) {
+        //             // Log error but continue logout
+        //             \Log::error("Failed to clear remember token: " . $e->getMessage());
+        //         }
+        //     }
 
-            // Clear branch remember cookies
-            Cookie::queue(Cookie::forget('branch_remember_token'));
-            Cookie::queue(Cookie::forget('branch_user_id'));
-            Cookie::queue(Cookie::forget('branch_connection'));
-        }
+        //     // Clear branch remember cookies
+        //     Cookie::queue(Cookie::forget('branch_remember_token'));
+        //     Cookie::queue(Cookie::forget('branch_user_id'));
+        //     Cookie::queue(Cookie::forget('branch_connection'));
+        // }
 
         // Logout master user
         Auth::logout();

@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Branch;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Traits\BranchAuthTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class InventoryController extends Controller
 {
+    use BranchAuthTrait;
     /**
      * Display a listing of the resource.
      */
@@ -60,19 +62,17 @@ class InventoryController extends Controller
 
     public function index()
     {
-        if (!session('branch_connection')) {
-            return redirect()->route('login')->with('error', 'Please login as branch user.');
-        }
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
-        $branchConnection = session('branch_connection');
-
-        $inventories = Inventory::forDatabase($branchConnection)->get();
+        $inventories = Inventory::on($branch->connection_name)->get();
 
         if ($inventories->isNotEmpty()) {
             $productIds = $inventories->pluck('product_id')->unique()->filter();
 
             if ($productIds->isNotEmpty()) {
-                $products = Product::forDatabase($branchConnection)
+                $products = Product::on($branch->connection_name)
                     ->whereIn('id', $productIds)
                     ->get()
                     ->keyBy('id');
@@ -89,14 +89,12 @@ class InventoryController extends Controller
 
     public function store(Request $request)
     {
-        if (session('user_type') !== 'branch' || !session('branch_connection')) {
-            return redirect()->route('login')->with('error', 'Please login as branch user.');
-        }
-
-        $branchConnection = session('branch_connection');
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
         try {
-            $existing = Inventory::forDatabase($branchConnection)
+            $existing = Inventory::on($branch->connection_name)
                 ->where('product_id', $request->product_id)
                 ->first();
 
@@ -109,7 +107,7 @@ class InventoryController extends Controller
                     $newQty -= $request->quantity;
                 }
 
-                Inventory::forDatabase($branchConnection)
+                Inventory::on($branch->connection_name)
                     ->where('product_id', $request->product_id)
                     ->update([
                         'quantity' => $newQty,
@@ -118,7 +116,7 @@ class InventoryController extends Controller
                     ]);
             } else {
                 // Insert new inventory row
-                Inventory::forDatabase($branchConnection)->insert([
+                Inventory::on($branch->connection_name)->insert([
                     'product_id' => $request->product_id,
                     'quantity' => strtoupper($request->type) == 'IN' ? $request->quantity : -$request->quantity,
                     'type' => $request->type,
@@ -134,20 +132,15 @@ class InventoryController extends Controller
         }
     }
 
-
-
-
     // You can fetch products here if needed
     public function create()
     {
-        if (session('user_type') !== 'branch' || !session('branch_connection')) {
-            return redirect()->route('login')->with('error', 'Please login as branch user.');
-        }
-
-        $branchConnection = session('branch_connection');
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
         // Fetch branch-wise products
-        $products = Product::forDatabase($branchConnection)->get();
+        $products = Product::on($branch->connection_name)->get();
 
         return view('inventory.create', compact('products'));
     }

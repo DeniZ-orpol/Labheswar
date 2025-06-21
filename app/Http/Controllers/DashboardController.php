@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
@@ -12,11 +13,12 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        return view('dashboard');
-        // $user= Auth::user();
-        // $branch = $user->branch;
+        // return view('dashboard');
+        $user= Auth::user();
+        $branch = $user->branch;
+        $role = $user->role_data;
 
-        // return view('dashboard', compact('user','branch'));
+        return view('dashboard', compact('user','branch', 'role'));
     }
 
     /**

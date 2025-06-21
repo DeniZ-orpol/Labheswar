@@ -6,32 +6,33 @@ use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseParty;
 use App\Models\PurchaseReceipt;
+use App\Traits\BranchAuthTrait;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class PurchaseController extends Controller
 {
+    use BranchAuthTrait;
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        if (session('user_type') !== 'branch' || !session('branch_connection')) {
-            return redirect()->back()->with('error', 'Branch session not found. Please login again.');
-        }
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
-        // Get branch connection name from session
-        $branchConnection = session('branch_connection');
+        $parties = PurchaseParty::on($branch->connection_name)->get();
+        $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
+            ->with(['purchaseParty', 'createUser', 'updateUser'])
+            ->orderByDesc('id')->paginate(10);
 
-        $parties = PurchaseParty::forDatabase($branchConnection)->get();
-        $purchaseReceipt = PurchaseReceipt::forDatabase($branchConnection)->orderByDesc('id')->paginate(10);
-
-        if ($purchaseReceipt->isNotEmpty()) {
-            $purchaseReceiptModel = new PurchaseParty();
-            $purchaseReceiptModel->setDynamicTable($branchConnection);
-            $purchaseReceiptModel->loadRelationsForPaginator($purchaseReceipt, ['purchaseParty', 'createUser', 'updateUser']);
-        }
+        // if ($purchaseReceipt->isNotEmpty()) {
+        //     $purchaseReceiptModel = new PurchaseParty();
+        //     $purchaseReceiptModel->setDynamicTable($branchConnection);
+        //     $purchaseReceiptModel->loadRelationsForPaginator($purchaseReceipt, ['purchaseParty', 'createUser', 'updateUser']);
+        // }
         // ->withDynamic(['purchaseParty', 'createUser', 'updateUser'])
         // ->orderByDesc('id')
         // ->get();
@@ -46,15 +47,12 @@ class PurchaseController extends Controller
      */
     public function create(Request $request)
     {
-        if (session('user_type') !== 'branch' || !session('branch_connection')) {
-            return redirect()->back()->with('error', 'Branch session not found. Please login again.');
-        }
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
-        // Get branch connection name from session
-        $branchConnection = session('branch_connection');
-
-        $parties = PurchaseParty::forDatabase($branchConnection)->get();
-        $products = Product::forDatabase($branchConnection)->get();
+        $parties = PurchaseParty::on($branch->connection_name)->get();
+        $products = Product::on($branch->connection_name)->get();
         // dd($products);
 
         return view('purchase.create', compact(['parties', 'products']));
@@ -67,12 +65,9 @@ class PurchaseController extends Controller
     {
         try {
             // Check if user is logged in as branch
-            if (session('user_type') !== 'branch' || !session('branch_connection')) {
-                return redirect()->back()->with('error', 'Branch session not found. Please login again.');
-            }
-
-            // Get branch connection name from session
-            $branchConnection = session('branch_connection');
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $branch = $auth['branch'];
 
             // Validate the request - including calculated fields from frontend
             $validate = $request->validate([
@@ -129,7 +124,7 @@ class PurchaseController extends Controller
 
             try {
                 // Create purchase receipt with calculated totals from frontend
-                $purchaseReceiptId = PurchaseReceipt::forDatabase($branchConnection)->insertGetId([
+                $purchaseReceiptId = PurchaseReceipt::on($branch->connection_name)->insertGetId([
                     'bill_date' => $validate['bill_date'],
                     'purchase_party_id' => $validate['party_name'],
                     'bill_no' => $validate['bill_no'],
@@ -151,14 +146,14 @@ class PurchaseController extends Controller
                 // Loop through each product and create purchase records with calculated values
                 foreach ($validate['product'] as $index => $productId) {
                     // Get product details for reference
-                    $product = Product::forDatabase($branchConnection)->find($productId);
+                    $product = Product::on($branch->connection_name)->find($productId);
 
                     if (!$product) {
                         continue; // Skip if product not found
                     }
 
                     // Create purchase record with calculated values from frontend
-                    Purchase::forDatabase($branchConnection)->insert([
+                    Purchase::on($branch->connection_name)->insert([
                         'bill_date' => $validate['bill_date'],
                         'purchase_receipt_id' => $purchaseReceiptId,
                         // 'purchase_party_id' => $validate['party_name'],
@@ -233,22 +228,19 @@ class PurchaseController extends Controller
      */
     public function edit(string $id)
     {
-        if (session('user_type') !== 'branch' || !session('branch_connection')) {
-            return redirect()->back()->with('error', 'Branch session not found. Please login again.');
-        }
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
 
-        // Get branch connection name from session
-        $branchConnection = session('branch_connection');
+        $parties = PurchaseParty::on($branch->connection_name)->get();
+        $products = Product::on($branch->connection_name)->get();
 
-        $parties = PurchaseParty::forDatabase($branchConnection)->get();
-        $products = Product::forDatabase($branchConnection)->get();
-        
-        $purchaseReceipt = PurchaseReceipt::forDatabase($branchConnection)
+        $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
             ->withDynamic(['purchaseParty', 'createUser', 'updateUser'])
             ->where('id', $id)
             ->first();
 
-        $purchaseItems = Purchase::forDatabase($branchConnection)
+        $purchaseItems = Purchase::on($branch->connection_name)
             ->where('purchase_receipt_id', $id)->get();
 
         // dd($purchaseItems);
@@ -262,11 +254,9 @@ class PurchaseController extends Controller
     {
         try {
             // Check if user is logged in as branch
-            if (session('user_type') !== 'branch' || !session('branch_connection')) {
-                return redirect()->back()->with('error', 'Branch session not found. Please login again.');
-            }
-
-            $branchConnection = session('branch_connection');
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $branch = $auth['branch'];
 
             // Validate the request - including calculated fields from frontend
             $validate = $request->validate([
@@ -284,7 +274,7 @@ class PurchaseController extends Controller
 
                 // Array validation for multiple purchase items
                 'product' => 'required|array|min:1',
-                'product.*' => 'required|exists:products,id',
+                'product.*' => 'required',
                 'box' => 'required|array',
                 'box.*' => 'nullable|numeric|min:0',
                 'pcs' => 'required|array',
@@ -325,7 +315,7 @@ class PurchaseController extends Controller
 
             // Check if purchase receipt exists
             // $purchaseReceipt = \DB::connection($branchConnection)
-            $purchaseReceipt = PurchaseReceipt::forDatabase($branchConnection)
+            $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
                 ->where('id', $id)
                 ->first();
             // ->table('purchase_receipt')
@@ -339,7 +329,7 @@ class PurchaseController extends Controller
 
             try {
                 // Update purchase receipt with calculated totals from frontend
-                PurchaseReceipt::forDatabase($branchConnection)
+                PurchaseReceipt::on($branch->connection_name)
                     ->where('id', $id)
                     ->update([
                         'bill_date' => $validate['bill_date'],
@@ -359,7 +349,7 @@ class PurchaseController extends Controller
                     ]);
 
                 // Get existing purchase items
-                $existingItems = Purchase::forDatabase($branchConnection)
+                $existingItems = Purchase::on($branch->connection_name)
                     ->where('purchase_receipt_id', $id)
                     ->get()
                     ->keyBy('id');
@@ -369,7 +359,7 @@ class PurchaseController extends Controller
                 // Process each product from the form
                 foreach ($validate['product'] as $index => $productId) {
                     // Get product details for reference
-                    $product = Product::forDatabase($branchConnection)->find($productId);
+                    $product = Product::on($branch->connection_name)->find($productId);
 
                     if (!$product) {
                         continue; // Skip if product not found
@@ -411,7 +401,7 @@ class PurchaseController extends Controller
 
                     if ($itemId && isset($existingItems[$itemId])) {
                         // Update existing item
-                        Purchase::forDatabase($branchConnection)
+                        Purchase::on($branch->connection_name)
                             ->where('id', $itemId)
                             ->where('purchase_receipt_id', $id)
                             ->update($purchaseData);
@@ -422,7 +412,7 @@ class PurchaseController extends Controller
                         $purchaseData['purchase_receipt_id'] = $id;
                         $purchaseData['created_at'] = now();
 
-                        $newItemId = Purchase::forDatabase($branchConnection)->insertGetId($purchaseData);
+                        $newItemId = Purchase::on($branch->connection_name)->insertGetId($purchaseData);
                         $processedItemIds[] = $newItemId;
                     }
                 }
@@ -430,7 +420,7 @@ class PurchaseController extends Controller
                 // Delete items that were removed (not in the current form submission)
                 $itemsToDelete = $existingItems->keys()->diff($processedItemIds);
                 if ($itemsToDelete->isNotEmpty()) {
-                    Purchase::forDatabase($branchConnection)
+                    Purchase::on($branch->connection_name)
                         ->whereIn('id', $itemsToDelete->toArray())
                         ->where('purchase_receipt_id', $id)
                         ->delete();
@@ -442,6 +432,7 @@ class PurchaseController extends Controller
                     ->with('success', 'Purchase Receipt #' . $id . ' updated successfully! Total Amount: ₹' . number_format($validate['receipt_total_amount'], 2));
 
             } catch (Exception $e) {
+                dd('aaa: ', $e->getMessage());
                 \DB::rollback();
                 \Log::error('Purchase update failed: ' . $e->getMessage());
                 return redirect()->back()
@@ -450,11 +441,13 @@ class PurchaseController extends Controller
             }
 
         } catch (ValidationException $e) {
+            dd('validate: ', $e->getMessage());
             return redirect()->back()
                 ->withErrors($e->validator)
                 ->withInput()
                 ->with('error', 'Please check the form fields.');
         } catch (Exception $ex) {
+            dd('ccc: ', $ex->getMessage());
             \Log::error('Purchase update error: ' . $ex->getMessage());
             return redirect()->back()
                 ->with('error', 'Error updating purchase: ' . $ex->getMessage())
@@ -469,14 +462,12 @@ class PurchaseController extends Controller
     {
         try {
             // Check if user is logged in as branch
-            if (session('user_type') !== 'branch' || !session('branch_connection')) {
-                return redirect()->back()->with('error', 'Branch session not found. Please login again.');
-            }
-
-            $branchConnection = session('branch_connection');
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $branch = $auth['branch'];
 
             // Check if purchase receipt exists
-            $purchaseReceipt = PurchaseReceipt::forDatabase($branchConnection)
+            $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
                 ->where('id', $id)
                 ->first();
 
@@ -489,12 +480,12 @@ class PurchaseController extends Controller
 
             try {
                 // Delete purchase items first
-                Purchase::forDatabase($branchConnection)
+                Purchase::on($branch->connection_name)
                     ->where('purchase_receipt_id', $id)
                     ->delete();
 
                 // Delete purchase receipt
-                PurchaseReceipt::forDatabase($branchConnection)
+                PurchaseReceipt::on($branch->connection_name)
                     ->where('id', $id)
                     ->delete();
 
