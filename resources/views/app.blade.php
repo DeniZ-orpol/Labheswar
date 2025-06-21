@@ -1240,33 +1240,37 @@ License: You must have a valid license purchased only from themeforest(the above
                             </li>
                         </ul>
                     </li>
-                    <li>
-                        <a href="javascript:;" class="side-menu">
-                            <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
-                            <div class="side-menu__title">
-                                Purchase
-                                <i data-lucide="chevron-down" class="side-menu__sub-icon"></i>
-                            </div>
-                        </a>
-
-                        <ul class="">
-                            <li>
-                                <a href="{{ route('purchase.index') }}"
-                                    class="side-menu {{ request()->routeIs('purchase.*') ? 'side-menu--active' : '' }}">
-                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                    <div class="side-menu__title"> Purchase List </div>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('purchase.party.index') }}"
-                                    class="side-menu {{ request()->routeIs('products.*') ? 'side-menu--active' : '' }}">
-                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                    <div class="side-menu__title"> Purchase Party </div>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
                 @endif
+                @php
+                    $purchaseMenuOpen = request()->routeIs('purchase.*') || request()->routeIs('purchase.party.*');
+                @endphp
+                <li>
+                    <a href="javascript:;" class="side-menu">
+                        <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
+                        <div class="side-menu__title">
+                            Purchase
+                            <i data-lucide="chevron-down" class="side-menu__sub-icon"></i>
+                        </div>
+                    </a>
+
+                    <ul class="{{ $purchaseMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
+
+                        <li>
+                            <a href="{{ route('purchase.party.index') }}"
+                                class="side-menu {{ request()->routeIs('purchase.party.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Purchase Party </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('purchase.index') }}"
+                                class="side-menu {{ request()->routeIs('purchase.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Purchase List </div>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
 
                 {{-- <li>
                         <a href="javascript:;" class="side-menu">
