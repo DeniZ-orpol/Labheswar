@@ -33,7 +33,7 @@
                             <p><strong>Cess:</strong> {{ $product->cess }}%</p>
                             <p><strong>Converse (Carton):</strong> {{ $product->converse_carton }}</p>
                             <p><strong>Converse (Box):</strong> {{ $product->converse_box }}</p>
-                            <p><strong>Converse (Pcs):</strong> {{ $product->converse_pcs }}</p>
+                            {{-- <p><strong>Converse (Pcs):</strong> {{ $product->converse_pcs }}</p> --}}
                             <p><strong>Min Qty:</strong> {{ $product->min_qty }}</p>
                             <p><strong>Reorder Qty:</strong> {{ $product->reorder_qty }}</p>
                             <p><strong>Negative Billing:</strong> {{ $product->negative_billing ?? 'No' }}</p>

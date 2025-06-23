@@ -26,7 +26,10 @@ class ProductController extends Controller
         $user = $auth['user'];
         $branch = $auth['branch'];
 
-        $products = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])->paginate(10);
+        $products = Product::on($branch->connection_name)
+            ->with(['category', 'hsnCode', 'pCompany'])
+            ->orderByDesc('id')
+            ->paginate(10);
 
         return view('products.index', compact('products'));
     }
@@ -409,32 +412,97 @@ class ProductController extends Controller
 
                 foreach ($rows as $row) {
                     if (!empty($row[0]) || !empty($row[1])) { // Check if name exists
+
+                        $companyId = null;
+                        if (!empty($row[6])) {
+                            $company = Company::on($branch->connection_name)
+                                ->where('name', $row[6])
+                                ->first();
+
+                            if (!$company) {
+                                $companyId = Company::on($branch->connection_name)->insertGetId([
+                                    'name' => $row[6],
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                            } else {
+                                $companyId = $company->id;
+                            }
+                        }
+
+                        // Handle Category - create or get existing
+                        $categoryId = null;
+                        if (!empty($row[7])) {
+                            $category = Category::on($branch->connection_name)
+                                ->where('name', $row[7])
+                                ->first();
+
+                            if (!$category) {
+                                $categoryId = Category::on($branch->connection_name)->insertGetId([
+                                    'name' => $row[7],
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                            } else {
+                                $categoryId = $category->id;
+                            }
+                        }
+
+                        // Handle HSN Code - create or get existing
+                        $hsnCodeId = null;
+                        if (!empty($row[8])) {
+                            $hsnCode = HsnCode::on($branch->connection_name)
+                                ->where('hsn_code', $row[8])
+                                ->first();
+
+                            if (!$hsnCode) {
+                                $hsnCodeId = HsnCode::on($branch->connection_name)->insertGetId([
+                                    'hsn_code' => $row[8],
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                            } else {
+                                $hsnCodeId = $hsnCode->id;
+                            }
+                        }
                         $data = [
-                            'product_barcode' => $row[0] ?? '',
-                            'product_name' => $row[1],
-                            'price' => $row[11] ?? 0,
-                            'min_quantity' => $row[19] ?? 0,
-                            'category' => $row[5] ?? '',
-                            'unit_type' => $row[3] ?? '',
+                            'product_name' => $row[0] ?? '',
+                            'barcode' => $row[1] ?? '',
+                            // 'image'=> $row[2] ?? '',
+                            'search_option' => $row[3] ?? '',
+                            'unit_types' => $row[4] ?? '',
+                            'decimal_btn' => $row[5] ?? '',
+                            'company' => $companyId ?? '',
+                            'category_id' => $categoryId ?? '',
+                            'hsn_code_id' => $hsnCodeId ?? '',
+                            'sgst' => $row[9] ?? '',
+                            'cgst1' => $row[10] ?? '',
+                            'cgst2' => $row[11] ?? '',
+                            'cess' => $row[12] ?? '',
+                            'mrp' => $row[13] ?? '',
+                            'purchase_rate' => $row[14] ?? '',
+                            'sale_rate_a' => $row[15] ?? '',
+                            'sale_rate_b' => $row[16] ?? '',
+                            'sale_rate_c' => $row[17] ?? '',
+                            'sale_online' => $row[18] ?? '',
+                            'converse_carton' => $row[19] ?? '',
+                            'converse_box' => $row[20] ?? '',
+                            'negative_billing' => $row[22] ?? '',
+                            'min_qty' => $row[23] ?? '',
+                            'reorder_qty' => $row[24] ?? '',
+                            'discount' => $row[25] ?? '',
+                            'max_discount' => $row[26] ?? '',
+                            'discount_scheme' => $row[27] ?? '',
+                            'bonus_use' => strtoupper($row[28]) === 'YES' ? 1 : 0,
                         ];
                         // dd($data);
-                        // Product::on($branch->connection_name)->insert($data);
+                        Product::on($branch->connection_name)->insert($data);
                     }
                 }
-
             }
-            // dd($file);
 
-            // if ($extension) {
-            // $this->importExcel($file, $branch->connection_name);
-            // } else {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'Only CSV files are supported'
-            //     ]);
-            // }
-
-            return view('products.index');
+            return redirect()->route('products.index')
+                ->with('success', 'Product created successfully!');
 
         } catch (Exception $e) {
             return response()->json([
