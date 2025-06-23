@@ -9,6 +9,7 @@ class AppCartsOrders extends Model
     protected $table = 'app_cart_order';
 
     protected $fillable = [
+        'order_receipt_id',
         'user_id',
         'cart_id',
         'product_id',
@@ -23,6 +24,10 @@ class AppCartsOrders extends Model
         'gst_p',
         'return_product',
     ];
+
+    public function orderReceipt() {
+        return $this->belongsTo(AppCartsOrderBill::class, 'order_receipt_id');
+    }
 
     public function user()
     {

@@ -54,8 +54,8 @@ class AppCartOrderController extends Controller
             $request->validate([
                 'product_id' => 'required|integer',
                 'product_price' => 'required|numeric',
-                'product_qty' => 'required|integer|min:1',
-                'product_weight' => 'required',
+                'product_qty' => 'nullable|integer|min:1',
+                'product_weight' => 'nullable',
                 'cart_id' => 'nullable|integer', // Optional cart_id
                 'new_cart' => 'sometimes|boolean' // Force new cart for same user
             ]);
@@ -486,6 +486,13 @@ class AppCartOrderController extends Controller
                     'ship_to_name' => $request->input('ship_to_name'),
                     'expected_delivery_date' => $request->input('expected_delivery_date')
                 ]);
+
+                // Update cart items with the order receipt ID
+                foreach ($cartItems as $item) {
+                    $item->update([
+                        'order_receipt_id' => $orderBill->id
+                    ]);
+                }
 
                 // Optional: Clear cart after bill creation
                 if ($request->input('clear_cart', true)) { // Default to true

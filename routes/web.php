@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AppOrderController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CategoryController;
@@ -68,12 +69,11 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
 
     // Products
     Route::resource('products', ProductController::class);
+    Route::post('/product/import', [ProductController::class, 'importProducts'])->name('products.import');
+
     Route::resource('categories', CategoryController::class);
 
     Route::resource('inventory', InventoryController::class);
-
-    Route::post('/product/import', [ProductController::class, 'importProducts'])->name('products.import');
-
 
     // Purchase
     Route::get('/purchase', [PurchaseController::class, 'index'])->name('purchase.index');
@@ -90,6 +90,8 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     Route::get('/purchase/party/{id}/edit', [PurchasePartyController::class, 'edit'])->name('purchase.party.edit');
     Route::put('/purchase/party/{id}/update', [PurchasePartyController::class, 'update'])->name('purchase.party.update');
     Route::delete('/purchase/party/{id}/delete', [PurchasePartyController::class, 'destroy'])->name('purchase.party.destroy');
+
+    Route::resource('app/orders', AppOrderController::class);
 });
 
 
