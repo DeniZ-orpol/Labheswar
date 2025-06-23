@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\Branch;
+use App\Models\Role;
 
 trait BranchAuthTrait
 {
@@ -24,23 +25,30 @@ trait BranchAuthTrait
             ], 403);
         }
 
-        $branch = Branch::where('id', $user->branch_id)
-            ->where('status', 'active')
-            ->first();
+        $role = Role::where('id', $user->role_id)->first();
 
-        if (!$branch) {
-            return response()->json([
-                'success' => false,
-                'data' => [],
-                'message' => 'No accessible branch found for user'
-            ]);
+        if(strtoupper($role->role_name) === 'SUPER ADMIN'){
+            $branch = Branch::where('status', 'active')->get();
+        } else {
+            $branch = Branch::where('id', $user->branch_id)
+                ->where('status', 'active')
+                ->first();
+                
+            if (!$branch) {
+                return response()->json([
+                    'success' => false,
+                    'data' => [],
+                    'message' => 'No accessible branch found for user'
+                ]);
+            }
+
+            configureBranchConnection($branch);
         }
-
-        configureBranchConnection($branch);
 
         return [
             'user' => $user,
-            'branch' => $branch
+            'branch' => $branch,
+            'role' => $role
         ];
     }
 }
