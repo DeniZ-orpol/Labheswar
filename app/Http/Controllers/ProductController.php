@@ -505,10 +505,7 @@ class ProductController extends Controller
                 ->with('success', 'Product created successfully!');
 
         } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Import failed: ' . $e->getMessage()
-            ]);
+            dd($e->getMessage());
         }
     }
 
