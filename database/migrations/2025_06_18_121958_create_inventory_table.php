@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('product_id')->constrained(); // Assumes products table exists
             $table->enum('type', ['in', 'out']);
-            $table->integer('quantity');
+            $table->decimal('quantity',10,2);
             $table->string('unit')->nullable(); // NOS, BOX, PIECE, etc.
             $table->string('reason')->nullable(); // Opening Stock, Purchase, Sale, etc.
             $table->timestamps();
