@@ -33,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/get-cart-list', [AppCartOrderController::class, 'getCartList']);
     Route::post('/cart/add', [AppCartOrderController::class, 'addToCart']);
     Route::put('/cart/update-quantity', [AppCartOrderController::class, 'updateQuantity']);
+    Route::post('/cart/remove-product', [AppCartOrderController::class, 'removeProductFromCart']);
 
     // Order Receipts API
     Route::get('/order-bills-list', [AppCartOrderController::class, 'getOrderBills']);

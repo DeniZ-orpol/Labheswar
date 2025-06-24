@@ -853,4 +853,184 @@ class AppCartOrderController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Remove product from cart and add it intro inventory
+     * @return void
+     */
+    public function removeProductFromCart(Request $request)
+    {
+        try {
+            // Get authenticated user using trait
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $role = $auth['role'];
+            $branch = $auth['branch'];
+
+            // Validate request
+            $request->validate([
+                'cart_item_id' => 'required|integer',
+                'cart_id' => 'sometimes|integer', // Optional for extra validation
+            ]);
+
+            $cartItemId = $request->input('cart_item_id');
+            $cartId = $request->input('cart_id'); // Optional
+
+            // Start database transaction
+            DB::connection($branch->connection_name)->beginTransaction();
+
+            try {
+                // Get cart item with product details
+                $cartItem = AppCartsOrders::on($branch->connection_name)
+                    ->where('id', $cartItemId)
+                    ->where('user_id', $user->id) // Ensure user owns this cart item
+                    ->first();
+
+                if (!$cartItem) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cart item not found or access denied'
+                    ], 404);
+                }
+
+                // Optional: Validate cart_id if provided
+                if ($cartId && $cartItem->cart_id != $cartId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cart item does not belong to specified cart'
+                    ], 400);
+                }
+
+                // Get product details
+                $product = Product::on($branch->connection_name)
+                    ->where('id', $cartItem->product_id)
+                    ->first();
+
+                if (!$product) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Product not found'
+                    ], 404);
+                }
+
+                // Get inventory record
+                $inventory = Inventory::on($branch->connection_name)
+                    ->where('product_id', $cartItem->product_id)
+                    ->first();
+
+                if (!$inventory) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Inventory record not found'
+                    ], 404);
+                }
+
+                // Determine quantity to add back to inventory
+                $quantityToAddBack = 0;
+                $displayQuantity = '';
+
+                // Check if product supports loose quantity (decimal_btn = 1) and has product_weight
+                if ($product->decimal_btn == 1 && !empty($cartItem->product_weight)) {
+                    // For loose quantity items, use product_weight as the quantity to add back
+                    $quantityToAddBack = $cartItem->product_weight;
+                    $displayQuantity = $cartItem->product_weight . ' ' . strtoupper($product->unit_types);
+                } else {
+                    // For fixed quantity items, use product_quantity
+                    $quantityToAddBack = $cartItem->product_quantity;
+                    $displayQuantity = $cartItem->product_quantity . ' PCS';
+                }
+
+                // Store cart item details for response before deletion
+                $removedItemDetails = [
+                    'id' => $cartItem->id,
+                    'product_id' => $cartItem->product_id,
+                    'product_name' => $product->product_name,
+                    'product_price' => $cartItem->product_price,
+                    'product_quantity' => $cartItem->product_quantity,
+                    'product_weight' => $cartItem->product_weight,
+                    'sub_total' => $cartItem->sub_total,
+                    'total_amount' => $cartItem->total_amount,
+                    'taxes' => $cartItem->taxes,
+                    'display_quantity' => $displayQuantity,
+                    'quantity_added_back' => $quantityToAddBack,
+                    'cart_id' => $cartItem->cart_id,
+                    'is_loose_quantity' => ($product->decimal_btn == 1 && !empty($cartItem->product_weight))
+                ];
+
+                // Add quantity back to inventory
+                $inventory->increment('quantity', $quantityToAddBack);
+
+                // Remove the cart item
+                $cartItem->delete();
+
+                // Check if cart is now empty
+                $remainingItems = AppCartsOrders::on($branch->connection_name)
+                    ->where('cart_id', $cartItem->cart_id)
+                    ->count();
+
+                $cartStatus = 'has_items';
+                if ($remainingItems == 0) {
+                    // Cart is empty, make it available
+                    $cart = Cart::on($branch->connection_name)
+                        ->where('id', $cartItem->cart_id)
+                        ->first();
+
+                    if ($cart) {
+                        $cart->update([
+                            'user_id' => null,
+                            'status' => 'available'
+                        ]);
+                        $cartStatus = 'empty_and_available';
+                    }
+                }
+
+                // Update popular products (decrement count)
+                $popularProduct = PopularProducts::on($branch->connection_name)
+                    ->where('user_id', $user->id)
+                    ->where('product_id', $cartItem->product_id)
+                    ->first();
+
+                if ($popularProduct && $popularProduct->count > 0) {
+                    $popularProduct->decrement('count');
+
+                    // Remove popular product record if count reaches 0
+                    if ($popularProduct->fresh()->count <= 0) {
+                        $popularProduct->delete();
+                    }
+                }
+
+                // Commit transaction
+                DB::connection($branch->connection_name)->commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Product removed from cart successfully',
+                    'data' => [
+                        'removed_item' => $removedItemDetails,
+                        'inventory_updated' => [
+                            'product_id' => $cartItem->product_id,
+                            'product_name' => $product->product_name,
+                            'quantity_added_back' => $quantityToAddBack,
+                            'new_inventory_quantity' => $inventory->quantity,
+                            'unit' => strtoupper($product->unit_types)
+                        ],
+                        'cart_status' => $cartStatus,
+                        'remaining_items_in_cart' => $remainingItems,
+                        'branch' => $branch->name
+                    ]
+                ]);
+
+            } catch (Exception $e) {
+                // Rollback transaction
+                DB::connection($branch->connection_name)->rollback();
+                throw $e;
+            }
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
