@@ -79,7 +79,7 @@ class AppCartOrderController extends Controller
                 $product = Product::on($branch->connection_name)
                     ->where('id', $productId)
                     ->first();
-
+                
                 if (!$product) {
                     return response()->json([
                         'success' => false,
@@ -694,6 +694,21 @@ class AppCartOrderController extends Controller
                 // ->where('branch_id', $branch->id)
                 ->first();
 
+            $selection = PopularProducts::on($branch->connection_name)
+                ->where('user_id', $user->id)
+                ->where('product_id', $product->id)
+                ->first();
+
+            if ($selection) {
+                $selection->increment('count');
+            } else {
+                PopularProducts::on($branch->connection_name)->create([
+                    'user_id' => $user->id,
+                    'product_id' => $product->id,
+                    'count' => 1
+                ]);
+            }
+
             if ($cartItem) {
                 $cartItem->product_quantity += $quantity;
                 $cartItem->sub_total += $subTotal;
@@ -735,84 +750,107 @@ class AppCartOrderController extends Controller
     }
 
     public function updateQuantity(Request $request)
-{
-    try {
-        $user = auth()->user();
-        if (!$user) {
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            $request->validate([
+                'cart_item_id' => 'required|integer',
+                'quantity'     => 'required|integer|min:1'
+            ]);
+
+            $branch = $user->branch;
+            if (!$branch || $branch->status !== 'active') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No accessible branch found'
+                ], 404);
+            }
+
+            $connection = configureBranchConnection($branch);
+            if (!$connection) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Branch connection configuration failed'
+                ], 500);
+            }
+
+            $cartItem = AppCartsOrders::on($connection)
+                ->where('id', $request->cart_item_id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$cartItem) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cart item not found'
+                ], 404);
+            }
+
+            $product = Product::on($connection)->find($cartItem->product_id);
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found'
+                ], 404);
+            }
+
+            $newQty = $request->quantity;
+            $price = $product->price ?? 0;
+            $subTotal = $newQty * $price;
+            $gstPercent = $product->gst_percentage ?? 0;
+            $gstAmount = ($subTotal * $gstPercent) / 100;
+            $totalAmount = $subTotal + $gstAmount;
+
+            $cartItem->product_quantity = $newQty;
+            $cartItem->product_price = $price;
+            $cartItem->sub_total = $subTotal;
+            $cartItem->gst_p = $gstPercent;
+            $cartItem->gst = $gstAmount;
+            $cartItem->taxes = $gstAmount;
+            $cartItem->total_amount = $totalAmount;
+            $cartItem->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cart item updated successfully',
+                'cart_item' => $cartItem
+            ]);
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized'
-            ], 401);
-        }
-
-        $request->validate([
-            'cart_item_id' => 'required|integer',
-            'quantity'     => 'required|integer|min:1'
-        ]);
-
-        $branch = $user->branch;
-        if (!$branch || $branch->status !== 'active') {
-            return response()->json([
-                'success' => false,
-                'message' => 'No accessible branch found'
-            ], 404);
-        }
-
-        $connection = configureBranchConnection($branch);
-        if (!$connection) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Branch connection configuration failed'
+                'message' => 'Server error: ' . $e->getMessage()
             ], 500);
         }
-
-        $cartItem = AppCartsOrders::on($connection)
-            ->where('id', $request->cart_item_id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (!$cartItem) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cart item not found'
-            ], 404);
-        }
-
-        $product = Product::on($connection)->find($cartItem->product_id);
-        if (!$product) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Product not found'
-            ], 404);
-        }
-
-        $newQty = $request->quantity;
-        $price = $product->price ?? 0;
-        $subTotal = $newQty * $price;
-        $gstPercent = $product->gst_percentage ?? 0;
-        $gstAmount = ($subTotal * $gstPercent) / 100;
-        $totalAmount = $subTotal + $gstAmount;
-
-        $cartItem->product_quantity = $newQty;
-        $cartItem->product_price = $price;
-        $cartItem->sub_total = $subTotal;
-        $cartItem->gst_p = $gstPercent;
-        $cartItem->gst = $gstAmount;
-        $cartItem->taxes = $gstAmount;
-        $cartItem->total_amount = $totalAmount;
-        $cartItem->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Cart item updated successfully',
-            'cart_item' => $cartItem
-        ]);
-    } catch (\Throwable $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Server error: ' . $e->getMessage()
-        ], 500);
     }
-}
 
+    public function getOrderBills()
+    {
+        try {
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $role = $auth['role'];
+            $branch = $auth['branch'];
+            $orders = AppCartsOrderBill::on($branch->connection_name)->get();
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'total_bills' => $orders->count(),
+                    'order_bills' => $orders,
+                    'branch' => $branch->name
+                ]
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
