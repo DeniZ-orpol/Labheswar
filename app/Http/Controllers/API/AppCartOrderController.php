@@ -79,7 +79,7 @@ class AppCartOrderController extends Controller
                 $product = Product::on($branch->connection_name)
                     ->where('id', $productId)
                     ->first();
-                
+
                 if (!$product) {
                     return response()->json([
                         'success' => false,
@@ -625,36 +625,39 @@ class AppCartOrderController extends Controller
         try {
             $user = auth()->user();
             if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized'
-                ], 401);
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
             }
 
-            // Step 1: Get branch
             $branch = $user->branch;
             if (!$branch || $branch->status !== 'active') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No accessible branch found'
-                ], 404);
+                return response()->json(['success' => false, 'message' => 'No accessible branch found'], 404);
             }
 
-            // ✅ Step 2: Configure connection and assign it
+            // Step 1: Configure branch DB connection
             $connection = configureBranchConnection($branch);
             if (!$connection) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Branch connection configuration failed'
-                ], 500);
+                return response()->json(['success' => false, 'message' => 'Branch connection configuration failed'], 500);
             }
 
-            // ✅ Step 3: Fetch product from branch DB
-            $product = Product::on($connection)
-                ->where('barcode', $request->barcode)
-                ->first();
+            // Step 2: Validate request input
+            $request->validate([
+                'barcode' => 'required|string',
+                'quantity' => 'nullable|integer|min:1',
+                'cart_id' => 'nullable|integer',
+                'new_cart' => 'sometimes|boolean'
+            ]);
 
+            $barcode = $request->barcode;
             $quantity = $request->quantity ?? 1;
+            $requestedCartId = $request->input('cart_id');
+            $newCart = $request->input('new_cart', false);
+
+            // Step 3: Fetch product from DB
+            $product = Product::on($connection)->where('barcode', $barcode)->first();
+            if (!$product) {
+                return response()->json(['success' => false, 'message' => 'Product not found'], 404);
+            }
+
             $price = $product->price ?? 0;
             $weight = $product->product_weight ?? null;
             $firmId = $product->firm_id ?? null;
@@ -664,37 +667,58 @@ class AppCartOrderController extends Controller
             $gstAmount = ($subTotal * $gstPercent) / 100;
             $totalAmount = $subTotal + $gstAmount;
 
-            if (!$product) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Product not found'
-                ], 404);
+            // Step 4: Cart logic
+            if ($requestedCartId) {
+                $targetCart = Cart::on($connection)->find($requestedCartId);
+                if (!$targetCart) {
+                    return response()->json(['success' => false, 'message' => 'Requested cart not found'], 404);
+                }
+
+                if ($targetCart->status === 'available') {
+                    $targetCart->update(['user_id' => $user->id, 'status' => 'unavailable']);
+                    $cart = $targetCart;
+                } elseif ($targetCart->user_id === $user->id) {
+                    $cart = $targetCart;
+                } else {
+                    $availableCart = Cart::on($connection)->where('status', 'available')->first();
+                    if (!$availableCart) {
+                        return response()->json(['success' => false, 'message' => 'No available cart for reassignment'], 400);
+                    }
+                    $availableCart->update(['user_id' => $user->id, 'status' => 'unavailable']);
+                    $cart = $availableCart;
+                }
+            } elseif ($newCart) {
+                $availableCart = Cart::on($connection)->where('status', 'available')->first();
+                if (!$availableCart) {
+                    return response()->json(['success' => false, 'message' => 'No carts available for new cart request'], 400);
+                }
+                $availableCart->update(['user_id' => $user->id, 'status' => 'unavailable']);
+                $cart = $availableCart;
+            } else {
+                $cart = Cart::on($connection)
+                    ->where('user_id', $user->id)
+                    ->where('status', 'unavailable')
+                    ->first();
+
+                if (!$cart) {
+                    $availableCart = Cart::on($connection)->where('status', 'available')->first();
+                    if (!$availableCart) {
+                        return response()->json(['success' => false, 'message' => 'No carts available'], 400);
+                    }
+                    $availableCart->update(['user_id' => $user->id, 'status' => 'unavailable']);
+                    $cart = $availableCart;
+                }
             }
 
-            // ✅ Step 4: Find or create cart
-            $cart = Cart::on($connection)
-                ->where('user_id', $user->id)
-                ->where('status', 'unavailable')
-                ->first();
-
-            if (!$cart) {
-                $cart = new Cart();
-                $cart->setConnection($connection);
-                $cart->user_id = $user->id;
-                $cart->status = 'unavailable';
-                $cart->created_at = now();
-                $cart->save();
-            }
-
-            // ✅ Step 5: Add or update cart item
+            // Step 5: Add or update cart item
             $cartItem = AppCartsOrders::on($connection)
                 ->where('cart_id', $cart->id)
                 ->where('user_id', $user->id)
                 ->where('product_id', $product->id)
-                // ->where('branch_id', $branch->id)
                 ->first();
 
-            $selection = PopularProducts::on($branch->connection_name)
+            // Step 6: Update popular products
+            $selection = PopularProducts::on($connection)
                 ->where('user_id', $user->id)
                 ->where('product_id', $product->id)
                 ->first();
@@ -702,13 +726,14 @@ class AppCartOrderController extends Controller
             if ($selection) {
                 $selection->increment('count');
             } else {
-                PopularProducts::on($branch->connection_name)->create([
+                PopularProducts::on($connection)->create([
                     'user_id' => $user->id,
                     'product_id' => $product->id,
                     'count' => 1
                 ]);
             }
 
+            // Step 7: Save or update cart item
             if ($cartItem) {
                 $cartItem->product_quantity += $quantity;
                 $cartItem->sub_total += $subTotal;
@@ -736,10 +761,10 @@ class AppCartOrderController extends Controller
             }
 
             return response()->json([
-                'success'    => true,
-                'message'    => 'Product added to cart',
-                'cart_id'    => $cart->id,
-                'cart_item'  => $cartItem
+                'success'   => true,
+                'message'   => 'Product added to cart',
+                'cart_id'   => $cart->id,
+                'cart_item' => $cartItem
             ]);
         } catch (\Throwable $e) {
             return response()->json([
@@ -748,6 +773,7 @@ class AppCartOrderController extends Controller
             ], 500);
         }
     }
+
 
     public function updateQuantity(Request $request)
     {
