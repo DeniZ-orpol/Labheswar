@@ -11,13 +11,15 @@ if (!function_exists('configureBranchConnection')) {
      */
     function configureBranchConnection($branch)
     {
+        $connectionName = $branch->connection_name;
+
         $branchConfig = [
-            'driver' => env('DB_CONNECTION'),
-            'host' => env('DB_HOST'),
-            'port' => env('DB_PORT'),
+            'driver' => env('DB_CONNECTION', 'mysql'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
             'database' => $branch->database_name,
-            'username' => $branch->db_username ?? env('DB_USERNAME'),
-            'password' => $branch->db_password ?? env('DB_PASSWORD'),
+            'username' => $branch->db_username ?? env('DB_USERNAME', 'root'),
+            'password' => $branch->db_password ?? env('DB_PASSWORD', ''),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
             'prefix' => '',
@@ -25,8 +27,11 @@ if (!function_exists('configureBranchConnection')) {
             'engine' => null,
         ];
 
-        config(['database.connections.' . $branch->connection_name => $branchConfig]);
-        DB::purge($branch->connection_name);
+        config(['database.connections.' . $connectionName => $branchConfig]);
+        DB::purge($connectionName);
+
+        // ✅ Return the connection name
+        return $connectionName;
     }
 }
 

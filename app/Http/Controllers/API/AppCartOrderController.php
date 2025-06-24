@@ -11,6 +11,7 @@ use App\Models\Inventory;
 use App\Models\Product;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class AppCartOrderController extends Controller
@@ -272,13 +273,11 @@ class AppCartOrderController extends Controller
                         'branch' => $branch->name
                     ]
                 ]);
-
             } catch (Exception $e) {
                 // Rollback transaction
                 DB::connection($branch->connection_name)->rollback();
                 throw $e;
             }
-
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -371,7 +370,6 @@ class AppCartOrderController extends Controller
                     'branch' => $branch->name
                 ]
             ]);
-
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -521,12 +519,10 @@ class AppCartOrderController extends Controller
                         'branch' => $branch->name
                     ]
                 ]);
-
             } catch (Exception $e) {
                 DB::connection($branch->connection_name)->rollback();
                 throw $e;
             }
-
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -598,7 +594,6 @@ class AppCartOrderController extends Controller
                     'branch' => $branch->name
                 ]
             ]);
-
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -606,4 +601,200 @@ class AppCartOrderController extends Controller
             ], 500);
         }
     }
+
+    public function addToCart(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            // Step 1: Get branch
+            $branch = $user->branch;
+            if (!$branch || $branch->status !== 'active') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No accessible branch found'
+                ], 404);
+            }
+
+            // ✅ Step 2: Configure connection and assign it
+            $connection = configureBranchConnection($branch);
+            if (!$connection) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Branch connection configuration failed'
+                ], 500);
+            }
+
+            // ✅ Step 3: Fetch product from branch DB
+            $product = Product::on($connection)
+                ->where('barcode', $request->barcode)
+                ->first();
+
+            $quantity = $request->quantity ?? 1;
+            $price = $product->price ?? 0;
+            $weight = $product->product_weight ?? null;
+            $firmId = $product->firm_id ?? null;
+            $gstPercent = $product->gst_percentage ?? 0;
+
+            $subTotal = $price * $quantity;
+            $gstAmount = ($subTotal * $gstPercent) / 100;
+            $totalAmount = $subTotal + $gstAmount;
+
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found'
+                ], 404);
+            }
+
+            // ✅ Step 4: Find or create cart
+            $cart = Cart::on($connection)
+                ->where('user_id', $user->id)
+                ->where('status', 'unavailable')
+                ->first();
+
+            if (!$cart) {
+                $cart = new Cart();
+                $cart->setConnection($connection);
+                $cart->user_id = $user->id;
+                $cart->status = 'unavailable';
+                $cart->created_at = now();
+                $cart->save();
+            }
+
+            // ✅ Step 5: Add or update cart item
+            $cartItem = AppCartsOrders::on($connection)
+                ->where('cart_id', $cart->id)
+                ->where('user_id', $user->id)
+                ->where('product_id', $product->id)
+                // ->where('branch_id', $branch->id)
+                ->first();
+
+            if ($cartItem) {
+                $cartItem->product_quantity += $quantity;
+                $cartItem->sub_total += $subTotal;
+                $cartItem->gst += $gstAmount;
+                $cartItem->taxes += $gstAmount;
+                $cartItem->total_amount += $totalAmount;
+                $cartItem->save();
+            } else {
+                $cartItem = new AppCartsOrders();
+                $cartItem->setConnection($connection);
+                $cartItem->user_id = $user->id;
+                $cartItem->cart_id = $cart->id;
+                $cartItem->product_id = $product->id;
+                $cartItem->firm_id = $firmId;
+                $cartItem->product_weight = $weight;
+                $cartItem->product_price = $price;
+                $cartItem->product_quantity = $quantity;
+                $cartItem->sub_total = $subTotal;
+                $cartItem->gst = $gstAmount;
+                $cartItem->gst_p = $gstPercent;
+                $cartItem->taxes = $gstAmount;
+                $cartItem->total_amount = $totalAmount;
+                $cartItem->return_product = 0;
+                $cartItem->save();
+            }
+
+            return response()->json([
+                'success'    => true,
+                'message'    => 'Product added to cart',
+                'cart_id'    => $cart->id,
+                'cart_item'  => $cartItem
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateQuantity(Request $request)
+{
+    try {
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
+        $request->validate([
+            'cart_item_id' => 'required|integer',
+            'quantity'     => 'required|integer|min:1'
+        ]);
+
+        $branch = $user->branch;
+        if (!$branch || $branch->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'No accessible branch found'
+            ], 404);
+        }
+
+        $connection = configureBranchConnection($branch);
+        if (!$connection) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Branch connection configuration failed'
+            ], 500);
+        }
+
+        $cartItem = AppCartsOrders::on($connection)
+            ->where('id', $request->cart_item_id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$cartItem) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cart item not found'
+            ], 404);
+        }
+
+        $product = Product::on($connection)->find($cartItem->product_id);
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found'
+            ], 404);
+        }
+
+        $newQty = $request->quantity;
+        $price = $product->price ?? 0;
+        $subTotal = $newQty * $price;
+        $gstPercent = $product->gst_percentage ?? 0;
+        $gstAmount = ($subTotal * $gstPercent) / 100;
+        $totalAmount = $subTotal + $gstAmount;
+
+        $cartItem->product_quantity = $newQty;
+        $cartItem->product_price = $price;
+        $cartItem->sub_total = $subTotal;
+        $cartItem->gst_p = $gstPercent;
+        $cartItem->gst = $gstAmount;
+        $cartItem->taxes = $gstAmount;
+        $cartItem->total_amount = $totalAmount;
+        $cartItem->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cart item updated successfully',
+            'cart_item' => $cartItem
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Server error: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
 }

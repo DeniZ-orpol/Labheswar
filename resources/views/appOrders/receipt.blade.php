@@ -34,6 +34,7 @@
             font-weight: bold;
             color: #000;
             padding: 10px 0;
+            padding-top: 0px;
         }
 
         .divider {
@@ -44,6 +45,7 @@
         .section-title {
             font-weight: bold;
             margin: 10px 0 5px;
+            text-align: center;
         }
 
         table {
@@ -56,7 +58,7 @@
         td {
             text-align: left;
             padding: 3px;
-            border-bottom: 1px dotted #aaa;
+            /* border-bottom: 1px dotted #aaa; */
         }
 
         .totals td {
@@ -87,8 +89,9 @@
         <div class="logo">
             <img src="https://via.placeholder.com/80x80?text=Logo" alt="Logo"><br>
             Labheshwar<br>
+            <hr>
         </div>
-        <div class="price-box"> {{ $order->total }} </div>
+        <div class="price-box">₹{{ $order->total }} </div>
     </div>
 
     <!-- Full Receipt -->
@@ -97,20 +100,20 @@
             <img src="https://via.placeholder.com/80x80?text=Logo" alt="Logo"><br>
             <strong>Labheshwar</strong><br>
         </div>
-
+        <hr>
         <div class="small-text">
             GSTIN :- {{ $branch->gst_no }}<br>
             {{ $branch->location }}<br>
-            {{-- <strong>Phone : +91 99786 46421</strong> --}}
+            <strong>Phone : +91 99786 46421</strong>
         </div>
-
+        <hr>
         <div class="center section-title">TAX INVOICE</div>
 
         <div class="small-text">
             <strong>Bill No :-</strong> {{ $order->id }}<br>
             <strong>Date :-</strong> {{ $order->created_at->format('d-m-Y') }}
         </div>
-
+        <hr>
         <div class="section-title">Products</div>
         <table>
             <thead>
@@ -122,24 +125,28 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    @foreach ($orderItems as $item)
-                        <td>CGST @ {{ $item->gst }} %<br> {{ $item->product->product_name }} </td>
-                        <td> {{ $item->total_amount }} </td>
-                        <td> {{ $item->product_weight ? $item->product_weight : $item->product_quantity }} </td>
-                        <td> {{ $item->product_price }} </td>
-                    @endforeach
-                </tr>
+                @foreach ($orderItems as $index => $item)
+                    <tr>
+                        <td style="font-size: 9px">
+                            <strong>{{ $index + 1 }} ) CGST @ {{ $item->gst }} %, SGST @ {{ $item->sgst }}
+                                %</strong><br>
+                            <span style="font-weight: bold">{{ $item->product->barcode }}</span>
+                            {{ strtoupper($item->product->product_name) }}
+                        </td>
+                        <td>{{ $item->total_amount }}</td>
+                        <td>{{ $item->product_weight ? $item->product_weight : $item->product_quantity }}</td>
+                        <td>{{ $item->product_price }}</td>
+                    </tr>
+                @endforeach
             </tbody>
         </table>
 
-        <div class="section-title">ITEM: {{ $totalItems }}</div>
+
         <table>
+            <td>ITEM: {{ $totalItems }}</td>
             <tr class="totals">
                 <td>Qty:</td>
                 <td colspan="3">{{ $totalItems }}</td>
-            </tr>
-            <tr class="totals">
                 <td>Total:</td>
                 <td colspan="3">₹{{ $order->total }}</td>
             </tr>

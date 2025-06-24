@@ -27,8 +27,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Cart API
     Route::post('/add-to-cart', [AppCartOrderController::class,'addProductToCart']);
     Route::post('/get-cart-items', [AppCartOrderController::class, 'getCartItems']);
-    Route::post('/create-order-receipt', [AppCartOrderController::class, 'createCartOrderReceipt']);
+    Route::post('/create-order-receipt', action: [AppCartOrderController::class, 'createCartOrderReceipt']);
     Route::get('/get-cart-list', [AppCartOrderController::class, 'getCartList']);
+    Route::post('/cart/add', [AppCartOrderController::class, 'addToCart']);
+    Route::put('/cart/update-quantity', [AppCartOrderController::class, 'updateQuantity']);
 });
 
 // Route::post('/products/store', [ProductController::class, 'store']);
