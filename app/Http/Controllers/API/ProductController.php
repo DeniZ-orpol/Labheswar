@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Company;
 use App\Models\HsnCode;
+use App\Models\Inventory;
 use App\Models\PopularProducts;
 use App\Models\Product;
 use App\Traits\BranchAuthTrait;
@@ -97,11 +98,74 @@ class ProductController extends Controller
                 ], 404);
             }
 
+            // Simple product data for frontend popup
+            $enhancedProducts = $products->map(function ($product) use ($branch) {
+                // Get inventory for this product
+                $inventory = Inventory::on($branch->connection_name)
+                    ->where('product_id', $product->id)
+                    ->first();
+
+                // Check if loose quantity is supported (using decimal_btn field)
+                $isLooseQuantityProduct = $product->decimal_btn == 1;
+
+                // Determine product price based on unit type
+                $productPrice = 0;
+                $priceUnit = '';
+
+                if ($isLooseQuantityProduct) {
+                    // For loose quantity products (KG, LITER), price is per base unit
+                    $productPrice = $product->sale_rate_a; // Price per KG or LITER
+                    $priceUnit = strtoupper($product->unit_types); // KG, LITER, etc.
+                } else {
+                    // For fixed quantity products (PCS), price is per piece
+                    $productPrice = $product->sale_rate_a; // Price per PCS
+                    $priceUnit = 'PCS';
+                }
+
+                // Simple product data for popup
+                return [
+                    'id' => $product->id,
+                    'product_name' => $product->product_name,
+                    'barcode' => $product->barcode,
+                    'image' => $product->image,
+                    'unit_types' => $product->unit_types,
+                    'decimal_btn' => $product->decimal_btn,
+                    'company' => $product->company,
+                    'mrp' => $product->mrp,
+                    'sale_rate_a' => $product->sale_rate_a,
+                    'sale_rate_b' => $product->sale_rate_b,
+                    'sale_rate_c' => $product->sale_rate_c,
+                    'gst_percentage' => $product->sgst + $product->cgst1 + $product->cgst2 + $product->cess,
+                    'min_qty' => $product->min_qty,
+                    'discount' => $product->discount,
+                    'max_discount' => $product->max_discount,
+
+                    // Price information for popup
+                    'product_price' => $productPrice, // Price per unit (1 KG, 1 LITER, or 1 PCS)
+                    'price_unit' => $priceUnit, // KG, LITER, PCS
+
+                    // Inventory information
+                    'available_quantity' => $inventory ? $inventory->quantity : 0,
+                    'in_stock' => $inventory ? $inventory->quantity > 0 : false,
+
+                    // Loose quantity support flag
+                    'is_loose_quantity' => $isLooseQuantityProduct,
+
+                    // Additional product details
+                    'hsn_code_id' => $product->hsn_code_id,
+                    'category_id' => $product->category_id,
+                    'sgst' => $product->sgst,
+                    'cgst1' => $product->cgst1,
+                    'cgst2' => $product->cgst2,
+                    'cess' => $product->cess,
+                ];
+            });
+
             return response()->json([
                 'success' => true,
                 'branch' => $branch->name,
                 'branch_connection' => $branch->connection_name,
-                'data' => $products
+                'data' => $enhancedProducts
             ]);
         } catch (Exception $e) {
             return response()->json([

@@ -620,24 +620,20 @@ class AppCartOrderController extends Controller
         }
     }
 
+    /**
+     * Add
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
     public function addToCart(Request $request)
     {
         try {
-            $user = auth()->user();
-            if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
-            }
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $role = $auth['role'];
+            $branch = $auth['branch'];
 
-            $branch = $user->branch;
-            if (!$branch || $branch->status !== 'active') {
-                return response()->json(['success' => false, 'message' => 'No accessible branch found'], 404);
-            }
-
-            // Step 1: Configure branch DB connection
-            $connection = configureBranchConnection($branch);
-            if (!$connection) {
-                return response()->json(['success' => false, 'message' => 'Branch connection configuration failed'], 500);
-            }
+            $connection = $branch->connection_name;
 
             // Step 2: Validate request input
             $request->validate([
@@ -761,9 +757,9 @@ class AppCartOrderController extends Controller
             }
 
             return response()->json([
-                'success'   => true,
-                'message'   => 'Product added to cart',
-                'cart_id'   => $cart->id,
+                'success' => true,
+                'message' => 'Product added to cart',
+                'cart_id' => $cart->id,
                 'cart_item' => $cartItem
             ]);
         } catch (\Throwable $e) {
@@ -778,34 +774,12 @@ class AppCartOrderController extends Controller
     public function updateQuantity(Request $request)
     {
         try {
-            $user = auth()->user();
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized'
-                ], 401);
-            }
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $role = $auth['role'];
+            $branch = $auth['branch'];
 
-            $request->validate([
-                'cart_item_id' => 'required|integer',
-                'quantity'     => 'required|integer|min:1'
-            ]);
-
-            $branch = $user->branch;
-            if (!$branch || $branch->status !== 'active') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No accessible branch found'
-                ], 404);
-            }
-
-            $connection = configureBranchConnection($branch);
-            if (!$connection) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Branch connection configuration failed'
-                ], 500);
-            }
+            $connection = $branch->connection_name;
 
             $cartItem = AppCartsOrders::on($connection)
                 ->where('id', $request->cart_item_id)
