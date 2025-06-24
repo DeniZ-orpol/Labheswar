@@ -8,13 +8,16 @@ use App\Models\AppCartsOrders;
 use App\Models\Branch;
 use App\Models\Cart;
 use App\Models\Inventory;
+use App\Models\PopularProducts;
 use App\Models\Product;
+use App\Traits\BranchAuthTrait;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AppCartOrderController extends Controller
 {
+    use BranchAuthTrait;
     public function addProductToCart(Request $request)
     {
         try {
@@ -198,62 +201,77 @@ class AppCartOrderController extends Controller
                 }
 
                 // Check if product already in this cart
-                $existingCartItem = AppCartsOrders::on($branch->connection_name)
-                    ->where('cart_id', $cart->id)
-                    ->where('product_id', $productId)
+                // $existingCartItem = AppCartsOrders::on($branch->connection_name)
+                //     ->where('cart_id', $cart->id)
+                //     ->where('product_id', $productId)
+                //     ->where('user_id', $user->id)
+                //     ->first();
+
+                // if ($existingCartItem) {
+                //     // Update existing cart item
+                //     $newQuantity = $existingCartItem->product_quantity + $requestedQuantity;
+
+                //     // Check if total quantity exceeds inventory
+                //     if ($newQuantity > $inventory->quantity) {
+                //         return response()->json([
+                //             'success' => false,
+                //             'message' => 'Total quantity exceeds available stock. Available: ' . $inventory->quantity . ', Current in cart: ' . $existingCartItem->product_quantity
+                //         ], 400);
+                //     }
+
+                //     // Calculate new totals using frontend price
+                //     $subTotal = $newQuantity * $productPrice;
+                //     $gstAmount = ($subTotal * ($product->gst_percentage ?? 0)) / 100;
+                //     $totalAmount = $subTotal + $gstAmount;
+
+                //     $existingCartItem->update([
+                //         'product_quantity' => $newQuantity,
+                //         'product_price' => $productPrice,
+                //         'product_weight' => $productWeight,
+                //         'sub_total' => $subTotal,
+                //         'gst' => $gstAmount,
+                //         'gst_p' => $product->gst_percentage ?? 0,
+                //         'total_amount' => $totalAmount
+                //     ]);
+
+                //     $cartItem = $existingCartItem;
+                // } else {
+                // Create new cart item using frontend data
+                $subTotal = $requestedQuantity * $productPrice;
+                $gstAmount = ($subTotal * ($product->gst_percentage ?? 0)) / 100;
+                $totalAmount = $subTotal + $gstAmount;
+
+                $cartItem = AppCartsOrders::on($branch->connection_name)->create([
+                    'user_id' => $user->id,
+                    'cart_id' => $cart->id,
+                    'product_id' => $productId,
+                    'firm_id' => $product->firm_id ?? null,
+                    'product_weight' => $productWeight,
+                    'product_price' => $productPrice,
+                    'product_quantity' => $requestedQuantity,
+                    'taxes' => $gstAmount,
+                    'sub_total' => $subTotal,
+                    'total_amount' => $totalAmount,
+                    'gst' => $gstAmount,
+                    'gst_p' => $product->gst_percentage ?? 0,
+                    'return_product' => 0
+                ]);
+
+                $selection = PopularProducts::on($branch->connection_name)
                     ->where('user_id', $user->id)
+                    ->where('product_id', $productId)
                     ->first();
 
-                if ($existingCartItem) {
-                    // Update existing cart item
-                    $newQuantity = $existingCartItem->product_quantity + $requestedQuantity;
-
-                    // Check if total quantity exceeds inventory
-                    if ($newQuantity > $inventory->quantity) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Total quantity exceeds available stock. Available: ' . $inventory->quantity . ', Current in cart: ' . $existingCartItem->product_quantity
-                        ], 400);
-                    }
-
-                    // Calculate new totals using frontend price
-                    $subTotal = $newQuantity * $productPrice;
-                    $gstAmount = ($subTotal * ($product->gst_percentage ?? 0)) / 100;
-                    $totalAmount = $subTotal + $gstAmount;
-
-                    $existingCartItem->update([
-                        'product_quantity' => $newQuantity,
-                        'product_price' => $productPrice,
-                        'product_weight' => $productWeight,
-                        'sub_total' => $subTotal,
-                        'gst' => $gstAmount,
-                        'gst_p' => $product->gst_percentage ?? 0,
-                        'total_amount' => $totalAmount
-                    ]);
-
-                    $cartItem = $existingCartItem;
+                if ($selection) {
+                    $selection->increment('count');
                 } else {
-                    // Create new cart item using frontend data
-                    $subTotal = $requestedQuantity * $productPrice;
-                    $gstAmount = ($subTotal * ($product->gst_percentage ?? 0)) / 100;
-                    $totalAmount = $subTotal + $gstAmount;
-
-                    $cartItem = AppCartsOrders::on($branch->connection_name)->create([
+                    PopularProducts::on($branch->connection_name)->create([
                         'user_id' => $user->id,
-                        'cart_id' => $cart->id,
                         'product_id' => $productId,
-                        'firm_id' => $product->firm_id ?? null,
-                        'product_weight' => $productWeight,
-                        'product_price' => $productPrice,
-                        'product_quantity' => $requestedQuantity,
-                        'taxes' => $gstAmount,
-                        'sub_total' => $subTotal,
-                        'total_amount' => $totalAmount,
-                        'gst' => $gstAmount,
-                        'gst_p' => $product->gst_percentage ?? 0,
-                        'return_product' => 0
+                        'count' => 1
                     ]);
                 }
+                // }
 
                 // Update inventory (reduce quantity)
                 $inventory->decrement('quantity', $requestedQuantity);
@@ -599,6 +617,36 @@ class AppCartOrderController extends Controller
                 ]
             ]);
 
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get list of orders bills(Order receipts)
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function getOrderBills()
+    {
+        try {
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $role = $auth['role'];
+            $branch = $auth['branch'];
+
+            $orders = AppCartsOrderBill::on($branch->connection_name)->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'total_bills' => $orders->count(),
+                    'order_bills' => $orders,
+                    'branch' => $branch->name
+                ]
+            ]);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
