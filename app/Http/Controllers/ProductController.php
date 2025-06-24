@@ -23,56 +23,88 @@ class ProductController extends Controller
     public function index()
     {
         $auth = $this->authenticateAndConfigureBranch();
+
+        if ($auth instanceof \Illuminate\Http\JsonResponse) {
+            return $auth;
+        }
+
         $user = $auth['user'];
+        $role = $auth['role'];
         $branch = $auth['branch'];
 
-        $products = Product::on($branch->connection_name)
-            ->with(['category', 'hsnCode', 'pCompany'])
-            ->orderByDesc('id')
-            ->paginate(10);
+        $products = collect();
 
-        return view('products.index', compact('products'));
+        if ($role->role_name === 'Super Admin') {
+            foreach ($branch as $br) {
+                // Dynamically configure this branch's DB connection
+                configureBranchConnection($br);
+
+                $branchProducts = Product::on($br->connection_name)
+                    ->with(['category', 'hsnCode', 'pCompany'])
+                    ->get();
+
+                // 💡 Append branch_id to each product
+                foreach ($branchProducts as $product) {
+                    $product->branch_id = $br->id;
+                    $product->branch_name = $br->name; // Optional: if you have a name column
+                }
+                $products = $products->merge($branchProducts);
+            }
+
+            // Sort manually since we're using collection
+            $products = $products->sortByDesc('id')->values();
+        } else {
+            $products = Product::on($branch->connection_name)
+                ->with(['category', 'hsnCode', 'pCompany'])
+                ->orderByDesc('id')
+                ->paginate(10);
+        }
+
+        return view('products.index', compact('products', 'role'));
     }
-    // public function index()
-    // {
-    //     // Check if user is logged in as branch
-    //     // if (session('user_type') !== 'branch' || !session('branch_connection')) {
-    //     //     return redirect()->route('login')->with('error', 'Please login as branch user.');
-    //     // }
-
-    //     $branchConnection = session('branch_connection');
-
-    //     // Get product with pagination first
-    //     $products = Product::forDatabase($branchConnection)->paginate(10);
-
-    //     // Load relationships using trait method to get related data for product(For pagination only)
-    //     if ($products->isNotEmpty()) {
-    //         $productModel = new Product();
-    //         $productModel->setDynamicTable($branchConnection);
-    //         $productModel->loadRelationsForPaginator($products, ['category', 'pCompany', 'hsnCode']);
-    //     }
-
-    //     return view('products.index', compact('products'));
-    // }
 
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        return view('products.create');
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $role = $auth['role'];
+
+        if (strtolower($role->role_name) === 'super admin') {
+            $branch = Branch::all();
+        } else {
+            // Normal user — get branch from auth
+            $branch = $auth['branch'];
+        }
+
+        return view('products.create', compact('branch', 'role'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request, ?string $branch = null)
     {
         try {
 
             $auth = $this->authenticateAndConfigureBranch();
             $user = $auth['user'];
-            $branch = $auth['branch'];
+            $role = $auth['role'];
+
+            if (strtolower($role->role_name) === 'super admin') {
+                $branchId = $request->branch;
+
+                if (!$branchId) {
+                    return redirect()->back()->with('error', 'Branch ID is required for Super Admin.');
+                }
+
+                $branch = Branch::findOrFail($branchId);
+                configureBranchConnection($branch);
+            } else {
+                $branch = $auth['branch'];
+            }
 
             $validate = $request->validate([
                 'product_barcode' => 'required|string|max:255',
@@ -199,45 +231,78 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
-        $branch = $auth['branch'];
+        $role = $auth['role'];
+
+        // If Super Admin, use `branch` from route or query
+        if (strtolower($role->role_name) === 'super admin') {
+            $branchId = $request->branch;
+            $branch = Branch::findOrFail($branchId);
+
+            configureBranchConnection($branch);
+        } else {
+            // Normal user — get branch from auth
+            $branch = $auth['branch'];
+        }
 
         $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
             ->where('id', $id)
             ->firstOrFail();
 
-        return view('products.show', compact('product'));
+        return view('products.show', compact('product', 'role', 'branch'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(Request $request, $id)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
-        $branch = $auth['branch'];
+        $role = $auth['role'];
+
+        // If Super Admin, use `branch` from route or query
+        if (strtolower($role->role_name) === 'super admin') {
+            $branchId = $request->branch;
+            $branch = Branch::findOrFail($branchId);
+
+            configureBranchConnection($branch);
+        } else {
+            // Normal user — get branch from auth
+            $branch = $auth['branch'];
+        }
 
         $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
             ->where('id', $id)
             ->firstOrFail();
 
-        return view('products.edit', compact('product'));
+        return view('products.edit', compact('product', 'role', 'branch'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id, ?string $branchId = null)
     {
         try {
 
             $auth = $this->authenticateAndConfigureBranch();
             $user = $auth['user'];
-            $branch = $auth['branch'];
+            $role = $auth['role'];
+
+            if (strtolower($role->role_name) === 'super admin') {
+                if (!$branchId) {
+                    return redirect()->back()->with('error', 'Branch ID is required for Super Admin.');
+                }
+
+                $branch = Branch::findOrFail($branchId);
+                configureBranchConnection($branch);
+            } else {
+                $branch = $auth['branch'];
+            }
 
             $validate = $request->validate([
                 'product_barcode' => 'required|string|max:255',

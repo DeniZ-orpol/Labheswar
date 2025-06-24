@@ -7,13 +7,16 @@ use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Company;
 use App\Models\HsnCode;
+use App\Models\PopularProducts;
 use App\Models\Product;
+use App\Traits\BranchAuthTrait;
 use Carbon\Exceptions\Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
+    use BranchAuthTrait;
     /**
      * Display a listing of the resource.
      */
@@ -29,6 +32,7 @@ class ProductController extends Controller
     {
         //
     }
+
     // public function findProductByBarcode($barcode)
     // {
     //     $matchingProducts = [];
@@ -67,6 +71,46 @@ class ProductController extends Controller
     //         'data' => $matchingProducts
     //     ]);
     // }
+
+
+    /**
+     * Find product by barcode from auth branch
+     * @param mixed $barcode
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function findProductByBarcode($barcode)
+    {
+        try {
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $role = $auth['role'];
+            $branch = $auth['branch'];
+
+            $products = Product::on($branch->connection_name)
+                ->where('barcode', $barcode)
+                ->get();
+
+            if ($products->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No matching products found in this branch.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'branch' => $branch->name,
+                'branch_connection' => $branch->connection_name,
+                'data' => $products
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error occurred while fetching product.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
     /**
      * Store a newly created resource in storage.
@@ -641,6 +685,49 @@ class ProductController extends Controller
             ], 500);
         }
 
+    }
+
+    public function getUserPopularProducts(Request $request)
+    {
+        try {
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $branch = $auth['branch'];
+
+            // Use Eloquent on dynamic connection
+            $popularSelections = PopularProducts::on($branch->connection_name)
+                ->where('user_id', $user->id)
+                ->with('product') // eager load product
+                ->orderByDesc('count')
+                ->take(10)
+                ->get();
+
+            if ($popularSelections->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No popular products found for this user.'
+                ], 404);
+            }
+
+            // Prepare data: attach selection count to product
+            $popularProducts = $popularSelections->map(function ($selection) {
+                $product = $selection->product;
+                $product->selection_count = $selection->count;
+                return $product;
+            });
+
+            return response()->json([
+                'success' => true,
+                'branch' => $branch->name,
+                'data' => $popularProducts
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error while fetching popular products.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     // public function showCategoriesFromAllBranches()

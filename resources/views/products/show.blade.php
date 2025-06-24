@@ -1,6 +1,9 @@
 @extends('app')
 
 @section('content')
+    @php
+        $isSuperAdmin = strtolower($role->role_name) === 'super admin';
+    @endphp
     <div class="content">
         <div class="intro-y grid grid-cols-12 gap-5 mt-5">
             <div class="col-span-12">
@@ -61,7 +64,10 @@
                     <!-- Navigation -->
                     <div class="mt-5">
                         <a href="{{ route('products.index') }}" class="btn btn-secondary">Back to Product List</a>
-                        <a href="{{ route('products.edit', $product->id) }}" class="btn btn-primary ml-2">Edit Product</a>
+                        <a href="{{ $isSuperAdmin
+                            ? route('products.edit', ['id' => $product->id, 'branch' => $branch->id])
+                            : route('products.edit', $product->id) }}"
+                            class="btn btn-primary ml-2">Edit Product</a>
                     </div>
                 </div>
             </div>

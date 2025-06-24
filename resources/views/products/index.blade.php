@@ -1,6 +1,9 @@
 @extends('app')
 
 @section('content')
+    @php
+        $isSuperAdmin = strtolower($role->role_name) === 'super admin';
+    @endphp
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             Products
@@ -8,12 +11,14 @@
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
                 <a href="{{ Route('products.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add Product</a>
-                <form action="{{ route('products.import') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <label for="excel_file">Import Products (Excel):</label>
-                    <input type="file" name="excel_file" required accept=".csv, .xlsx, .xls">
-                    <button type="submit">Import</button>
-                </form>
+                @if (!$isSuperAdmin)
+                    <form action="{{ route('products.import') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <label for="excel_file">Import Products (Excel):</label>
+                        <input type="file" name="excel_file" required accept=".csv, .xlsx, .xls">
+                        <button type="submit">Import</button>
+                    </form>
+                @endif
 
             </div>
 
@@ -27,6 +32,9 @@
                             <th>Category</th>
                             <th>HSN</th>
                             <th>MRP</th>
+                            @if ($isSuperAdmin)
+                                <th>Branch</th>
+                            @endif
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -46,14 +54,24 @@
                                 <td>{{ $product->category->name ?? '-' }}</td>
                                 <td>{{ $product->hsnCode->hsn_code ?? '-' }}</td>
                                 <td>{{ $product->mrp }}</td>
+                                @if ($isSuperAdmin)
+                                    <th>{{ $product->branch_name }}</th>
+                                @endif
                                 <td>
                                     <div class="flex gap-2">
-                                        <a href="{{ route('products.show', $product->id) }}"
+                                        <a href="{{ $isSuperAdmin
+                                            ? route('products.show', ['id' => $product->id, 'branch' => $product->branch_id])
+                                            : route('products.show', ['id' => $product->id]) }}"
                                             class="btn btn-primary">View</a>
-                                        <a href="{{ route('products.edit', $product->id) }}"
+                                        <a href="{{ $isSuperAdmin
+                                            ? route('products.edit', ['id' => $product->id, 'branch' => $product->branch_id])
+                                            : route('products.edit', $product->id) }}"
                                             class="btn btn-primary">Edit</a>
-                                        <form action="{{ route('products.destroy', $product->id) }}" method="POST"
-                                            onsubmit="return confirm('Are you sure?');">
+                                        <form
+                                            action="{{ $isSuperAdmin
+                                                ? route('products.destroy', ['id' => $product->id, 'branch' => $product->branch_id])
+                                                : route('products.destroy', $product->id) }}"
+                                            method="POST" onsubmit="return confirm('Are you sure?');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-danger">Delete</button>

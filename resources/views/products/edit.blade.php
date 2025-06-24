@@ -1,5 +1,8 @@
 @extends('app')
 @section('content')
+    @php
+        $isSuperAdmin = strtolower($role->role_name) === 'super admin';
+    @endphp
     <style>
         .row {
             display: flex;
@@ -20,8 +23,11 @@
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             Edit Product
         </h2>
-        <form action="{{ route('products.update', $product->id) }}" method="POST" enctype="multipart/form-data"
-            class="form-updated validate-form">
+        <form
+            action="{{ $isSuperAdmin
+                ? route('products.update', ['id' => $product->id, 'branch' => $branch->id])
+                : route('products.update', $product->id) }}"
+            method="POST" enctype="multipart/form-data" class="form-updated validate-form">
             @csrf
             @method('PUT')
             <div class="row">
