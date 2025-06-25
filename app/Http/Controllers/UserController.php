@@ -20,7 +20,8 @@ class UserController extends Controller
         $users = User::with(['role_data','branch'])
             ->whereHas('role_data', function ($query) {
                 $query->where('role_name', '!=', 'Super Admin');
-            })->orderByDesc('id')->get();
+            })->where('is_active', '1')
+            ->orderByDesc('id')->get();
 
         return view('users.index', compact('users'));
     }
