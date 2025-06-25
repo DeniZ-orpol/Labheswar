@@ -20,7 +20,7 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $auth = $this->authenticateAndConfigureBranch();
 
@@ -34,25 +34,57 @@ class ProductController extends Controller
 
         $products = collect();
 
-        if ($role->role_name === 'Super Admin') {
-            foreach ($branch as $br) {
-                // Dynamically configure this branch's DB connection
-                configureBranchConnection($br);
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            // Get the selected branch ID from request
+            $selectedBranchId = $request->get('branch_id');
+            $availableBranches = $branch; // All active branches for dropdown
 
-                $branchProducts = Product::on($br->connection_name)
-                    ->with(['category', 'hsnCode', 'pCompany'])
-                    ->get();
+            if (!$selectedBranchId) {
+                // No branch selected - return empty collection with message
+                $products = collect();
+                $selectedBranch = null;
+                $showNoBranchMessage = true;
 
-                // 💡 Append branch_id to each product
-                foreach ($branchProducts as $product) {
-                    $product->branch_id = $br->id;
-                    $product->branch_name = $br->name; // Optional: if you have a name column
-                }
-                $products = $products->merge($branchProducts);
+                return view('products.index', compact(
+                    'products',
+                    'role',
+                    'availableBranches',
+                    'selectedBranch',
+                    'showNoBranchMessage'
+                ));
             }
 
-            // Sort manually since we're using collection
-            $products = $products->sortByDesc('id')->values();
+            // Find the selected branch
+            $selectedBranch = $branch->where('id', $selectedBranchId)->first();
+
+            if (!$selectedBranch) {
+                // Invalid branch ID - redirect with error
+                return redirect()->route('products.index')
+                    ->with('error', 'Invalid branch selected');
+            }
+
+            // Configure connection for selected branch
+            configureBranchConnection($selectedBranch);
+
+            // Get products for the selected branch with pagination
+            $products = Product::on($selectedBranch->connection_name)
+                ->with(['category', 'hsnCode', 'pCompany'])
+                ->orderByDesc('id')
+                ->paginate(10);
+
+            // Append branch_id to pagination links
+            $products->appends($request->query());
+
+            $showNoBranchMessage = false;
+
+            return view('products.index', compact(
+                'products',
+                'role',
+                'availableBranches',
+                'selectedBranch',
+                'showNoBranchMessage'
+            ));
+
         } else {
             $products = Product::on($branch->connection_name)
                 ->with(['category', 'hsnCode', 'pCompany'])
