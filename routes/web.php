@@ -109,6 +109,11 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     Route::delete('/purchase/party/{id}/delete', [PurchasePartyController::class, 'destroy'])->name('purchase.party.destroy');
 
     Route::resource('app/orders', AppOrderController::class);
+
+    // Search routes for search dropdown
+    Route::get('/companies/search', [ProductController::class, 'searchCompany'])->name('companies.search');
+    Route::get('/categories/search', [ProductController::class, 'searchCategory'])->name('categories.search');
+    Route::get('/hsn-code/search', [ProductController::class, 'searchHsnCode'])->name('hsn.search');
 });
 
 

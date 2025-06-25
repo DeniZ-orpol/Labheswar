@@ -34,6 +34,20 @@ License: You must have a valid license purchased only from themeforest(the above
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTablesmin.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.js"></script>
 
+    <style>
+        /* Hide number input arrows/spinners */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* Firefox */
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+
     @stack('styles')
 
 
@@ -1272,7 +1286,7 @@ License: You must have a valid license purchased only from themeforest(the above
                     </ul>
                 </li>
                 @php
-                    $orderMenuOpen = request()->routeIs('orders.*')
+                    $orderMenuOpen = request()->routeIs('orders.*');
                 @endphp
                 <li>
                     <a href="javascript:;" class="side-menu">
@@ -1282,7 +1296,8 @@ License: You must have a valid license purchased only from themeforest(the above
                     </a>
                     <ul class="{{ $orderMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
                         <li>
-                            <a href="{{ route('orders.index') }}" class="side-menu {{ request()->routeIs('orders.*') ? 'side-menu--active' : '' }}">
+                            <a href="{{ route('orders.index') }}"
+                                class="side-menu {{ request()->routeIs('orders.*') ? 'side-menu--active' : '' }}">
                                 <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                 <div class="side-menu__title"> App Orders List </div>
                             </a>
@@ -2737,6 +2752,28 @@ License: You must have a valid license purchased only from themeforest(the above
         function goBack() {
             window.history.back();
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Disable arrow key functionality for number inputs
+            function disableArrowKeys(event) {
+                if (event.target.type === 'number') {
+                    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                        event.preventDefault();
+                    }
+                }
+            }
+
+            // Disable mouse wheel scroll on number input
+            function disableScrollOnNumberInput(event) {
+                if (document.activeElement.type === 'number') {
+                    event.preventDefault();
+                }
+            }
+
+            // Add event listener to document to catch all number inputs
+            document.addEventListener('keydown', disableArrowKeys);
+            document.addEventListener('wheel', disableScrollOnNumberInput, { passive: false });
+        });
     </script>
 
     @stack('scripts')

@@ -1,8 +1,6 @@
 @extends('app')
-@section('content')
-    @php
-        $isSuperAdmin = strtolower($role->role_name) === 'super admin';
-    @endphp
+
+@push('styles')
     <style>
         .row {
             display: flex;
@@ -18,7 +16,83 @@
             /* border: 1px solid #ddd; */
             box-sizing: border-box;
         }
+
+        .custom-dropzone {
+            border: 2px dashed #1abc9c;
+            border-radius: 12px;
+            height: 300px;
+            width: 100%;
+            position: relative;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .custom-dropzone:hover {
+            border-color: #16a085;
+        }
+
+        .custom-dropzone input[type="file"] {
+            opacity: 0;
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .custom-dropzone span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #bbb;
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        /* Company Search Dropdown Styles */
+        .search-dropdown {
+            position: relative;
+            width: 100%;
+        }
+
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .dropdown-list.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .create-new {
+            color: #007bff;
+            font-style: italic;
+        }
     </style>
+@endpush
+@section('content')
+    @php
+        $isSuperAdmin = strtolower($role->role_name) === 'super admin';
+    @endphp
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             Edit Product
@@ -91,30 +165,66 @@
                     </div>
 
                     <!-- Company -->
-                    <div class="input-form col-span-3 mt-3">
+                    {{-- <div class="input-form col-span-3 mt-3">
                         <label for="product_company" class="form-label w-full flex flex-col sm:flex-row">
                             Company
                         </label>
                         <input id="product_company" type="text" name="product_company" class="form-control field-new"
                             value="{{ $product->pCompany->name ?? '' }}">
+                    </div> --}}
+                    <!-- Company with Searchable Dropdown -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_company" class="form-label w-full flex flex-col sm:flex-row">
+                            Company
+                        </label>
+                        <div class="search-dropdown">
+                            <input id="product_company" type="text" name="product_company"
+                                class="form-control field-new search-input" placeholder="Search or type company name"
+                                autocomplete="off" value="{{ $product->pCompany->name ?? '' }}">
+                            <div class="dropdown-list" id="companyDropdown"></div>
+                        </div>
                     </div>
 
                     <!-- category -->
-                    <div class="input-form col-span-3 mt-3">
+                    {{-- <div class="input-form col-span-3 mt-3">
                         <label for="product_category" class="form-label w-full flex flex-col sm:flex-row">
                             category
                         </label>
                         <input id="product_category" type="text" name="product_category" class="form-control field-new"
                             value="{{ $product->category->name ?? '' }}">
+                    </div> --}}
+                    <!-- Category with Searchable Dropdown -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="product_category" class="form-label w-full flex flex-col sm:flex-row">
+                            Category
+                        </label>
+                        <div class="search-dropdown">
+                            <input id="product_category" type="text" name="product_category"
+                                class="form-control field-new search-input" placeholder="Search or type category"
+                                autocomplete="off" value="{{ $product->category->name ?? '' }}">
+                            <div class="dropdown-list" id="categoryDropdown"></div>
+                        </div>
                     </div>
 
                     <!-- HSN code -->
-                    <div class="input-form col-span-3 mt-3">
+                    {{-- <div class="input-form col-span-3 mt-3">
                         <label for="hsn_code" class="form-label w-full flex flex-col sm:flex-row">
                             HSN Code
                         </label>
                         <input id="hsn_code" type="text" name="hsn_code" class="form-control field-new"
                             value="{{ $product->hsnCode->hsn_code ?? '' }}">
+                    </div> --}}
+                    <!-- HSN Code with Searchable Dropdown -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="hsn_code" class="form-label w-full flex flex-col sm:flex-row">
+                            HSN Code
+                        </label>
+                        <div class="search-dropdown">
+                            <input id="hsn_code" type="text" name="hsn_code" class="form-control field-new search-input"
+                                placeholder="Search or type HSN code" autocomplete="off" 
+                                value="{{ $product->hsnCode->hsn_code ?? '' }}">
+                            <div class="dropdown-list" id="hsnDropdown"></div>
+                        </div>
                     </div>
 
                     <!-- sgst -->
@@ -126,21 +236,21 @@
                             value="{{ $product->sgst }}">
                     </div>
 
-                    <!-- CGST 1 -->
+                    <!-- CGST -->
                     <div class="input-form col-span-3 mt-3">
-                        <label for="product_cgst_1" class="form-label w-full flex flex-col sm:flex-row">
-                            CGST 1
+                        <label for="product_cgst" class="form-label w-full flex flex-col sm:flex-row">
+                            CGST
                         </label>
-                        <input id="product_cgst_1" type="number" step="0.01" name="cgst1"
+                        <input id="product_cgst" type="number" step="0.01" name="cgst"
                             class="form-control field-new" value="{{ $product->cgst1 }}">
                     </div>
 
-                    <!-- CGST 2 -->
+                    <!-- IGST -->
                     <div class="input-form col-span-3 mt-3">
-                        <label for="product_cgst_2" class="form-label w-full flex flex-col sm:flex-row">
-                            CGST 2
+                        <label for="product_igst" class="form-label w-full flex flex-col sm:flex-row">
+                            IGST
                         </label>
-                        <input id="product_cgst_2" type="number" step="0.01" name="cgst2"
+                        <input id="product_igst" type="number" step="0.01" name="igst"
                             class="form-control field-new" value="{{ $product->cgst2 }}">
                     </div>
 
@@ -286,7 +396,7 @@
                     <!-- Max Discount -->
                     <div class="input-form col-span-3 mt-3">
                         <label for="max_discount" class="form-label w-full flex flex-col sm:flex-row">
-                            Max Discount
+                            Max Discount (%)
                         </label>
                         <input id="max_discount" type="number" name="max_discount" class="form-control field-new"
                             value="{{ $product->max_discount }}">
@@ -403,22 +513,158 @@
         </div>
         <!-- END: Failed Notification Content -->
     </div>
+@endsection
 
-    <script>
-        function previewImage(input) {
-            const preview = document.getElementById('previewImg');
-            const previewBox = document.getElementById('imagePreview');
-            const fileNameText = document.getElementById('fileName');
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Company dropdown (existing)
+        initSearchDropdown('product_company', 'companyDropdown', '{{ route('companies.search') }}');
 
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    previewBox.style.display = 'block';
-                    fileNameText.innerText = input.files[0].name;
-                };
-                reader.readAsDataURL(input.files[0]);
+        // Category dropdown
+        initSearchDropdown('product_category', 'categoryDropdown', '{{ route('categories.search') }}');
+
+        // HSN Code dropdown
+        initSearchDropdown('hsn_code', 'hsnDropdown', '{{ route('hsn.search') }}');
+    });
+
+
+    // search dropdown
+    function initSearchDropdown(inputId, dropdownId, searchUrl) {
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById(dropdownId);
+        let timeout;
+        let selectedIndex = -1;
+
+        input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const value = this.value.trim();
+            selectedIndex = -1;
+
+            if (value.length < 1) {
+                dropdown.classList.remove('show');
+                return;
+            }
+
+            timeout = setTimeout(async () => {
+                try {
+                    let url = `${searchUrl}?search=${value}`;
+
+                    // Add branch_id if Super Admin
+                    const branchSelect = document.getElementById('branch');
+                    if (branchSelect && branchSelect.value) {
+                        url += `&branch_id=${branchSelect.value}`;
+                    }
+
+                    const response = await fetch(url, {
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector(
+                                'meta[name="csrf-token"]').content
+                        }
+                    });
+
+                    const data = await response.json();
+                    const items = data.items || data.companies || data.categories || data
+                        .hsn_codes || [];
+
+                    let html = '';
+                    items.forEach(item => {
+                        html +=
+                            `<div class="dropdown-item" onclick="selectItem('${inputId}', '${dropdownId}', '${item}')">${item}</div>`;
+                    });
+
+                    // Add create new option
+                    if (!items.includes(value)) {
+                        html +=
+                            `<div class="dropdown-item create-new" onclick="selectItem('${inputId}', '${dropdownId}', '${value}')">Create new: "${value}"</div>`;
+                    }
+
+                    dropdown.innerHTML = html;
+                    dropdown.classList.add('show');
+                    selectedIndex = -1;
+
+                } catch (error) {
+                    dropdown.classList.remove('show');
+                }
+            }, 200);
+        });
+
+        // Arrow key navigation
+        input.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.dropdown-item');
+
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
+                updateHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
+                updateHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    items[selectedIndex].click();
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
+    }
+
+    function updateHighlight(dropdown, items, selectedIndex) {
+        items.forEach((item, index) => {
+            item.style.backgroundColor = index === selectedIndex ? '#e9ecef' : '';
+        });
+
+        // Auto-scroll within dropdown only
+        if (selectedIndex >= 0 && items[selectedIndex]) {
+            const selectedItem = items[selectedIndex];
+            const dropdownScrollTop = dropdown.scrollTop;
+            const dropdownHeight = dropdown.clientHeight;
+            const itemTop = selectedItem.offsetTop;
+            const itemHeight = selectedItem.offsetHeight;
+
+            // Check if item is above visible area
+            if (itemTop < dropdownScrollTop) {
+                dropdown.scrollTop = itemTop;
+            }
+            // Check if item is below visible area
+            else if (itemTop + itemHeight > dropdownScrollTop + dropdownHeight) {
+                dropdown.scrollTop = itemTop + itemHeight - dropdownHeight;
             }
         }
-    </script>
-@endsection
+    }
+
+    function selectItem(inputId, dropdownId, value) {
+        document.getElementById(inputId).value = value;
+        document.getElementById(dropdownId).classList.remove('show');
+    }
+    // end search dropdown
+
+    function previewImage(input) {
+        const preview = document.getElementById('previewImg');
+        const previewBox = document.getElementById('imagePreview');
+        const fileNameText = document.getElementById('fileName');
+
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                previewBox.style.display = 'block';
+                fileNameText.innerText = input.files[0].name;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>

@@ -148,8 +148,8 @@ class ProductController extends Controller
                 'product_category' => 'nullable|string',
                 'hsn_code' => 'nullable|string',
                 'sgst' => 'nullable|numeric|min:0',
-                'cgst_1' => 'nullable|numeric|min:0',
-                'cgst_2' => 'nullable|numeric|min:0',
+                'cgst' => 'nullable|numeric|min:0',
+                'igst' => 'nullable|numeric|min:0',
                 'cess' => 'nullable|numeric|min:0',
                 'mrp' => 'nullable|numeric|min:0',
                 'purchase_rate' => 'nullable|numeric|min:0',
@@ -225,8 +225,8 @@ class ProductController extends Controller
                 'category_id' => $categoryId,
                 'hsn_code_id' => $hsnCodeId,
                 'sgst' => $validate['sgst'] ?? 0,
-                'cgst1' => $validate['cgst_1'] ?? 0,
-                'cgst2' => $validate['cgst_2'] ?? 0,
+                'cgst1' => $validate['cgst'] ?? 0,
+                'cgst2' => $validate['igst'] ?? 0, //igst
                 'cess' => $validate['cess'] ?? 0,
                 'mrp' => $validate['mrp'] ?? 0,
                 'purchase_rate' => $validate['purchase_rate'] ?? 0,
@@ -346,8 +346,8 @@ class ProductController extends Controller
                 'product_category' => 'nullable|string',
                 'hsn_code' => 'nullable|string',
                 'sgst' => 'nullable|numeric|min:0',
-                'cgst1' => 'nullable|numeric|min:0',
-                'cgst2' => 'nullable|numeric|min:0',
+                'cgst' => 'nullable|numeric|min:0',
+                'igst' => 'nullable|numeric|min:0',
                 'cess' => 'nullable|numeric|min:0',
                 'mrp' => 'nullable|numeric|min:0',
                 'purchase_rate' => 'nullable|numeric|min:0',
@@ -429,8 +429,8 @@ class ProductController extends Controller
                 'category_id' => $categoryId,
                 'hsn_code_id' => $hsnCodeId,
                 'sgst' => $validate['sgst'] ?? 0,
-                'cgst1' => $validate['cgst1'] ?? 0,
-                'cgst2' => $validate['cgst2'] ?? 0,
+                'cgst1' => $validate['cgst'] ?? 0,
+                'cgst2' => $validate['igst'] ?? 0,
                 'cess' => $validate['cess'] ?? 0,
                 'mrp' => $validate['mrp'] ?? 0,
                 'purchase_rate' => $validate['purchase_rate'] ?? 0,
@@ -606,29 +606,131 @@ class ProductController extends Controller
         }
     }
 
-    private function importExcel($file, $branchDb)
+    public function searchCompany(Request $request)
     {
-        if ($xlsx = SimpleXLSX::parse($file->getRealPath())) {
-
-            $rows = $xlsx->rows();
-            array_shift($rows);
-
-            foreach ($rows as $row) {
-                if (!empty($row[0]) || !empty($row[1])) { // Check if name exists
-                    $data = [
-                        'product_barcode' => $row[0] ?? '',
-                        'product_name' => $row[1],
-                        'price' => $row[11] ?? 0,
-                        'min_quantity' => $row[19] ?? 0,
-                        'category' => $row[5] ?? '',
-                        'unit_type' => $row[3] ?? '',
-                    ];
-                    dd($data);
-                    DB::connection($branchDb)->table('products')->insert($data);
-                }
-            }
-
+        $search = $request->get('search', '');
+        
+        if (empty($search)) {
+            return response()->json(['companies' => []]);
         }
+        try {
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $role = $auth['role'];
+    
+            // If Super Admin, use `branch` from route or query
+            if (strtolower($role->role_name) === 'super admin') {
+                $branchId = $request->branch;
+                if (empty($branchId)) {
+                    return response()->json(['companies' => []]);
+                }
 
+                $branch = Branch::findOrFail($branchId);
+                configureBranchConnection($branch);
+            } else {
+                // Normal user — get branch from auth
+                $branch = $auth['branch'];
+            }
+    
+            $search = $request->get('search', '');
+            if (empty($search)) {
+                return response()->json(['companies' => []]);
+            }
+    
+            $companies = Company::on($branch->connection_name)
+                ->where('name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
+                ->limit(10)
+                ->pluck('name') // Return company names
+                ->toArray();
+    
+            return response()->json(['companies' => $companies]);
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+    }
+    public function searchCategory(Request $request)
+    {
+        $search = $request->get('search', '');
+        
+        if (empty($search)) {
+            return response()->json(['categories' => []]);
+        }
+        try {
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $role = $auth['role'];
+    
+            // If Super Admin, use `branch` from route or query
+            if (strtolower($role->role_name) === 'super admin') {
+                $branchId = $request->branch;
+                if (empty($branchId)) {
+                    return response()->json(['categories' => []]);
+                }
+
+                $branch = Branch::findOrFail($branchId);
+                configureBranchConnection($branch);
+            } else {
+                // Normal user — get branch from auth
+                $branch = $auth['branch'];
+            }
+    
+            $search = $request->get('search', '');
+            if (empty($search)) {
+                return response()->json(['categories' => []]);
+            }
+    
+            $categories = Category::on($branch->connection_name)
+                ->where('name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
+                ->limit(10)
+                ->pluck('name') // Return category names
+                ->toArray();
+    
+            return response()->json(['categories' => $categories]);
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+    }
+
+    public function searchHsnCode(Request $request)
+    {
+        $search = $request->get('search', '');
+        
+        if (empty($search)) {
+            return response()->json(['hsn_codes' => []]);
+        }
+        try {
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $role = $auth['role'];
+    
+            // If Super Admin, use `branch` from route or query
+            if (strtolower($role->role_name) === 'super admin') {
+                $branchId = $request->branch;
+                if (empty($branchId)) {
+                    return response()->json(['hsn_codes' => []]);
+                }
+
+                $branch = Branch::findOrFail($branchId);
+                configureBranchConnection($branch);
+            } else {
+                // Normal user — get branch from auth
+                $branch = $auth['branch'];
+            }
+    
+            $search = $request->get('search', '');
+            if (empty($search)) {
+                return response()->json(['hsn_codes' => []]);
+            }
+    
+            $hsn_codes = HsnCode::on($branch->connection_name)
+                ->where('hsn_code', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
+                ->limit(10)
+                ->pluck('hsn_code') // Return hsn codes
+                ->toArray();
+    
+            return response()->json(['hsn_codes' => $hsn_codes]);
+        } catch (\Throwable $th) {
+            return response()->json(['hsn_codes' => []]);
+        }
     }
 }

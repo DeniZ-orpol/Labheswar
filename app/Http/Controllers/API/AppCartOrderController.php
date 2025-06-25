@@ -231,7 +231,7 @@ class AppCartOrderController extends Controller
                     'product_id' => $productId,
                     'firm_id' => $product->firm_id ?? null,
                     'product_weight' => $finalWeight, // Store base unit value (e.g., 0.5 for 500g)
-                    'product_price' => $productPrice,
+                    'product_price' => $productPrice, // base price without gst
                     'product_quantity' => $finalQuantity,
                     'taxes' => $gstAmount,
                     'sub_total' => $subTotal,
