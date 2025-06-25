@@ -1,5 +1,8 @@
     @extends('app')
     @section('content')
+        @php
+            $isSuperAdmin = strtolower($role->role_name) === 'super admin';
+        @endphp
         <style>
             .row {
                 display: flex;
@@ -53,8 +56,11 @@
             <h2 class="intro-y text-lg font-medium mt-10 heading">
                 Create Category
             </h2>
-            <form action="{{ route('categories.update', $category->id) }}" method="POST" enctype="multipart/form-data"
-                class="form-updated validate-form">
+            <form
+                action="{{ $isSuperAdmin
+                    ? route('categories.update', ['id' => $category->id, 'branch' => $branch->id])
+                    : route('categories.update', $category->id) }}"
+                method="POST" enctype="multipart/form-data" class="form-updated validate-form">
                 @csrf
                 @method('PUT')
                 <div class="row">

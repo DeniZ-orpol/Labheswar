@@ -78,10 +78,17 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     Route::put('/products/{id}/update/{branch?}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{id}/delete/{branch?}', [ProductController::class, 'destroy'])->name('products.destroy');
 
-    
     Route::post('/product/import', [ProductController::class, 'importProducts'])->name('products.import');
 
-    Route::resource('categories', CategoryController::class);
+    // Categories
+    // Route::resource('categories', CategoryController::class);
+    Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
+    Route::post('/categories/store/{branch?}', [CategoryController::class, 'store'])->name('categories.store');
+    Route::get('/categories/{id}/show/{branch?}', [CategoryController::class, 'show'])->name('categories.show');
+    Route::get('/categories/{id}/edit/{branch?}', [CategoryController::class, 'edit'])->name('categories.edit');
+    Route::put('/categories/{id}/update/{branch?}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{id}/delete/{branch?}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
     Route::resource('inventory', InventoryController::class);
 

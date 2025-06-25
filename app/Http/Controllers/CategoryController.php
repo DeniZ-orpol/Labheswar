@@ -14,15 +14,69 @@ class CategoryController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
+        $role = $auth['role'];
         $branch = $auth['branch'];
 
-        $categories = Category::on($branch->connection_name)->orderBy('created_at', 'desc')->get();
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            // Get the selected branch ID from request
+            $selectedBranchId = $request->get('branch_id');
+            $availableBranches = $branch; // All active branches for dropdown
 
-        return view('categories.index', compact('categories'));
+            if (!$selectedBranchId) {
+                // No branch selected - return empty collection with message
+                $categories = collect();
+                $selectedBranch = null;
+                $showNoBranchMessage = true;
+
+                return view('categories.index', compact(
+                    'categories',
+                    'role',
+                    'availableBranches',
+                    'selectedBranch',
+                    'showNoBranchMessage'
+                ));
+            }
+
+            // Find the selected branch
+            $selectedBranch = $branch->where('id', $selectedBranchId)->first();
+
+            if (!$selectedBranch) {
+                // Invalid branch ID - redirect with error
+                return redirect()->route('categories.index')
+                    ->with('error', 'Invalid branch selected');
+            }
+
+            // Configure connection for selected branch
+            configureBranchConnection($selectedBranch);
+
+            // Get categories for the selected branch with pagination
+            $categories = Category::on($selectedBranch->connection_name)
+                ->orderByDesc('id')
+                ->paginate(10);
+
+            // Append branch_id to pagination links
+            $categories->appends($request->query());
+
+            $showNoBranchMessage = false;
+
+            return view('categories.index', compact(
+                'categories',
+                'role',
+                'availableBranches',
+                'selectedBranch',
+                'showNoBranchMessage'
+            ));
+
+        } else {
+            $categories = Category::on($branch->connection_name)->orderBy('created_at', 'desc')->paginate(10);
+        }
+
+
+        return view('categories.index', compact('categories', 'role'));
     }
 
     /**
@@ -30,17 +84,42 @@ class CategoryController extends Controller
      */
     public function create()
     {
-        return view('categories.create');
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $role = $auth['role'];
+
+        if (strtolower($role->role_name) === 'super admin') {
+            $branch = Branch::all();
+        } else {
+            // Normal user — get branch from auth
+            $branch = $auth['branch'];
+        }
+
+        return view('categories.create', compact('branch', 'role'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request, ?string $branch = null)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
-        $branch = $auth['branch'];
+        $role = $auth['role'];
+
+        if (strtolower($role->role_name) === 'super admin') {
+            $branchId = $request->branch;
+
+            if (!$branchId) {
+                return redirect()->back()->with('error', 'Branch ID is required for Super Admin.');
+            }
+
+            $branch = Branch::findOrFail($branchId);
+            configureBranchConnection($branch);
+        } else {
+            // Normal user — get branch from auth
+            $branch = $auth['branch'];
+        }
 
         $imagePath = null;
 
@@ -73,27 +152,47 @@ class CategoryController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
-        $branch = $auth['branch'];
+        $role = $auth['role'];
+
+        if (strtolower($role->role_name) === 'super admin') {
+            $branchId = $request->branch;
+            $branch = Branch::findOrFail($branchId);
+
+            configureBranchConnection($branch);
+        } else {
+            // Normal user — get branch from auth
+            $branch = $auth['branch'];
+        }
 
         $category = Category::on($branch->connection_name)->where('id', $id)->first();
         if (!$category) {
             return redirect()->route('categories.index')->with('error', 'Category not found.');
         }
-        return view('categories.show', compact('category'));
+        return view('categories.show', compact('category', 'branch', 'role'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Request $request, string $id)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
-        $branch = $auth['branch'];
+        $role = $auth['role'];
+
+        if (strtolower($role->role_name) === 'super admin') {
+            $branchId = $request->branch;
+            $branch = Branch::findOrFail($branchId);
+
+            configureBranchConnection($branch);
+        } else {
+            // Normal user — get branch from auth
+            $branch = $auth['branch'];
+        }
 
         $category = Category::on($branch->connection_name)->where('id', $id)->first();
 
@@ -101,17 +200,29 @@ class CategoryController extends Controller
             return redirect()->route('categories.index')->with('error', 'Category not found.');
         }
 
-        return view('categories.edit', compact('category'));
+        return view('categories.edit', compact('category', 'branch', 'role'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, ?string $branchId = null)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
-        $branch = $auth['branch'];
+        $role = $auth['role'];
+
+        if (strtolower($role->role_name) === 'super admin') {
+            if (!$branchId) {
+                return redirect()->back()->with('error', 'Branch ID is required for Super Admin.');
+            }
+
+            $branch = Branch::findOrFail($branchId);
+            configureBranchConnection($branch);
+        } else {
+            // Normal user — get branch from auth
+            $branch = $auth['branch'];
+        }
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -147,7 +258,14 @@ class CategoryController extends Controller
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
-        $branch = $auth['branch'];
+        $role = $auth['role'];
+
+        if (strtolower($role->role_name) === 'super admin') {
+            $branch = Branch::all();
+        } else {
+            // Normal user — get branch from auth
+            $branch = $auth['branch'];
+        }
 
         // Delete the category from the current branch connection
         Category::on($branch->connection_name)->where('id', $id)->delete();
