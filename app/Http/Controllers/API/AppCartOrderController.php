@@ -60,17 +60,22 @@ class AppCartOrderController extends Controller
                     ], 404);
                 }
 
-                // Check inventory availability
-                $inventory = Inventory::on($branch->connection_name)
+                // Check inventory availability - GET ALL INVENTORY ENTRIES
+                $inventoryEntries = Inventory::on($branch->connection_name)
                     ->where('product_id', $productId)
-                    ->first();
+                    ->where('quantity', '>', 0) // Only get entries with positive quantity
+                    ->orderBy('created_at', 'asc') // FIFO - First In, First Out
+                    ->get();
 
-                if (!$inventory) {
+                if ($inventoryEntries->isEmpty()) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Product not available in inventory'
                     ], 400);
                 }
+
+                // Calculate total available stock
+                $totalAvailableStock = $inventoryEntries->sum('quantity');
 
                 // NEW: Parse and convert product_weight for inventory management only
                 $inventoryCheckQuantity = $requestedQuantity; // Default for fixed quantity
@@ -94,11 +99,11 @@ class AppCartOrderController extends Controller
                 }
 
                 // Check stock availability using the correct quantity
-                if ($inventory->quantity < $inventoryCheckQuantity) {
+                if ($totalAvailableStock < $inventoryCheckQuantity) {
                     $unit = $isLooseQuantity ? strtoupper($product->unit_types) : 'PCS';
                     return response()->json([
                         'success' => false,
-                        'message' => 'Insufficient stock. Available quantity: ' . $inventory->quantity . ' ' . $unit
+                        'message' => 'Insufficient stock. Available quantity: ' . $totalAvailableStock . ' ' . $unit
                     ], 400);
                 }
 
@@ -252,8 +257,27 @@ class AppCartOrderController extends Controller
                     ]);
                 }
 
-                // Update inventory using converted quantity
-                $inventory->decrement('quantity', $inventoryCheckQuantity);
+                // UPDATED: Deduct inventory using FIFO method
+                $remainingToDeduct = $inventoryCheckQuantity;
+
+                foreach ($inventoryEntries as $inventoryEntry) {
+                    if ($remainingToDeduct <= 0) {
+                        break; // All quantity has been deducted
+                    }
+
+                    $availableInThisEntry = $inventoryEntry->quantity;
+                    $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
+
+                    // Update this inventory entry
+                    $inventoryEntry->decrement('quantity', $deductFromThisEntry);
+
+                    $remainingToDeduct -= $deductFromThisEntry;
+                }
+
+                // Calculate remaining total inventory for response
+                $remainingTotalStock = Inventory::on($branch->connection_name)
+                    ->where('product_id', $productId)
+                    ->sum('quantity');
 
                 // Commit transaction
                 DB::connection($branch->connection_name)->commit();
@@ -273,7 +297,7 @@ class AppCartOrderController extends Controller
                         'cart_id' => $cart->id,
                         'cart_status' => $cart->status,
                         'cart_item' => $cartItem,
-                        'remaining_inventory' => $inventory->quantity,
+                        'remaining_inventory' => $remainingTotalStock,
                         'branch' => $branch->name,
                         'is_loose_quantity' => $isLooseQuantity,
                         'display_quantity' => $displayQuantity,

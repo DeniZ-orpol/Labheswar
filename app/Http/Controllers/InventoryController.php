@@ -77,10 +77,37 @@ class InventoryController extends Controller
                     ->get()
                     ->keyBy('id');
 
-                // Attach products to inventories using Laravel's setRelation method
-                $inventories->each(function ($inventory) use ($products) {
-                    $inventory->setRelation('product', $products->get($inventory->product_id));
+                // Group by product and calculate total quantity
+                $groupedInventories = collect();
+
+                $inventories->groupBy('product_id')->each(function ($productInventories, $productId) use ($products, &$groupedInventories) {
+                    $product = $products->get($productId);
+
+                    if ($product) {
+                        $totalQuantity = 0;
+
+                        // Calculate total quantity for this product
+                        foreach ($productInventories as $inventory) {
+                            $totalQuantity += $inventory->quantity;
+                        }
+
+                        // Create single inventory record for this product
+                        $groupedInventory = (object) [
+                            'product_id' => $productId,
+                            'product' => $product,
+                            'type' => 'calculated',
+                            'quantity' => $totalQuantity,
+                            'unit' => $productInventories->first()->unit ?? 'pcs',
+                            'reason' => 'Total Stock',
+                            'created_at' => $productInventories->max('created_at'),
+                            'updated_at' => $productInventories->max('updated_at')
+                        ];
+
+                        $groupedInventories->push($groupedInventory);
+                    }
                 });
+
+                $inventories = $groupedInventories;
             }
         }
 
@@ -94,37 +121,37 @@ class InventoryController extends Controller
         $branch = $auth['branch'];
 
         try {
-            $existing = Inventory::on($branch->connection_name)
-                ->where('product_id', $request->product_id)
-                ->first();
+            // $existing = Inventory::on($branch->connection_name)
+            //     ->where('product_id', $request->product_id)
+            //     ->first();
 
-            if ($existing) {
-                // Update quantity based on type
-                $newQty = $existing->quantity;
-                if (strtoupper($request->type) == 'IN') {
-                    $newQty += $request->quantity;
-                } elseif (strtoupper($request->type) == 'OUT') {
-                    $newQty -= $request->quantity;
-                }
+            // if ($existing) {
+            //     // Update quantity based on type
+            //     $newQty = $existing->quantity;
+            //     if (strtoupper($request->type) == 'IN') {
+            //         $newQty += $request->quantity;
+            //     } elseif (strtoupper($request->type) == 'OUT') {
+            //         $newQty -= $request->quantity;
+            //     }
 
-                Inventory::on($branch->connection_name)
-                    ->where('product_id', $request->product_id)
-                    ->update([
-                        'quantity' => $newQty,
-                        'reason' => $request->reason,
-                        'updated_at' => now(),
-                    ]);
-            } else {
-                // Insert new inventory row
-                Inventory::on($branch->connection_name)->insert([
-                    'product_id' => $request->product_id,
-                    'quantity' => strtoupper($request->type) == 'IN' ? $request->quantity : -$request->quantity,
-                    'type' => $request->type,
-                    'reason' => $request->reason,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            //     Inventory::on($branch->connection_name)
+            //         ->where('product_id', $request->product_id)
+            //         ->update([
+            //             'quantity' => $newQty,
+            //             'reason' => $request->reason,
+            //             'updated_at' => now(),
+            //         ]);
+            // } else {
+            // Insert new inventory row
+            Inventory::on($branch->connection_name)->insert([
+                'product_id' => $request->product_id,
+                'quantity' => strtoupper($request->type) == 'IN' ? $request->quantity : -$request->quantity,
+                'type' => $request->type,
+                'reason' => $request->reason,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            // }
 
             return redirect()->route('inventory.index')->with('success', 'Inventory saved successfully.');
         } catch (\Exception $e) {

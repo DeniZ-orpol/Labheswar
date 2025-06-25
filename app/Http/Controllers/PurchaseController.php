@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseParty;
@@ -85,7 +86,7 @@ class PurchaseController extends Controller
 
                 // Array validation for multiple purchase items
                 'product' => 'required|array|min:1',
-                'product.*' => 'required|exists:products,id',
+                'product.*' => 'required',
                 'box' => 'array',
                 'box.*' => 'nullable|numeric|min:0',
                 'pcs' => 'array',
@@ -138,7 +139,7 @@ class PurchaseController extends Controller
                     'total_amount' => $validate['receipt_total_amount'],
 
                     'receipt_status' => 'completed',
-                    'created_by' => session('branch_user_id'),
+                    'created_by' => $user->id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -151,6 +152,13 @@ class PurchaseController extends Controller
                     if (!$product) {
                         continue; // Skip if product not found
                     }
+
+                    // Calculate total quantity including free
+                    $boxQuantity = $validate['box'][$index] ?? 0;
+                    $pcsQuantity = $validate['pcs'][$index] ?? 0;
+                    $freeQuantity = $validate['free'][$index] ?? 0;
+                    $totalPcs = $validate['total_pcs'][$index] ?? 0;
+                    $totalWithFree = $totalPcs + $freeQuantity;
 
                     // Create purchase record with calculated values from frontend
                     Purchase::on($branch->connection_name)->insert([
@@ -165,9 +173,9 @@ class PurchaseController extends Controller
                         'mrp' => $product->mrp ?? 0,
 
                         // Original form values
-                        'box' => $validate['box'][$index] ?? 0,
-                        'pcs' => $validate['pcs'][$index] ?? 0,
-                        'free' => $validate['free'][$index] ?? 0,
+                        'box' => $boxQuantity,
+                        'pcs' => $pcsQuantity,
+                        'free' => $freeQuantity,
                         'p_rate' => $validate['purchase_rate'][$index] ?? 0,
                         'discount' => $validate['discount_percent'][$index] ?? 0,
                         'lumpsum' => $validate['discount_lumpsum'][$index] ?? 0,
@@ -178,6 +186,18 @@ class PurchaseController extends Controller
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
+
+                    if ($totalWithFree > 0) {
+                        Inventory::on($branch->connection_name)->create([
+                            'product_id' => $productId,
+                            'type' => 'in', // or 'in' - adjust based on your inventory types
+                            'quantity' => $totalWithFree,
+                            'unit' => $product->unit_types ?? 'pcs',
+                            'reason' => 'Purchase Bill #' . $validate['bill_no'] . ' - Receipt #' . $purchaseReceiptId,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
 
                     // Optional: Update product stock if needed
                     // $totalPcsWithFree = $validate['total_pcs'][$index] + ($validate['free'][$index] ?? 0);
