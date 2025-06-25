@@ -350,8 +350,8 @@
                                 <label for="box_barcode" class="form-label w-full flex flex-col sm:flex-row">
                                     Box Barcode
                                 </label>
-                                <input id="box_barcode" type="number" name="box_barcode"
-                                    class="form-control field-new" value="{{ $product->box_barcode }}">
+                                <input id="box_barcode" type="number" name="box_barcode" class="form-control field-new"
+                                    value="{{ $product->box_barcode }}">
                             </div>
                         </div>
                     </div>
@@ -553,10 +553,177 @@
         // Category dropdown
         initSearchDropdown('product_category', 'categoryDropdown', '{{ route('categories.search') }}');
 
-        // HSN Code dropdown
-        initSearchDropdown('hsn_code', 'hsnDropdown', '{{ route('hsn.search') }}');
+        // HSN Code dropdown with GST auto-fill
+        initHsnDropdown();
     });
 
+    // HSN dropdown and GST autofill
+    function initHsnDropdown() {
+        const input = document.getElementById('hsn_code');
+        const dropdown = document.getElementById('hsnDropdown');
+        const searchUrl = '{{ route('hsn.search') }}';
+        let timeout;
+        let selectedIndex = -1;
+        let currentHsnData = []; // Store current search results
+
+        input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const value = this.value.trim();
+            selectedIndex = -1;
+
+            if (value.length < 1) {
+                dropdown.classList.remove('show');
+                currentHsnData = [];
+                return;
+            }
+
+            timeout = setTimeout(async () => {
+                try {
+                    let url = `${searchUrl}?search=${value}`;
+
+                    const branchSelect = document.getElementById('branch');
+                    if (branchSelect && branchSelect.value) {
+                        url += `&branch_id=${branchSelect.value}`;
+                    }
+
+                    const response = await fetch(url, {
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector(
+                                'meta[name="csrf-token"]').content
+                        }
+                    });
+
+                    const data = await response.json();
+                    currentHsnData = data.hsn_codes || [];
+
+                    let html = '';
+                    currentHsnData.forEach((item, index) => {
+                        html +=
+                            `<div class="dropdown-item" data-index="${index}">${item.hsn_code}</div>`;
+                    });
+
+                    // Add create new option
+                    const hsnExists = currentHsnData.some(item => item.hsn_code.toLowerCase() ===
+                        value.toLowerCase());
+                    if (!hsnExists) {
+                        html +=
+                            `<div class="dropdown-item create-new" data-new-value="${value}">Create new: "${value}"</div>`;
+                    }
+
+                    dropdown.innerHTML = html;
+                    dropdown.classList.add('show');
+                    selectedIndex = -1;
+
+                    // Add click listeners to dropdown items
+                    dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                        item.addEventListener('mousedown', function(e) {
+                            e.preventDefault();
+                            if (this.dataset.newValue) {
+                                // Creating new HSN code
+                                selectHsnCode(this.dataset.newValue, null);
+                            } else if (this.dataset.index !== undefined) {
+                                // Selecting existing HSN code
+                                const index = parseInt(this.dataset.index);
+                                selectHsnCode(currentHsnData[index].hsn_code,
+                                    currentHsnData[index].gst);
+                            }
+                        });
+                    });
+
+                } catch (error) {
+                    console.error('HSN search error:', error);
+                    dropdown.classList.remove('show');
+                    currentHsnData = [];
+                }
+            }, 200);
+        });
+
+        // Arrow key navigation
+        input.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.dropdown-item');
+
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
+                updateHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
+                updateHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    const selectedItem = items[selectedIndex];
+                    if (selectedItem.dataset.newValue) {
+                        // Creating new HSN code
+                        selectHsnCode(selectedItem.dataset.newValue, null);
+                    } else if (selectedItem.dataset.index !== undefined) {
+                        // Selecting existing HSN code
+                        const index = parseInt(selectedItem.dataset.index);
+                        selectHsnCode(currentHsnData[index].hsn_code, currentHsnData[index].gst);
+                    }
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
+
+        // Function to select HSN code and auto-fill GST
+        function selectHsnCode(hsnCode, gstData) {
+            input.value = hsnCode;
+            dropdown.classList.remove('show');
+
+            if (gstData) {
+                try {
+                    // Parse GST data if it's a string
+                    const gst = typeof gstData === 'string' ? JSON.parse(gstData) : gstData;
+
+                    // Fill GST fields
+                    const sgstField = document.getElementById('product_sgst');
+                    const cgstField = document.getElementById('product_cgst');
+                    const igstField = document.getElementById('product_igst');
+                    const cessField = document.getElementById('product_cess');
+
+                    if (sgstField) sgstField.value = gst.SGST || 0;
+                    if (cgstField) cgstField.value = gst.CGST || 0;
+                    if (igstField) igstField.value = gst.IGST || 0;
+                    if (cessField) cessField.value = gst.CESS || 0;
+
+                    console.log('GST fields filled:', gst);
+
+                } catch (e) {
+                    console.error('Error parsing GST data:', e);
+                    clearGstFields();
+                }
+            } else {
+                clearGstFields();
+            }
+        }
+
+        // Helper function to clear GST fields
+        function clearGstFields() {
+            const sgstField = document.getElementById('product_sgst');
+            const cgstField = document.getElementById('product_cgst');
+            const igstField = document.getElementById('product_igst');
+            const cessField = document.getElementById('product_cess');
+
+            if (sgstField) sgstField.value = '';
+            if (cgstField) cgstField.value = '';
+            if (igstField) igstField.value = '';
+            if (cessField) cessField.value = '';
+        }
+    }
 
     // search dropdown
     function initSearchDropdown(inputId, dropdownId, searchUrl) {
