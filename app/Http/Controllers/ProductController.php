@@ -157,7 +157,9 @@ class ProductController extends Controller
                 'sale_rate_b' => 'nullable|numeric|min:0',
                 'sale_rate_c' => 'nullable|numeric|min:0',
                 'converse_carton' => 'nullable|numeric|min:0',
-                'converse_boc' => 'nullable|numeric|min:0',
+                'carton_barcode' => 'nullable|numeric|min:0',
+                'converse_box' => 'nullable|numeric|min:0',
+                'box_barcode' => 'nullable|numeric|min:0',
                 'converse_pcs' => 'nullable|numeric|min:0',
                 'negative_billing' => 'nullable',
                 'min_qty' => 'nullable|numeric|min:0',
@@ -236,7 +238,9 @@ class ProductController extends Controller
                 'sale_online' => isset($validate['sale_online']) ? 1 : 0,
                 // 'gst_active' => isset($validate['gst_active']) ? 1 : 0,
                 'converse_carton' => $validate['converse_carton'] ?? 0,
-                'converse_box' => $validate['converse_boc'] ?? 0,
+                'carton_barcode' => $validate['carton_barcode'] ?? 0,
+                'converse_box' => $validate['converse_box'] ?? 0,
+                'box_barcode' => $validate['box_barcode'] ?? 0,
                 'converse_pcs' => $validate['converse_pcs'] ?? 0,
                 'negative_billing' => $validate['negative_billing'] ?? null,
                 'min_qty' => $validate['min_qty'] ?? 0,
@@ -355,7 +359,9 @@ class ProductController extends Controller
                 'sale_rate_b' => 'nullable|numeric|min:0',
                 'sale_rate_c' => 'nullable|numeric|min:0',
                 'converse_carton' => 'nullable|numeric|min:0',
-                'converse_boc' => 'nullable|numeric|min:0',
+                'carton_barcode' => 'nullable|numeric|min:0',
+                'converse_box' => 'nullable|numeric|min:0',
+                'box_barcode' => 'nullable|numeric|min:0',
                 'converse_pcs' => 'nullable|numeric|min:0',
                 'negative_billing' => 'nullable',
                 'min_qty' => 'nullable|numeric|min:0',
@@ -440,7 +446,9 @@ class ProductController extends Controller
                 'sale_online' => isset($validate['sale_online']) ? 1 : 0,
                 // 'gst_active' => isset($validate['gst_active']) ? 1 : 0,
                 'converse_carton' => $validate['converse_carton'] ?? 0,
-                'converse_box' => $validate['converse_boc'] ?? 0,
+                'carton_barcode' => $validate['carton_barcode'] ?? 0,
+                'converse_box' => $validate['converse_box'] ?? 0,
+                'box_barcode' => $validate['box_barcode'] ?? 0,
                 'converse_pcs' => $validate['converse_pcs'] ?? 0,
                 'negative_billing' => $validate['negative_billing'] ?? null,
                 'min_qty' => $validate['min_qty'] ?? 0,
@@ -609,7 +617,7 @@ class ProductController extends Controller
     public function searchCompany(Request $request)
     {
         $search = $request->get('search', '');
-        
+
         if (empty($search)) {
             return response()->json(['companies' => []]);
         }
@@ -617,7 +625,7 @@ class ProductController extends Controller
             $auth = $this->authenticateAndConfigureBranch();
             $user = $auth['user'];
             $role = $auth['role'];
-    
+
             // If Super Admin, use `branch` from route or query
             if (strtolower($role->role_name) === 'super admin') {
                 $branchId = $request->branch;
@@ -631,18 +639,18 @@ class ProductController extends Controller
                 // Normal user — get branch from auth
                 $branch = $auth['branch'];
             }
-    
+
             $search = $request->get('search', '');
             if (empty($search)) {
                 return response()->json(['companies' => []]);
             }
-    
+
             $companies = Company::on($branch->connection_name)
                 ->where('name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
                 ->limit(10)
                 ->pluck('name') // Return company names
                 ->toArray();
-    
+
             return response()->json(['companies' => $companies]);
         } catch (\Throwable $th) {
             //throw $th;
@@ -651,7 +659,7 @@ class ProductController extends Controller
     public function searchCategory(Request $request)
     {
         $search = $request->get('search', '');
-        
+
         if (empty($search)) {
             return response()->json(['categories' => []]);
         }
@@ -659,7 +667,7 @@ class ProductController extends Controller
             $auth = $this->authenticateAndConfigureBranch();
             $user = $auth['user'];
             $role = $auth['role'];
-    
+
             // If Super Admin, use `branch` from route or query
             if (strtolower($role->role_name) === 'super admin') {
                 $branchId = $request->branch;
@@ -673,18 +681,18 @@ class ProductController extends Controller
                 // Normal user — get branch from auth
                 $branch = $auth['branch'];
             }
-    
+
             $search = $request->get('search', '');
             if (empty($search)) {
                 return response()->json(['categories' => []]);
             }
-    
+
             $categories = Category::on($branch->connection_name)
                 ->where('name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
                 ->limit(10)
                 ->pluck('name') // Return category names
                 ->toArray();
-    
+
             return response()->json(['categories' => $categories]);
         } catch (\Throwable $th) {
             //throw $th;
@@ -694,7 +702,7 @@ class ProductController extends Controller
     public function searchHsnCode(Request $request)
     {
         $search = $request->get('search', '');
-        
+
         if (empty($search)) {
             return response()->json(['hsn_codes' => []]);
         }
@@ -702,7 +710,7 @@ class ProductController extends Controller
             $auth = $this->authenticateAndConfigureBranch();
             $user = $auth['user'];
             $role = $auth['role'];
-    
+
             // If Super Admin, use `branch` from route or query
             if (strtolower($role->role_name) === 'super admin') {
                 $branchId = $request->branch;
@@ -716,18 +724,18 @@ class ProductController extends Controller
                 // Normal user — get branch from auth
                 $branch = $auth['branch'];
             }
-    
+
             $search = $request->get('search', '');
             if (empty($search)) {
                 return response()->json(['hsn_codes' => []]);
             }
-    
+
             $hsn_codes = HsnCode::on($branch->connection_name)
                 ->where('hsn_code', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
                 ->limit(10)
                 ->pluck('hsn_code') // Return hsn codes
                 ->toArray();
-    
+
             return response()->json(['hsn_codes' => $hsn_codes]);
         } catch (\Throwable $th) {
             return response()->json(['hsn_codes' => []]);

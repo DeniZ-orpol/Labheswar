@@ -12,7 +12,7 @@
             width: 50%;
             /* Adjust as needed */
             /* background-color: #f2f2f2; */
-            padding: 10px;
+            /* padding: 10px; */
             /* border: 1px solid #ddd; */
             box-sizing: border-box;
         }
@@ -101,7 +101,7 @@
             class="form-updated validate-form">
             @csrf <!-- CSRF token for security -->
             <div class="row">
-                <div class="column">
+                <div class="column p-5">
                     {{-- <div class="grid grid-cols-12 gap-2 grid-updated"> --}}
 
                     <!-- Branch Dropdown for Super admin only -->
@@ -267,7 +267,7 @@
                         <label for="product_purchase_rate" class="form-label w-full flex flex-col sm:flex-row">
                             Purchase Rate
                         </label>
-                        <input id="product_purchase_rate" type="number" step="0.01" name="purchase_rate"
+                        <input id="product_purchase_rate" type="number" step="0.0001" name="purchase_rate"
                             class="form-control field-new">
                     </div>
 
@@ -298,22 +298,54 @@
                             class="form-control field-new">
                     </div>
 
-                    <!-- Converse carton -->
-                    <div class="input-form col-span-3 mt-3">
-                        <label for="converse_carton" class="form-label w-full flex flex-col sm:flex-row">
-                            Converse Carton
-                        </label>
-                        <input id="converse_carton" type="number" name="converse_carton"
-                            class="form-control field-new">
+                    <!-- Carton -->
+                    <div class="row pt-5">
+                        <!-- Converse carton -->
+                        <div class="column pr-5">
+                            <div class="input-form col-span-3">
+                                <label for="converse_carton" class="form-label w-full flex flex-col sm:flex-row">
+                                    Converse Carton
+                                </label>
+                                <input id="converse_carton" type="number" name="converse_carton"
+                                    class="form-control field-new">
+                            </div>
+                        </div>
+                        <!-- Carton barcode -->
+                        <div class="column">
+                            <div class="input-form col-span-3">
+                                <label for="carton_barcode" class="form-label w-full flex flex-col sm:flex-row">
+                                    Carton Barcode
+                                </label>
+                                <input id="carton_barcode" type="number" name="carton_barcode"
+                                    class="form-control field-new">
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Converse BOX -->
-                    <div class="input-form col-span-3 mt-3">
-                        <label for="converse_box" class="form-label w-full flex flex-col sm:flex-row">
-                            Converse Box
-                        </label>
-                        <input id="converse_box" type="number" name="converse_boc" class="form-control field-new">
+                    <!-- BOX -->
+                    <div class="row">
+                        <!-- Converse BOX -->
+                        <div class="column pr-5">
+                            <div class="input-form col-span-3">
+                                <label for="converse_box" class="form-label w-full flex flex-col sm:flex-row">
+                                    Converse Box
+                                </label>
+                                <input id="converse_box" type="number" name="converse_box"
+                                    class="form-control field-new">
+                            </div>
+                        </div>
+                        <!-- BOX barcode -->
+                        <div class="column">
+                            <div class="input-form col-span-3">
+                                <label for="box_barcode" class="form-label w-full flex flex-col sm:flex-row">
+                                    Box Barcode
+                                </label>
+                                <input id="box_barcode" type="number" name="box_barcode"
+                                    class="form-control field-new">
+                            </div>
+                        </div>
                     </div>
+
 
                     <!-- Converse pcs -->
                     {{-- <div class="input-form col-span-3 mt-3">
@@ -370,7 +402,8 @@
                         <label for="max_discount" class="form-label w-full flex flex-col sm:flex-row">
                             Max Discount (%)
                         </label>
-                        <input id="max_discount" type="number" name="max_discount" class="form-control field-new">
+                        <input id="max_discount" type="number" step="0.0001" name="max_discount"
+                            class="form-control field-new">
                     </div>
 
                     <!-- Discount Scheme -->
@@ -523,7 +556,8 @@
                     });
 
                     const data = await response.json();
-                    const items = data.items || data.companies || data.categories || data.hsn_codes || [];
+                    const items = data.items || data.companies || data.categories || data
+                        .hsn_codes || [];
 
                     let html = '';
                     items.forEach(item => {

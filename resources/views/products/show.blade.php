@@ -31,11 +31,13 @@
                             <p><strong>Sale Rate B:</strong> ₹{{ $product->sale_rate_b }}</p>
                             <p><strong>Sale Rate C:</strong> ₹{{ $product->sale_rate_c }}</p>
                             <p><strong>SGST:</strong> {{ $product->sgst }}%</p>
-                            <p><strong>CGST 1:</strong> {{ $product->cgst1 }}%</p>
-                            <p><strong>CGST 2:</strong> {{ $product->cgst2 }}%</p>
+                            <p><strong>CGST:</strong> {{ $product->cgst1 }}%</p>
+                            <p><strong>IGST:</strong> {{ $product->cgst2 }}%</p>
                             <p><strong>Cess:</strong> {{ $product->cess }}%</p>
                             <p><strong>Converse (Carton):</strong> {{ $product->converse_carton }}</p>
+                            <p><strong>Carton Barcode:</strong> {{ $product->carton_barcode }}</p>
                             <p><strong>Converse (Box):</strong> {{ $product->converse_box }}</p>
+                            <p><strong>Box Barcode:</strong> {{ $product->box_barcode }}</p>
                             {{-- <p><strong>Converse (Pcs):</strong> {{ $product->converse_pcs }}</p> --}}
                             <p><strong>Min Qty:</strong> {{ $product->min_qty }}</p>
                             <p><strong>Reorder Qty:</strong> {{ $product->reorder_qty }}</p>

@@ -221,7 +221,7 @@
                         </label>
                         <div class="search-dropdown">
                             <input id="hsn_code" type="text" name="hsn_code" class="form-control field-new search-input"
-                                placeholder="Search or type HSN code" autocomplete="off" 
+                                placeholder="Search or type HSN code" autocomplete="off"
                                 value="{{ $product->hsnCode->hsn_code ?? '' }}">
                             <div class="dropdown-list" id="hsnDropdown"></div>
                         </div>
@@ -277,7 +277,7 @@
                         <label for="product_purchase_rate" class="form-label w-full flex flex-col sm:flex-row">
                             Purchase Rate
                         </label>
-                        <input id="product_purchase_rate" type="number" step="0.01" name="purchase_rate"
+                        <input id="product_purchase_rate" type="number" step="0.0001" name="purchase_rate"
                             class="form-control field-new" value="{{ $product->purchase_rate }}">
                     </div>
 
@@ -308,22 +308,52 @@
                             class="form-control field-new" value="{{ $product->sale_rate_c }}">
                     </div>
 
-                    <!-- Converse carton -->
-                    <div class="input-form col-span-3 mt-3">
-                        <label for="converse_carton" class="form-label w-full flex flex-col sm:flex-row">
-                            Converse Carton
-                        </label>
-                        <input id="converse_carton" type="number" name="converse_carton" class="form-control field-new"
-                            value="{{ $product->converse_carton }}">
+                    <!-- Carton -->
+                    <div class="row pt-5">
+                        <!-- Converse carton -->
+                        <div class="column pr-5">
+                            <div class="input-form col-span-3">
+                                <label for="converse_carton" class="form-label w-full flex flex-col sm:flex-row">
+                                    Converse Carton
+                                </label>
+                                <input id="converse_carton" type="number" name="converse_carton"
+                                    class="form-control field-new" value="{{ $product->converse_carton }}">
+                            </div>
+                        </div>
+                        <!-- Carton barcode -->
+                        <div class="column">
+                            <div class="input-form col-span-3">
+                                <label for="carton_barcode" class="form-label w-full flex flex-col sm:flex-row">
+                                    Carton Barcode
+                                </label>
+                                <input id="carton_barcode" type="number" name="carton_barcode"
+                                    class="form-control field-new" value="{{ $product->carton_barcode }}">
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Converse BOX -->
-                    <div class="input-form col-span-3 mt-3">
-                        <label for="converse_box" class="form-label w-full flex flex-col sm:flex-row">
-                            Converse Box
-                        </label>
-                        <input id="converse_box" type="number" name="converse_boc" class="form-control field-new"
-                            value="{{ $product->converse_box }}">
+                    <!-- BOX -->
+                    <div class="row">
+                        <!-- Converse BOX -->
+                        <div class="column pr-5">
+                            <div class="input-form col-span-3 mt-3">
+                                <label for="converse_box" class="form-label w-full flex flex-col sm:flex-row">
+                                    Converse Box
+                                </label>
+                                <input id="converse_box" type="number" name="converse_box"
+                                    class="form-control field-new" value="{{ $product->converse_box }}">
+                            </div>
+                        </div>
+                        <!-- BOX barcode -->
+                        <div class="column">
+                            <div class="input-form col-span-3">
+                                <label for="box_barcode" class="form-label w-full flex flex-col sm:flex-row">
+                                    Box Barcode
+                                </label>
+                                <input id="box_barcode" type="number" name="box_barcode"
+                                    class="form-control field-new" value="{{ $product->box_barcode }}">
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Converse pcs -->
@@ -398,8 +428,8 @@
                         <label for="max_discount" class="form-label w-full flex flex-col sm:flex-row">
                             Max Discount (%)
                         </label>
-                        <input id="max_discount" type="number" name="max_discount" class="form-control field-new"
-                            value="{{ $product->max_discount }}">
+                        <input id="max_discount" type="number" step="0.0001" name="max_discount"
+                            class="form-control field-new" value="{{ $product->max_discount }}">
                     </div>
 
                     <!-- Discount Scheme -->
@@ -448,13 +478,13 @@
                     </div>
 
                     <!-- GST active toggle -->
-                    <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
+                    {{-- <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
                         <label for="gst_active" class="form-label w-full flex flex-col sm:flex-row">
                             GST
                         </label>
                         <input id="gst_active" type="checkbox" name="gst_active" class="form-check-input mr-0 ml-3"
                             {{ $product->gst_active ? 'checked' : '' }}>
-                    </div>
+                    </div> --}}
 
                     <div class="input-form col-span-3 mt-3">
                         <label for="fileInput" class="form-label w-full flex flex-col sm:flex-row">
