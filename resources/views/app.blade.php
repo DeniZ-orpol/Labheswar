@@ -1208,6 +1208,13 @@ License: You must have a valid license purchased only from themeforest(the above
                                     <div class="side-menu__title"> Category </div>
                                 </a>
                             </li>
+                            <li>
+                                <a href="{{ route('hsn_codes.index') }}"
+                                    class="side-menu {{ request()->routeIs('hsn_codes.*') ? 'side-menu--active' : '' }}">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Hsn Code </div>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 @endif
@@ -1250,6 +1257,13 @@ License: You must have a valid license purchased only from themeforest(the above
                                     class="side-menu {{ request()->routeIs('inventory.*') ? 'side-menu--active' : '' }}">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title"> Inventory </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('hsn_codes.index') }}"
+                                    class="side-menu {{ request()->routeIs('hsn_codes.*') ? 'side-menu--active' : '' }}">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Hsn Code </div>
                                 </a>
                             </li>
                         </ul>
@@ -2772,7 +2786,9 @@ License: You must have a valid license purchased only from themeforest(the above
 
             // Add event listener to document to catch all number inputs
             document.addEventListener('keydown', disableArrowKeys);
-            document.addEventListener('wheel', disableScrollOnNumberInput, { passive: false });
+            document.addEventListener('wheel', disableScrollOnNumberInput, {
+                passive: false
+            });
         });
     </script>
 

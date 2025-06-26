@@ -50,6 +50,57 @@
                             <tr>
                                 <td colspan="7" class="text-center">No Purchase Party found.</td>
                             </tr>
+                            @if ($isPaginated)
+                                <div class="pagination-wrapper">
+                                    <div class="pagination-info">
+                                        Showing {{ $products->firstItem() }} to {{ $products->lastItem() }} of
+                                        {{ $products->total() }} entries
+                                    </div>
+                                    <div class="pagination-nav">
+                                        <nav role="navigation" aria-label="Pagination Navigation">
+                                            <ul class="pagination">
+                                                {{-- Previous Page Link --}}
+                                                @if ($products->onFirstPage())
+                                                    <li class="page-item disabled" aria-disabled="true">
+                                                        <span class="page-link">‹</span>
+                                                    </li>
+                                                @else
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="{{ $products->previousPageUrl() }}"
+                                                            rel="prev">‹</a>
+                                                    </li>
+                                                @endif
+
+                                                {{-- Page Numbers --}}
+                                                @for ($i = 1; $i <= $products->lastPage(); $i++)
+                                                    @if ($i == $products->currentPage())
+                                                        <li class="page-item active">
+                                                            <span class="page-link">{{ $i }}</span>
+                                                        </li>
+                                                    @else
+                                                        <li class="page-item">
+                                                            <a class="page-link"
+                                                                href="{{ $products->url($i) }}">{{ $i }}</a>
+                                                        </li>
+                                                    @endif
+                                                @endfor
+
+                                                {{-- Next Page Link --}}
+                                                @if ($products->hasMorePages())
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="{{ $products->nextPageUrl() }}"
+                                                            rel="next">›</a>
+                                                    </li>
+                                                @else
+                                                    <li class="page-item disabled" aria-disabled="true">
+                                                        <span class="page-link">›</span>
+                                                    </li>
+                                                @endif
+                                            </ul>
+                                        </nav>
+                                    </div>
+                                </div>
+                            @endif
                         @endif
                     </tbody>
                 </table>
@@ -116,31 +167,25 @@
 @endpush
 
 @push('scripts')
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- DataTables + Tailwind -->
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.tailwindcss.min.js"></script>
-
     <script>
-        $(document).ready(function() {
-            $('#DataTable').DataTable({
-                paging: true,
-                pageLength: 10,
-                lengthMenu: [5, 10, 25, 50],
-                ordering: true,
-                searching: true,
-                responsive: true,
-                language: {
-                    paginate: {
-                        previous: "←",
-                        next: "→"
-                    },
-                    search: "Search:",
-                    lengthMenu: "Show _MENU_ entries"
-                }
-            });
-        });
+        function changeBranch() {
+            const branchSelect = document.getElementById('branch_select');
+            const selectedBranchId = branchSelect.value;
+
+            // Build URL with branch_id parameter
+            const currentUrl = new URL(window.location.href);
+
+            if (selectedBranchId) {
+                currentUrl.searchParams.set('branch_id', selectedBranchId);
+            } else {
+                currentUrl.searchParams.delete('branch_id');
+            }
+
+            // Remove page parameter when switching branches
+            currentUrl.searchParams.delete('page');
+
+            // Redirect to new URL
+            window.location.href = currentUrl.toString();
+        }
     </script>
 @endpush

@@ -517,30 +517,35 @@
                 </div>
                 <!-- END: Modal Header -->
 
-                <!-- BEGIN: Modal Body -->
-                <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
-                    <div class="col-span-12">
-                        <label for="modal-hsn-code" class="form-label">HSN Code</label>
-                        <input id="modal-hsn-code" type="text" class="form-control bg-gray-100" readonly>
+                <form action="{{ route('hsn_codes.modalstore') }}" method="POST">
+                    @csrf
+                    <!-- BEGIN: Modal Body -->
+                    <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
+                        <div class="col-span-12">
+                            <label for="modal-hsn-code" class="form-label">HSN Code</label>
+                            <input id="modal-hsn-code" name="hsn_code" type="text" class="form-control bg-gray-100"
+                                readonly>
+                        </div>
+                        <div class="col-span-12">
+                            <label for="modal-gst" class="form-label">GST (%)</label>
+                            <input id="modal-gst" name="gst" type="number" step="0.01" class="form-control"
+                                placeholder="Enter GST percentage" required>
+                        </div>
                     </div>
-                    <div class="col-span-12">
-                        <label for="modal-gst" class="form-label">GST (%)</label>
-                        <input id="modal-gst" type="number" step="0.01" class="form-control"
-                            placeholder="Enter GST percentage">
-                    </div>
-                </div>
-                <!-- END: Modal Body -->
+                    <!-- END: Modal Body -->
 
-                <!-- BEGIN: Modal Footer -->
-                <div class="modal-footer">
-                    <button type="button" id="cancel-hsn-modal"
-                        class="btn btn-outline-secondary w-20 mr-1">Cancel</button>
-                    <button type="button" id="save-hsn-modal" class="btn btn-primary w-20">Save</button>
-                </div>
-                <!-- END: Modal Footer -->
+                    <!-- BEGIN: Modal Footer -->
+                    <div class="modal-footer">
+                        <button type="button" id="cancel-hsn-modal"
+                            class="btn btn-outline-secondary w-20 mr-1">Cancel</button>
+                        <button type="submit" class="btn btn-primary w-20">Save</button>
+                    </div>
+                    <!-- END: Modal Footer -->
+                </form>
             </div>
         </div>
     </div>
+
     <!-- END: HSN Modal -->
 
 @endsection
@@ -775,29 +780,28 @@
         function selectHsnCode(hsnCode, gstData) {
             dropdown.classList.remove('show');
 
-            // Create display text with HSN code and GST values
             let displayText = hsnCode;
 
             if (gstData) {
+                // dd($gstData);
                 try {
-                    // Parse GST data if it's a string
                     const gst = typeof gstData === 'string' ? JSON.parse(gstData) : gstData;
 
-                    // Add GST values to display text
-                    displayText +=
-                        ` (SGST: ${gst.SGST || 0}%, CGST: ${gst.CGST || 0}%, IGST: ${gst.IGST || 0}%)`;
-                    // ` (SGST: ${gst.SGST || 0}%, CGST: ${gst.CGST || 0}%, IGST: ${gst.IGST || 0}%, CESS: ${gst.CESS || 0}%)`;
+                    // Prefer splitting gst.gst into SGST/CGST if present
+                    const sgst = gst.gst ? gst.gst / 2 : (gst.SGST || 0);
+                    const cgst = gst.gst ? gst.gst / 2 : (gst.CGST || 0);
+                    const igst = gst.gst ? gst.gst * 2 : (gst.IGST || 0);
+
+                    displayText += ` (SGST: ${sgst}%, CGST: ${cgst}%, IGST: ${igst}%)`;
 
                     // Fill GST fields
                     const sgstField = document.getElementById('product_sgst');
                     const cgstField = document.getElementById('product_cgst');
                     const igstField = document.getElementById('product_igst');
-                    // const cessField = document.getElementById('product_cess');
 
-                    if (sgstField) sgstField.value = gst.SGST || 0;
-                    if (cgstField) cgstField.value = gst.CGST || 0;
-                    if (igstField) igstField.value = gst.IGST || 0;
-                    // if (cessField) cessField.value = gst.CESS || 0;
+                    if (sgstField) sgstField.value = sgst;
+                    if (cgstField) cgstField.value = cgst;
+                    if (igstField) igstField.value = igst;
 
                     console.log('GST fields filled:', gst);
 
@@ -809,23 +813,24 @@
                 clearGstFields();
             }
 
-            // Set the display text in input field
+            // Set display value to input field
             input.value = displayText;
 
-            // Store the actual HSN code for form submission in a hidden field
+            // Store hidden actual HSN code
             let hiddenHsnField = document.getElementById('hidden_hsn_code');
             if (!hiddenHsnField) {
                 hiddenHsnField = document.createElement('input');
                 hiddenHsnField.type = 'hidden';
                 hiddenHsnField.id = 'hidden_hsn_code';
-                hiddenHsnField.name = 'hsn_code'; // This will be submitted
+                hiddenHsnField.name = 'hsn_code';
                 input.parentNode.appendChild(hiddenHsnField);
 
-                // Change the visible input name so it's not submitted
+                // Prevent visible field from being submitted
                 input.name = 'hsn_code_display';
             }
             hiddenHsnField.value = hsnCode;
         }
+
 
         // Helper function to clear GST fields
         function clearGstFields() {

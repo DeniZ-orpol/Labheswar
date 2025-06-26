@@ -6,6 +6,7 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ForgotPasswordController;
+use App\Http\Controllers\HsnController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseController;
@@ -114,6 +115,9 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     Route::get('/companies/search', [ProductController::class, 'searchCompany'])->name('companies.search');
     Route::get('/categories/search', [ProductController::class, 'searchCategory'])->name('categories.search');
     Route::get('/hsn-code/search', [ProductController::class, 'searchHsnCode'])->name('hsn.search');
+
+    Route::resource('hsn_codes', HsnController::class);
+    Route::post('/hsn_codes/modalstore', [HsnController::class, 'modalStore'])->name('hsn_codes.modalstore');
 });
 
 

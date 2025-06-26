@@ -61,6 +61,14 @@
             /* border-bottom: 1px dotted #aaa; */
         }
 
+        .divider {
+            margin: 0;
+        }
+
+        .divider1 {
+            margin-bottom: 0px;
+        }
+
         .totals td {
             font-weight: bold;
         }
@@ -127,31 +135,79 @@
             <tbody>
                 @foreach ($orderItems as $index => $item)
                     <tr>
+                        {{-- {{dd($item->product)}} --}}
                         <td style="font-size: 9px">
-                            <strong>{{ $index + 1 }} ) CGST @ {{ $item->gst }} %, SGST @ {{ $item->sgst }}
-                                %</strong><br>
+                            <strong>{{ $index + 1 }} ) CGST @ {{ rtrim(rtrim($item->product->cgst1, '0'), '.') }}%,
+                                SGST @ {{ rtrim(rtrim($item->product->sgst, '0'), '.') }}%</strong><br>
                             <span style="font-weight: bold">{{ $item->product->barcode }}</span>
                             {{ strtoupper($item->product->product_name) }}
                         </td>
-                        <td>{{ $item->total_amount }}</td>
-                        <td>{{ $item->product_weight ? $item->product_weight : $item->product_quantity }}</td>
                         <td>{{ $item->product_price }}</td>
+                        <td>{{ $item->product_weight ? $item->product_weight : $item->product_quantity }}</td>
+                        <td>{{ $item->total_amount }}</td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
-
+        <hr class="divider">
 
         <table>
-            <td>ITEM: {{ $totalItems }}</td>
             <tr class="totals">
-                <td>Qty:</td>
-                <td colspan="3">{{ $totalItems }}</td>
-                <td>Total:</td>
-                <td colspan="3">₹{{ $order->total }}</td>
+                <td>ITEM: {{ $totalItems }}</td>
+                <td></td>
+                <td colspan="3" style="text-align: right; padding: 0px;">&nbsp;Qty:{{ $totalItems }}</td>
+                <td colspan="3" style="text-align: center; padding: 0px;">₹{{ $order->total }}</td>
             </tr>
         </table>
+        <hr class="divider1">
+        <table>
+            <thead>
+                <tr>
+                    <th style="font-size: 8px;font-weight:400">Gst IND</th>
+                    <th style="font-size: 8px;font-weight:400">Goods Value</th>
+                    <th style="font-size: 8px;font-weight:400">CGST</th>
+                    <th style="font-size: 8px;font-weight:400">SGST</th>
+                    <th style="font-size: 8px;font-weight:400">CESS</th>
+                    <th style="font-size: 8px;font-weight:400">Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($orderItems as $index => $item)
+                    <tr>
+                        {{-- {{dd($item)}} --}}
+                        <td style="font-size: 8px;font-weight:400">{{ $loop->iteration }}</td>
+                        {{-- <td style="font-size: 9px">
+                            <strong>{{ $index + 1 }} ) CGST @ {{ $item->gst }} %, SGST @ {{ $item->sgst }}
+                                %</strong><br>
+                            <span style="font-weight: bold">{{ $item->product->barcode }}</span>
+                            {{ strtoupper($item->product->product_name) }}
+                        </td> --}}
+                        {{-- {{dd($item->product_price *$item->product_quantity)}} --}}
+                        <td style="font-size: 8px;font-weight:600">₹{{ number_format($item->product_price * $item->product_quantity,2)   }}
+                        </td>
+                        <td style="font-size: 8px;font-weight:600">
+                            ₹{{ number_format(($item->product_price * $item->product_quantity * $item->product->cgst1) / 100, 2) }}
+                        </td>
+                        <td style="font-size: 8px;font-weight:600">
+                            ₹{{ number_format(($item->product_price * $item->product_quantity * $item->product->sgst) / 100, 2) }}
+                        </td>
+                        <td style="font-size: 8px;font-weight:600">
+                            ₹{{ number_format(($item->product_price * $item->product_quantity * $item->product->cess) / 100, 2) }}
+                        </td>
+                        <td style="font-size: 8px; font-weight:600">
+                            ₹{{ number_format(
+                                $item->product_price * $item->product_quantity +
+                                    ($item->product_price * $item->product_quantity * $item->product->cgst1) / 100 +
+                                    ($item->product_price * $item->product_quantity * $item->product->sgst) / 100 +
+                                    ($item->product_price * $item->product_quantity * $item->product->cess) / 100,
+                                2,
+                            ) }}
+                        </td>
 
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
         <div class="small-text">Saved Rs. -1 /- on MRP</div>
         <div class="small-text">This is computer generated invoice does not require signature.</div>
 
