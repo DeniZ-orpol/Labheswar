@@ -434,8 +434,8 @@ class ProductController extends Controller
                 // Prepare GST data as JSON
                 $gstData = [
                     'SGST' => (float) ($validate['sgst'] ?? 0),
-                    'CGST' => (float) ($validate['cgst_1'] ?? 0),
-                    'IGST' => (float) ($validate['cgst_2'] ?? 0), // cgst_2 is IGST
+                    'CGST' => (float) ($validate['cgst'] ?? 0),
+                    'IGST' => (float) ($validate['igst'] ?? 0),
                     'CESS' => (float) ($validate['cess'] ?? 0)
                 ];
 

@@ -227,13 +227,20 @@
                         </div>
                     </div>
 
+                    @php
+                        $hsnGst = null;
+                        if ($product->hsnCode && $product->hsnCode->gst) {
+                            $hsnGst = json_decode($product->hsnCode->gst, true);
+                        }
+                    @endphp
                     <!-- sgst -->
                     <div class="input-form col-span-3 mt-3">
                         <label for="product_sgst" class="form-label w-full flex flex-col sm:flex-row">
                             SGST
                         </label>
                         <input id="product_sgst" type="number" step="0.01" name="sgst" class="form-control field-new"
-                            value="{{ $product->sgst }}">
+                            value="{{ $hsnGst['SGST'] ?? '' }}">
+                            {{-- value="{{ $hsnGst['SGST'] ?? $product->sgst ?? '' }}"> --}}
                     </div>
 
                     <!-- CGST -->
@@ -242,7 +249,8 @@
                             CGST
                         </label>
                         <input id="product_cgst" type="number" step="0.01" name="cgst"
-                            class="form-control field-new" value="{{ $product->cgst1 }}">
+                            class="form-control field-new" value="{{ $hsnGst['CGST'] ?? '' }}">
+                            {{-- class="form-control field-new" value="{{ $hsnGst['CGST'] ?? $product->cgst1 ?? '' }}"> --}}
                     </div>
 
                     <!-- IGST -->
@@ -251,7 +259,8 @@
                             IGST
                         </label>
                         <input id="product_igst" type="number" step="0.01" name="igst"
-                            class="form-control field-new" value="{{ $product->cgst2 }}">
+                            class="form-control field-new" value="{{ $hsnGst['IGST'] ?? '' }}">
+                            {{-- class="form-control field-new" value="{{ $hsnGst['IGST'] ?? $product->cgst2 ? '' }}"> --}}
                     </div>
 
                     <!-- CESS -->
@@ -260,7 +269,8 @@
                             CESS
                         </label>
                         <input id="product_cess" type="number" step="0.01" name="cess"
-                            class="form-control field-new" value="{{ $product->cess }}">
+                            class="form-control field-new" value="{{ $hsnGst['CESS'] ?? '' }}">
+                            {{-- class="form-control field-new" value="{{ $hsnGst['CESS'] ?? $product->cess ?? '' }}"> --}}
                     </div>
 
                     <!-- MRP -->
