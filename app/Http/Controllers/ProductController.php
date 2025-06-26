@@ -426,7 +426,7 @@ class ProductController extends Controller
             if ($request->hasFile('product_image')) {
                 // Delete old image if exists
                 if ($product->image) {
-                    $oldImagePath = public_path('uploads/' . $product->image);
+                    $oldImagePath = public_path($product->image);
                     if (file_exists($oldImagePath)) {
                         unlink($oldImagePath);
                     }

@@ -122,10 +122,25 @@ class CategoryController extends Controller
         }
 
         $imagePath = null;
-
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('category', 'public');
+            $file = $request->file('image');
+            $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
+
+            // Create branch-specific directory
+            $uploadPath = public_path('uploads/' . $branch->connection_name . '/category');
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+
+            // Move file to branch-specific folder
+            $file->move($uploadPath, $filename);
+
+            // Store path as: branch_connection/products/filename.jpg
+            $imagePath = 'uploads/' . $branch->connection_name . '/category/' . $filename;
         }
+        // if ($request->hasFile('image')) {
+        //     $imagePath = $request->file('image')->store('category', 'public');
+        // }
 
         $data = [
             'name' => $request->name,
@@ -236,11 +251,34 @@ class CategoryController extends Controller
         }
 
         $imagePath = $category->image;
-
         if ($request->hasFile('image')) {
-            // Optionally delete old image here if needed
-            $imagePath = $request->file('image')->store('category', 'public');
+            // Delete old image if exists
+            if ($category->image) {
+                $oldImagePath = public_path($category->image);
+                if (file_exists($oldImagePath)) {
+                    unlink($oldImagePath);
+                }
+            }
+
+            $file = $request->file('image');
+            $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
+
+            // Create branch-specific directory
+            $uploadPath = public_path('uploads/' . $branch->connection_name . '/category');
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+
+            // Move file to branch-specific folder
+            $file->move($uploadPath, $filename);
+
+            // Store path as: branch_connection/products/filename.jpg
+            $imagePath = 'uploads/' . $branch->connection_name . '/category/' . $filename;
         }
+        // if ($request->hasFile('image')) {
+        //     // Optionally delete old image here if needed
+        //     $imagePath = $request->file('image')->store('category', 'public');
+        // }
 
         Category::on($branch->connection_name)->where('id', $id)->update([
             'name' => $request->name,

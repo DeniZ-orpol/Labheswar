@@ -66,7 +66,7 @@
                                     <td class="px-4 py-2">{{ $category->name }}</td>
                                     <td class="px-4 py-2">
                                         @if ($category->image)
-                                            <img src="{{ asset('storage/' . $category->image) }}" alt="Category Image"
+                                            <img src="{{ asset($category->image) }}" alt="Category Image"
                                                 class="h-12 w-12 object-cover rounded">
                                         @else
                                             <span class="text-gray-500 italic">No Image</span>

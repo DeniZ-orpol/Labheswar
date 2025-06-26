@@ -20,7 +20,7 @@
                             @if ($category->image)
                                 <div class="mt-5">
                                     {{-- <div class="font-medium text-lg mb-2">category Image</div> --}}
-                                    <img src="{{ asset('storage/' . $category->image) }}" alt="category Image"
+                                    <img src="{{ asset($category->image) }}" alt="category Image"
                                         style="max-width: 250px; border-radius: 10px;" />
                                 </div>
                             @endif

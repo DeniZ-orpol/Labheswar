@@ -96,7 +96,7 @@
                                 <div id="imagePreview"
                                     style="max-width: 300px; margin: 0 auto; {{ $category->image ? '' : 'display: none;' }}">
                                     <img id="previewImg"
-                                        src="{{ $category->image ? asset('storage/' . $category->image) : '' }}"
+                                        src="{{ $category->image ? asset($category->image) : '' }}"
                                         style="width: 100%; height: auto; border-radius: 8px; margin-top: 10px;" />
                                     <div style="margin-top: 10px; font-size: 14px; color: #666;">
                                         <span id="fileName">{{ $category->image ? basename($category->image) : '' }}</span>
