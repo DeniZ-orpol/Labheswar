@@ -73,7 +73,9 @@
                                     </td>
                                     <td>
                                         @if ($product->image)
-                                            <img src="{{ asset('storage/' . $product->image) }}" alt="Product Image"
+                                            {{-- <img src="{{ asset('storage/' . $product->image) }}" alt="Product Image"
+                                                width="80"> --}}
+                                            <img src="{{ asset($product->image) }}" alt="Product Image"
                                                 width="80">
                                         @else
                                             No Image

@@ -178,10 +178,26 @@ class ProductController extends Controller
 
             // Upload product image (optional)
             $path = null;
+            // if ($request->hasFile('product_image')) {
+            //     $file = $request->file('product_image');
+            //     $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
+            //     $path = $file->storeAs('products', $filename, 'public');
+            // }
             if ($request->hasFile('product_image')) {
                 $file = $request->file('product_image');
                 $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
-                $path = $file->storeAs('products', $filename, 'public');
+
+                // Create branch-specific directory
+                $uploadPath = public_path('uploads/' . $branch->connection_name . '/products');
+                if (!file_exists($uploadPath)) {
+                    mkdir($uploadPath, 0755, true);
+                }
+
+                // Move file to branch-specific folder
+                $file->move($uploadPath, $filename);
+
+                // Store path as: branch_connection/products/filename.jpg
+                $path = 'uploads/' . $branch->connection_name . '/products/' . $filename;
             }
 
             // Handle Company - use branch connection
@@ -397,15 +413,39 @@ class ProductController extends Controller
 
             // Upload new image if available
             $path = $product->image; // Keep existing image by default
+            // if ($request->hasFile('product_image')) {
+            //     $file = $request->file('product_image');
+            //     $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
+            //     $path = $file->storeAs('products', $filename, 'public');
+
+            //     // Optionally delete old image
+            //     if ($product->image && \Storage::disk('public')->exists($product->image)) {
+            //         \Storage::disk('public')->delete($product->image);
+            //     }
+            // }
             if ($request->hasFile('product_image')) {
+                // Delete old image if exists
+                if ($product->image) {
+                    $oldImagePath = public_path('uploads/' . $product->image);
+                    if (file_exists($oldImagePath)) {
+                        unlink($oldImagePath);
+                    }
+                }
+
                 $file = $request->file('product_image');
                 $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
-                $path = $file->storeAs('products', $filename, 'public');
 
-                // Optionally delete old image
-                if ($product->image && \Storage::disk('public')->exists($product->image)) {
-                    \Storage::disk('public')->delete($product->image);
+                // Create branch-specific directory
+                $uploadPath = public_path('uploads/' . $branch->connection_name . '/products');
+                if (!file_exists($uploadPath)) {
+                    mkdir($uploadPath, 0755, true);
                 }
+
+                // Move file to branch-specific folder
+                $file->move($uploadPath, $filename);
+
+                // Store path as: branch_connection/products/filename.jpg
+                $path = 'uploads/' . $branch->connection_name . '/products/' . $filename;
             }
 
             // Handle Company - use branch connection
