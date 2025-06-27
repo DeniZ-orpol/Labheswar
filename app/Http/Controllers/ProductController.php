@@ -393,7 +393,7 @@ class ProductController extends Controller
                 'sale_online' => 'nullable',
                 // 'gst_active' => 'nullable'
             ]);
-
+            // dd($request->all());
             if (strtolower($role->role_name) === 'super admin') {
                 $product = Product::with(['category', 'hsnCode', 'pCompany'])
                     ->where('id', $id)
