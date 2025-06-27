@@ -70,7 +70,6 @@ class CategoryController extends Controller
                 'selectedBranch',
                 'showNoBranchMessage'
             ));
-
         } else {
             $categories = Category::on($branch->connection_name)->orderBy('created_at', 'desc')->paginate(10);
         }
@@ -309,5 +308,76 @@ class CategoryController extends Controller
         Category::on($branch->connection_name)->where('id', $id)->delete();
 
         return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
+    }
+
+    public function modalstore(Request $request, ?string $branch = null)
+    {
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $role = $auth['role'];
+
+        if (strtolower($role->role_name) === 'super admin') {
+            $branchId = $request->branch;
+
+            if (!$branchId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Branch ID is required for Super Admin.',
+                ], 422);
+            }
+
+            $branch = Branch::findOrFail($branchId);
+            configureBranchConnection($branch);
+        } else {
+            $branch = $auth['branch'];
+        }
+
+        // Check if category already exists (either in branch DB or master)
+        $categoryName = trim($request->name);
+
+        $existsInBranch = Category::on($branch->connection_name)->where('name', $categoryName)->exists();
+        $existsInMaster = Category::where('name', $categoryName)->exists();
+
+        if ($existsInBranch || $existsInMaster) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Category already exists.',
+            ], 409);
+        }
+
+        // Upload image if provided
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
+
+            $uploadPath = public_path('uploads/' . $branch->connection_name . '/category');
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+
+            $file->move($uploadPath, $filename);
+            $imagePath = 'uploads/' . $branch->connection_name . '/category/' . $filename;
+        }
+
+        $data = [
+            'name' => $categoryName,
+            'image' => $imagePath,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        // Insert into both branch and master
+        Category::on($branch->connection_name)->insert($data);
+        Category::insert($data); // master DB
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Category created successfully',
+            'data' => [
+                'id' => Category::on($branch->connection_name)->where('name', $categoryName)->latest()->value('id'),
+                'name' => $categoryName,
+            ]
+        ]);
     }
 }

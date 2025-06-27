@@ -1253,6 +1253,13 @@ License: You must have a valid license purchased only from themeforest(the above
                                 </a>
                             </li>
                             <li>
+                                <a href="{{ route('company.index') }}"
+                                    class="side-menu {{ request()->routeIs('company.*') ? 'side-menu--active' : '' }}">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Company </div>
+                                </a>
+                            </li>
+                            <li>
                                 <a href="{{ route('inventory.index') }}"
                                     class="side-menu {{ request()->routeIs('inventory.*') ? 'side-menu--active' : '' }}">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
