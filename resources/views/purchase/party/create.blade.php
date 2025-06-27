@@ -12,6 +12,48 @@
                             *</span></label>
                     <input type="text" name="party_name" class="form-control field-new" required>
                 </div>
+                <div class="col-span-6 mt-3">
+                    <label class="form-label">Company Name<span style="color: red;margin-left: 3px;">
+                            *</span></label>
+                    <input type="text" name="company_name" class="form-control field-new" required>
+                </div>
+                <div class="col-span-6 mt-3">
+                    <label class="form-label">Gst NO.<span style="color: red;margin-left: 3px;">
+                            *</span></label>
+                    <input type="text" name="gst_number" class="form-control field-new" required>
+                </div>
+                <div class="col-span-6 mt-3">
+                    <label class="form-label">Bank Account Number<span style="color: red;margin-left: 3px;">
+                            *</span></label>
+                    <input type="text" name="acc_no" class="form-control field-new" required>
+                </div>
+                <div class="col-span-6 mt-3">
+                    <label class="form-label">IFSC Code<span style="color: red;margin-left: 3px;">
+                            *</span></label>
+                    <input type="text" name="ifsc_code" class="form-control field-new" required>
+                </div>
+                <div class="col-span-6 mt-3">
+                    <label class="form-label">Station<span style="color: red;margin-left: 3px;">
+                            *</span></label>
+                    <input type="text" name="station" class="form-control field-new" required>
+                </div>
+                <div class="col-span-6 mt-3">
+                    <label class="form-label">Pin Code</label>
+                    <input type="text" name="pincode" class="form-control field-new" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')">
+                </div>
+                <div class="col-span-6 mt-3">
+                    <label class="form-label">Mobile NO.</label>
+                    <input type="text" name="mobile_no"
+                        class="form-control field-new"oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')">
+                </div>
+                <div class="col-span-6 mt-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control field-new">
+                </div>
+                <div class="col-span-6 mt-3">
+                    <label class="form-label">Address</label>
+                    <input type="textbox" name="address" class="form-control field-new" style="height: 100px">
+                </div>
             </div>
             <a onclick="goBack()" class="btn btn-outline-primary shadow-md mr-2">Back </a>
             <button type="submit" class="btn btn-primary mt-5 btn-hover">Save</button>

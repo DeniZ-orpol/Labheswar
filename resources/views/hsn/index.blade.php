@@ -21,6 +21,7 @@
                         <th>Cgst</th>
                         <th>Sgst</th>
                         <th>Igst</th>
+                        <th>Short Name</th>
                         <th style="TEXT-ALIGN: left;">Actions</th>
                     </tr>
                 </thead>
@@ -33,7 +34,7 @@
                             <td>{{ number_format((float) $hsn->gst / 2, 2) }}%</td>
                             <td>{{ number_format((float) $hsn->gst / 2, 2) }}%</td>
                             <td>{{ number_format((float) $hsn->gst, 2) }}%</td>
-
+                            <td>{{ $hsn->short_name }}</td>
                             <td>
                                 <!-- Add buttons for actions like 'View', 'Edit' etc. -->
                                 <!-- <button class="btn btn-primary">Message</button> -->

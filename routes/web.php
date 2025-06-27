@@ -109,6 +109,7 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     Route::get('/purchase/party/{id}/edit', [PurchasePartyController::class, 'edit'])->name('purchase.party.edit');
     Route::put('/purchase/party/{id}/update', [PurchasePartyController::class, 'update'])->name('purchase.party.update');
     Route::delete('/purchase/party/{id}/delete', [PurchasePartyController::class, 'destroy'])->name('purchase.party.destroy');
+    Route::get('/purchase/party/{id}/show', [PurchasePartyController::class, 'show'])->name('purchase.party.show');
 
     Route::resource('app/orders', AppOrderController::class);
 

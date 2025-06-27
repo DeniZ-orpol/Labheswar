@@ -41,11 +41,30 @@ class PurchasePartyController extends Controller
         $branch = $auth['branch'];
 
         $validate = $request->validate([
-            'party_name' => 'required|string'
+            'party_name' => 'required|string',
+            'company_name' => 'required|string',
+            'gst_number' => 'required|string',
+            'acc_no' => 'required|string',
+            'ifsc_code' => 'required|string',
+            'station' => 'required|string',
+            'pincode' => 'string',
+            'mobile_no' => 'string',
+            'email' => 'string',
+            'address' => 'string',
         ]);
+        // dd($request->all());
 
         $data = [
-            'party_name' => $validate['party_name']
+            'party_name' => $validate['party_name'],
+            'company_name' => $validate['party_name'],
+            'gst_number' => $validate['party_name'],
+            'acc_no' => $validate['party_name'],
+            'ifsc_code' => $validate['party_name'],
+            'station' => $validate['party_name'],
+            'pincode' => $validate['party_name'],
+            'mobile_no' => $validate['party_name'],
+            'email' => $validate['party_name'],
+            'address' => $validate['party_name'],
         ];
 
         PurchaseParty::on($branch->connection_name)->create($data);
@@ -58,7 +77,14 @@ class PurchasePartyController extends Controller
      */
     public function show(string $id)
     {
-        // 
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
+
+        // Find the purchase party using branch connection
+        $party = PurchaseParty::on($branch->connection_name)->findOrFail($id);
+
+        return view('purchase.party.show', compact('party'));
     }
 
     /**
@@ -85,7 +111,16 @@ class PurchasePartyController extends Controller
         $branch = $auth['branch'];
 
         $validate = $request->validate([
-            'party_name' => 'required|string'
+            'party_name' => 'required|string',
+            'company_name' => 'required|string',
+            'gst_number' => 'required|string',
+            'acc_no' => 'required|string',
+            'ifsc_code' => 'required|string',
+            'station' => 'required|string',
+            'pincode' => 'string',
+            'mobile_no' => 'string',
+            'email' => 'string',
+            'address' => 'string',
         ]);
 
         $party = PurchaseParty::on($branch->connection_name)->findOrFail($id);

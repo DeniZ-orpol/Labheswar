@@ -9,5 +9,5 @@ class HsnCode extends Model
 {
     use HasDynamicTable;
     protected $table = 'hsn_codes';
-    protected $fillable = ['hsn_code','gst'];
+    protected $fillable = ['hsn_code','gst','short_name'];
 }

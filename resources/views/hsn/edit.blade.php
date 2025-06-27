@@ -20,6 +20,11 @@
                     <input type="text" name="gst" id="gst" class="form-control field-new" required
                         value="{{ $hsn->gst }}"oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')">
                 </div>
+                <div class="col-span-3 mt-3">
+                    <label for="short_name" class="form-label">Short Name</label>
+                    <input type="text" name="short_name" id="short_name" class="form-control field-new" required
+                        value="{{ $hsn->short_name }}">
+                </div>
             </div>
             <a onclick="goBack()" class="btn btn-outline-primary shadow-md mr-2">Back </a>
             <button type="submit" class="btn btn-primary mt-5 btn-hover">Save</button>

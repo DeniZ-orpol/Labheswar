@@ -30,6 +30,11 @@
                                     <td>{{ $party->party_name }}</td>
                                     <td>
                                         <div class="flex gap-2 justify-content-left">
+                                            <a href="{{ route('purchase.party.show', $party->id) }}"
+                                                class="btn btn-primary mr-1 mb-2">
+                                                View
+                                                {{-- {{ dd($hsn->id) }} --}}
+                                            </a>
                                             <form action=" {{ route('purchase.party.destroy', $party->id) }} "
                                                 method="POST"
                                                 onsubmit="return confirm('Are you sure you want to delete this role?');"

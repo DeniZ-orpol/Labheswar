@@ -46,11 +46,13 @@ class HsnController extends Controller
         $validate = $request->validate([
             'hsn_code' => 'required|string|max:255',
             'gst' => 'required|string|max:255',
+            'short_name' => 'required|string|max:255',
         ]);
         // dd($request->all());
         $data = [
             'hsn_code' => $validate['hsn_code'],
-            'gst' => $validate['gst']
+            'gst' => $validate['gst'],
+            'short_name' => $validate['short_name']
         ];
         // dd($data);
         HsnCode::on($branch->connection_name)->create($data);
@@ -114,11 +116,13 @@ class HsnController extends Controller
         $validate = $request->validate([
             'hsn_code' => 'required|string|max:255',
             'gst' => 'required|string|max:255',
+            'short_name' => 'required|string|max:255',
         ]);
         // dd($request->all());
         $data = [
             'hsn_code' => $validate['hsn_code'],
-            'gst' => $validate['gst']
+            'gst' => $validate['gst'],
+            'short_name' => $validate['short_name']
         ];
         // dd($data);
         HsnCode::on($branch->connection_name)->where('id', $id)->first();
@@ -126,6 +130,7 @@ class HsnController extends Controller
         HsnCode::on($branch->connection_name)->where('id', $id)->update([
             'hsn_code' => $request->hsn_code,
             'gst' => $request->gst,
+            'short_name' => $request->short_name,
             'updated_at' => now(),
         ]);
 
@@ -161,11 +166,13 @@ class HsnController extends Controller
         $validate = $request->validate([
             'hsn_code' => 'required|string|max:255',
             'gst' => 'required|string|max:255',
+            'short_name' => 'required|string|max:255',
         ]);
         // dd($request->all());
         $data = [
             'hsn_code' => $validate['hsn_code'],
-            'gst' => $validate['gst']
+            'gst' => $validate['gst'],
+            'short_name' => $validate['short_name']
         ];
         // dd($data);
         $hsnCode = HsnCode::on($branch->connection_name)->create($data);
@@ -176,7 +183,8 @@ class HsnController extends Controller
             'data' => [
                 'id' => $hsnCode->id,
                 'hsn_code' => $hsnCode->hsn_code,
-                'gst' => $hsnCode->gst
+                'gst' => $hsnCode->gst,
+                'short_name' => $hsnCode->short_name
             ]
         ]);
 

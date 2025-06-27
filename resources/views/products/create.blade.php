@@ -240,8 +240,7 @@
                         <label for="product_mrp" class="form-label w-full flex flex-col sm:flex-row">
                             MRP
                         </label>
-                        <input id="product_mrp" type="number" name="mrp" step="0.01"
-                            class="form-control field-new">
+                        <input id="product_mrp" type="number" name="mrp" step="0.01" class="form-control field-new">
                     </div>
 
                     <!-- Purchase rate -->
@@ -513,6 +512,11 @@
                             <input id="modal-gst" name="gst" type="number" step="0.01" class="form-control"
                                 placeholder="Enter GST percentage" required>
                         </div>
+                        <div class="col-span-12">
+                            <label for="modal-short-name" class="form-label">Short Name</label>
+                            <input id="modal-short-name" name="short_name" type="text"
+                                class="form-control bg-gray-100">
+                        </div>
                     </div>
                     <!-- END: Modal Body -->
 
@@ -601,7 +605,6 @@
         </div>
     </div>
     <!-- END: Company Modal -->
-
 @endsection
 
 <script>
@@ -747,6 +750,9 @@
         const modalHsnInput = document.getElementById('modal-hsn-code');
         const modalGstInput = document.getElementById('modal-gst');
 
+
+
+
         // Cancel button
         cancelBtn.addEventListener('click', closeHsnModal);
 
@@ -757,7 +763,7 @@
             // Use existing element references - fastest approach
             const hsnCode = modalHsnInput.value.trim();
             const gst = modalGstInput.value.trim();
-
+                    const shortName = document.getElementById('modal-short-name').value.trim();
             // Quick validation
             if (!hsnCode || !gst) {
                 alert('HSN Code and GST are required');
@@ -768,7 +774,7 @@
             const params = new URLSearchParams();
             params.append('hsn_code', hsnCode);
             params.append('gst', gst);
-
+            params.append('short_name', shortName);
             // Add branch_id if needed
             const branchSelect = document.getElementById('branch');
             if (branchSelect?.value) {
