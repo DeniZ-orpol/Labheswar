@@ -7,7 +7,8 @@
         </h2>
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
-                <a href="{{ Route('hsn_codes.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add New Hsn Code</a>
+                <a href="{{ Route('hsn_codes.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add New Hsn
+                    Code</a>
             </div>
 
             <!-- BEGIN: Users Layout -->
@@ -31,13 +32,14 @@
                             <td>{{ $hsn->hsn_code }}</td>
                             <td>{{ number_format((float) $hsn->gst / 2, 2) }}%</td>
                             <td>{{ number_format((float) $hsn->gst / 2, 2) }}%</td>
-                            <td>{{ number_format((float) $hsn->gst  , 2) }}%</td>
+                            <td>{{ number_format((float) $hsn->gst, 2) }}%</td>
 
                             <td>
                                 <!-- Add buttons for actions like 'View', 'Edit' etc. -->
                                 <!-- <button class="btn btn-primary">Message</button> -->
                                 <div class="flex gap-2 justify-content-left">
-                                    <a href="{{ route('hsn_codes.show', $hsn->id) }}" class="btn btn-primary mr-1 mb-2"> View
+                                    <a href="{{ route('hsn_codes.show', $hsn->id) }}" class="btn btn-primary mr-1 mb-2">
+                                        View
                                         {{-- {{ dd($hsn->id) }} --}}
                                     </a>
                                     <form action="{{ route('hsn_codes.destroy', $hsn->id) }}" method="POST"
@@ -47,68 +49,67 @@
                                         @method('DELETE') <!-- Add this line -->
                                         <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
                                     </form>
-                                    <a href="{{ route('hsn_codes.edit', $hsn->id) }}" class="btn btn-primary mr-1 mb-2"> Edit
+                                    <a href="{{ route('hsn_codes.edit', $hsn->id) }}" class="btn btn-primary mr-1 mb-2">
+                                        Edit
                                         {{-- {{ dd($hsn->id) }} --}}
                                     </a>
                                 </div>
                             </td>
                         </tr>
                     @endforeach
-
-                    {{-- @if ($hsns instanceof \Illuminate\Pagination\LengthAwarePaginator && $hsns->hasPages())
-                        {{-- Pagination --}}
-                        {{-- <div class="pagination-wrapper">
-                            <div class="pagination-info">
-                                Showing {{ $hsns->firstItem() }} to {{ $hsns->lastItem() }} of
-                                {{ $hsns->total() }} entries
-                            </div>
-                            <div class="pagination-nav">
-                                <nav role="navigation" aria-label="Pagination Navigation">
-                                    <ul class="pagination">
-                                        {{-- Previous Page Link --}}
-                                        {{-- @if ($hsns->onFirstPage())
-                                            <li class="page-item disabled" aria-disabled="true">
-                                                <span class="page-link">‹</span>
-                                            </li>
-                                        @else
-                                            <li class="page-item">
-                                                <a class="page-link" href="{{ $hsns->previousPageUrl() }}"
-                                                    rel="prev">‹</a>
-                                            </li>
-                                        @endif --}}
-
-                                        {{-- Page Numbers --}}
-                                        {{-- @for ($i = 1; $i <= $hsns->lastPage(); $i++)
-                                            @if ($i == $hsns->currentPage())
-                                                <li class="page-item active">
-                                                    <span class="page-link">{{ $i }}</span>
-                                                </li>
-                                            @else
-                                                <li class="page-item">
-                                                    <a class="page-link"
-                                                        href="{{ $hsns->url($i) }}">{{ $i }}</a>
-                                                </li>
-                                            @endif
-                                        @endfor --}}
-
-                                        {{-- Next Page Link --}}
-                                        {{-- @if ($hsns->hasMorePages())
-                                            <li class="page-item">
-                                                <a class="page-link" href="{{ $hsns->nextPageUrl() }}" rel="next">›</a>
-                                            </li>
-                                        @else
-                                            <li class="page-item disabled" aria-disabled="true">
-                                                <span class="page-link">›</span>
-                                            </li>
-                                        @endif
-                                    </ul>
-                                </nav>
-                            </div>
-                        </div>
-                    @endif --}}
-
                 </tbody>
             </table>
+            @if ($hsns instanceof \Illuminate\Pagination\LengthAwarePaginator && $hsns->hasPages())
+                {{-- Pagination --}}
+                <div class="pagination-wrapper">
+                    <div class="pagination-info">
+                        Showing {{ $hsns->firstItem() }} to {{ $hsns->lastItem() }} of
+                        {{ $hsns->total() }} entries
+                    </div>
+                    <div class="pagination-nav">
+                        <nav role="navigation" aria-label="Pagination Navigation">
+                            <ul class="pagination">
+                                {{-- Previous Page Link --}}
+                                @if ($hsns->onFirstPage())
+                                    <li class="page-item disabled" aria-disabled="true">
+                                        <span class="page-link">‹</span>
+                                    </li>
+                                @else
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ $hsns->previousPageUrl() }}" rel="prev">‹</a>
+                                    </li>
+                                @endif
+
+                                {{-- Page Numbers --}}
+                                @for ($i = 1; $i <= $hsns->lastPage(); $i++)
+                                    @if ($i == $hsns->currentPage())
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ $i }}</span>
+                                        </li>
+                                    @else
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $hsns->url($i) }}">{{ $i }}</a>
+                                        </li>
+                                    @endif
+                                @endfor
+
+                                {{-- Next Page Link --}}
+                                @if ($hsns->hasMorePages())
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ $hsns->nextPageUrl() }}" rel="next">›</a>
+                                    </li>
+                                @else
+                                    <li class="page-item disabled" aria-disabled="true">
+                                        <span class="page-link">›</span>
+                                    </li>
+                                @endif
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            @endif
+
+
 
             <!-- END: Users Layout -->
         </div>
@@ -119,14 +120,15 @@
     <style>
         /* Custom Pagination Styles */
         .pagination-wrapper {
-            display: flex;
-            justify-content: space-between;
+            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            margin-top: 1rem;
-            padding: 0 1rem;
+            gap: 0.5rem;
         }
 
+
         .pagination-info {
+            display: none;
             font-size: 14px;
             color: #6b7280;
             font-weight: 500;
