@@ -69,15 +69,15 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     Route::resource('roles', RoleController::class);
 
     // Products
-    // Route::resource('products', ProductController::class);
+    Route::resource('products', ProductController::class);
 
-    Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-    Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
-    Route::post('/products/store/{branch?}', [ProductController::class, 'store'])->name('products.store');
-    Route::get('/products/{id}/show/{branch?}', [ProductController::class, 'show'])->name('products.show');
-    Route::get('/products/{id}/edit/{branch?}', [ProductController::class, 'edit'])->name('products.edit');
-    Route::put('/products/{id}/update/{branch?}', [ProductController::class, 'update'])->name('products.update');
-    Route::delete('/products/{id}/delete/{branch?}', [ProductController::class, 'destroy'])->name('products.destroy');
+    // Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+    // Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
+    // Route::post('/products/store/{branch?}', [ProductController::class, 'store'])->name('products.store');
+    // Route::get('/products/{id}/show/{branch?}', [ProductController::class, 'show'])->name('products.show');
+    // Route::get('/products/{id}/edit/{branch?}', [ProductController::class, 'edit'])->name('products.edit');
+    // Route::put('/products/{id}/update/{branch?}', [ProductController::class, 'update'])->name('products.update');
+    // Route::delete('/products/{id}/delete/{branch?}', [ProductController::class, 'destroy'])->name('products.destroy');
 
     Route::post('/product/import', [ProductController::class, 'importProducts'])->name('products.import');
 

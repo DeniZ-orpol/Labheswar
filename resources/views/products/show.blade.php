@@ -2,7 +2,7 @@
 
 @section('content')
     @php
-        $isSuperAdmin = strtolower($role->role_name) === 'super admin';
+        // $isSuperAdmin = strtolower($role->role_name) === 'super admin';
 
         // Get gst from HSN
         $hsnGst = null;
@@ -72,9 +72,7 @@
                     <!-- Navigation -->
                     <div class="mt-5">
                         <a href="{{ route('products.index') }}" class="btn btn-secondary">Back to Product List</a>
-                        <a href="{{ $isSuperAdmin
-                            ? route('products.edit', ['id' => $product->id, 'branch' => $branch->id])
-                            : route('products.edit', $product->id) }}"
+                        <a href="{{ route('products.edit', $product->id) }}"
                             class="btn btn-primary ml-2">Edit Product</a>
                     </div>
                 </div>

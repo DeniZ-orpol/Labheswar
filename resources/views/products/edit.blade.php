@@ -90,18 +90,12 @@
     </style>
 @endpush
 @section('content')
-    @php
-        $isSuperAdmin = strtolower($role->role_name) === 'super admin';
-    @endphp
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             Edit Product
         </h2>
-        <form
-            action="{{ $isSuperAdmin
-                ? route('products.update', ['id' => $product->id, 'branch' => $branch->id])
-                : route('products.update', $product->id) }}"
-            method="POST" enctype="multipart/form-data" class="form-updated validate-form">
+        <form action="{{ route('products.update', $product->id) }}" method="POST" enctype="multipart/form-data"
+            class="form-updated validate-form">
             @csrf
             @method('PUT')
             <div class="row">
@@ -220,48 +214,64 @@
                             HSN Code
                         </label>
                         <div class="search-dropdown">
-                            <input id="hsn_code" type="text" name="hsn_code" class="form-control field-new search-input"
-                                placeholder="Search or type HSN code" autocomplete="off"
-                                value="{{ $product->hsnCode->hsn_code ?? '' }}">
+                            @php
+                                $hsnDisplayValue = '';
+                                if ($product->hsnCode) {
+                                    $hsnDisplayValue = $product->hsnCode->hsn_code;
+                                    if ($product->hsnCode->gst) {
+                                        $gstData = is_string($product->hsnCode->gst)
+                                            ? json_decode($product->hsnCode->gst, true)
+                                            : $product->hsnCode->gst;
+                                        $gstValue = is_array($gstData) ? $gstData['gst'] ?? $gstData : $gstData;
+
+                                        $sgst = $gstValue / 2;
+                                        $cgst = $gstValue / 2;
+                                        $igst = $gstValue;
+
+                                        $hsnDisplayValue .= " (SGST: {$sgst}%, CGST: {$cgst}%, IGST: {$igst}%)";
+                                    }
+                                }
+                            @endphp
+
+                            <input id="hsn_code" type="text" name="hsn_code_display"
+                                class="form-control field-new search-input" placeholder="Search or type HSN code"
+                                autocomplete="off" value="{{ $hsnDisplayValue }}">
                             <div class="dropdown-list" id="hsnDropdown"></div>
+
+                            <!-- Hidden fields for actual HSN data -->
+                            <input type="hidden" id="hidden_hsn_code" name="hsn_code"
+                                value="{{ $product->hsnCode->hsn_code ?? '' }}">
+                            <input type="hidden" id="hidden_hsn_id" name="hsn_code_id"
+                                value="{{ $product->hsn_code_id ?? '' }}">
                         </div>
                     </div>
 
-                    @php
-                        $hsnGst = null;
-                        if ($product->hsnCode && $product->hsnCode->gst) {
-                            $hsnGst = json_decode($product->hsnCode->gst, true);
-                        }
-                    @endphp
                     <!-- sgst -->
-                    <div class="input-form col-span-3 mt-3">
+                    {{-- <div class="input-form col-span-3 mt-3">
                         <label for="product_sgst" class="form-label w-full flex flex-col sm:flex-row">
                             SGST
                         </label>
                         <input id="product_sgst" type="number" step="0.01" name="sgst" class="form-control field-new"
                             value="{{ $hsnGst['SGST'] ?? '' }}">
-                            {{-- value="{{ $hsnGst['SGST'] ?? $product->sgst ?? '' }}"> --}}
-                    </div>
+                    </div> --}}
 
                     <!-- CGST -->
-                    <div class="input-form col-span-3 mt-3">
+                    {{-- <div class="input-form col-span-3 mt-3">
                         <label for="product_cgst" class="form-label w-full flex flex-col sm:flex-row">
                             CGST
                         </label>
                         <input id="product_cgst" type="number" step="0.01" name="cgst"
                             class="form-control field-new" value="{{ $hsnGst['CGST'] ?? '' }}">
-                            {{-- class="form-control field-new" value="{{ $hsnGst['CGST'] ?? $product->cgst1 ?? '' }}"> --}}
-                    </div>
+                    </div> --}}
 
                     <!-- IGST -->
-                    <div class="input-form col-span-3 mt-3">
+                    {{-- <div class="input-form col-span-3 mt-3">
                         <label for="product_igst" class="form-label w-full flex flex-col sm:flex-row">
                             IGST
                         </label>
                         <input id="product_igst" type="number" step="0.01" name="igst"
                             class="form-control field-new" value="{{ $hsnGst['IGST'] ?? '' }}">
-                            {{-- class="form-control field-new" value="{{ $hsnGst['IGST'] ?? $product->cgst2 ? '' }}"> --}}
-                    </div>
+                    </div> --}}
 
                     <!-- CESS -->
                     <div class="input-form col-span-3 mt-3">
@@ -269,8 +279,8 @@
                             CESS
                         </label>
                         <input id="product_cess" type="number" step="0.01" name="cess"
-                            class="form-control field-new" value="{{ $hsnGst['CESS'] ?? '' }}">
-                            {{-- class="form-control field-new" value="{{ $hsnGst['CESS'] ?? $product->cess ?? '' }}"> --}}
+                            class="form-control field-new" value="{{ $product->cess ?? null }}">
+                        {{-- class="form-control field-new" value="{{ $hsnGst['CESS'] ?? $product->cess ?? '' }}"> --}}
                     </div>
 
                     <!-- MRP -->
@@ -367,13 +377,13 @@
                     </div>
 
                     <!-- Converse pcs -->
-                    <div class="input-form col-span-3 mt-3">
+                    {{-- <div class="input-form col-span-3 mt-3">
                         <label for="converse_pcs" class="form-label w-full flex flex-col sm:flex-row">
                             Converse PCS
                         </label>
                         <input id="converse_pcs" type="number" name="converse_pcs" class="form-control field-new"
                             value="{{ $product->converse_pcs }}">
-                    </div>
+                    </div> --}}
 
                     <!-- Negative Billing -->
                     <div class="input-form col-span-3 mt-3">
@@ -514,8 +524,7 @@
                             <!-- Preview box (shows initially if product has image) -->
                             <div id="imagePreview"
                                 style="max-width: 300px; margin: 0 auto; {{ $product->image ? '' : 'display: none;' }}">
-                                <img id="previewImg"
-                                    src="{{ $product->image ? asset($product->image) : '' }}"
+                                <img id="previewImg" src="{{ $product->image ? asset($product->image) : '' }}"
                                     style="width: 100%; height: auto; border-radius: 8px; margin-top: 10px;" />
                                 <div style="margin-top: 10px; font-size: 14px; color: #666;">
                                     <span id="fileName">{{ $product->image ? basename($product->image) : '' }}</span>
@@ -553,6 +562,123 @@
         </div>
         <!-- END: Failed Notification Content -->
     </div>
+
+    <!-- BEGIN: HSN Modal -->
+    <div id="hsn-modal" class="modal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!-- BEGIN: Modal Header -->
+                <div class="modal-header">
+                    <h2 class="font-medium text-base mr-auto">Create New HSN Code</h2>
+                </div>
+                <!-- END: Modal Header -->
+
+                <form action="{{ route('hsn_codes.modalstore') }}" id="hsn-form" method="POST">
+                    @csrf
+                    <!-- BEGIN: Modal Body -->
+                    <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
+                        <div class="col-span-12">
+                            <label for="modal-hsn-code" class="form-label">HSN Code</label>
+                            <input id="modal-hsn-code" name="hsn_code" type="text" class="form-control bg-gray-100"
+                                readonly>
+                        </div>
+                        <div class="col-span-12">
+                            <label for="modal-gst" class="form-label">GST (%)</label>
+                            <input id="modal-gst" name="gst" type="number" step="0.01" class="form-control"
+                                placeholder="Enter GST percentage" required>
+                        </div>
+                    </div>
+                    <!-- END: Modal Body -->
+
+                    <!-- BEGIN: Modal Footer -->
+                    <div class="modal-footer">
+                        <button type="button" id="cancel-hsn-modal"
+                            class="btn btn-outline-secondary w-20 mr-1">Cancel</button>
+                        <button type="submit" class="btn btn-primary w-20">Save</button>
+                    </div>
+                    <!-- END: Modal Footer -->
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- END: HSN Modal -->
+
+    <!-- BEGIN: Category Modal -->
+    <div id="category-modal" class="modal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!-- BEGIN: Modal Header -->
+                <div class="modal-header">
+                    <h2 class="font-medium text-base mr-auto">Create New Category</h2>
+                </div>
+                <!-- END: Modal Header -->
+
+                {{-- <form action="{{ route('categories.modalstore') }}" id="category-form" method="POST"> --}}
+                <form action="#" id="category-form" method="POST">
+                    @csrf
+                    <!-- BEGIN: Modal Body -->
+                    <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
+                        <div class="col-span-12">
+                            <label for="modal-category-name" class="form-label">Category Name</label>
+                            <input id="modal-category-name" name="category_name" type="text" class="form-control"
+                                placeholder="Enter category name" required>
+                        </div>
+                        <div class="col-span-12">
+                            <label for="modal-category-description" class="form-label">Description (Optional)</label>
+                            <textarea id="modal-category-description" name="description" class="form-control"
+                                placeholder="Enter category description" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <!-- END: Modal Body -->
+
+                    <!-- BEGIN: Modal Footer -->
+                    <div class="modal-footer">
+                        <button type="button" id="cancel-category-modal"
+                            class="btn btn-outline-secondary w-20 mr-1">Cancel</button>
+                        <button type="submit" class="btn btn-primary w-20">Save</button>
+                    </div>
+                    <!-- END: Modal Footer -->
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- END: Category Modal -->
+
+    <!-- BEGIN: Company Modal -->
+    <div id="company-modal" class="modal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!-- BEGIN: Modal Header -->
+                <div class="modal-header">
+                    <h2 class="font-medium text-base mr-auto">Create New Company</h2>
+                </div>
+                <!-- END: Modal Header -->
+
+                {{-- <form action="{{ route('companies.modalstore') }}" id="company-form" method="POST"> --}}
+                <form action="#" id="company-form" method="POST">
+                    @csrf
+                    <!-- BEGIN: Modal Body -->
+                    <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
+                        <div class="col-span-12">
+                            <label for="modal-company-name" class="form-label">Company Name</label>
+                            <input id="modal-company-name" name="company_name" type="text" class="form-control"
+                                placeholder="Enter company name" required>
+                        </div>
+                    </div>
+                    <!-- END: Modal Body -->
+
+                    <!-- BEGIN: Modal Footer -->
+                    <div class="modal-footer">
+                        <button type="button" id="cancel-company-modal"
+                            class="btn btn-outline-secondary w-20 mr-1">Cancel</button>
+                        <button type="submit" class="btn btn-primary w-20">Save</button>
+                    </div>
+                    <!-- END: Modal Footer -->
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- END: Company Modal -->
 @endsection
 
 <script>
@@ -565,7 +691,243 @@
 
         // HSN Code dropdown with GST auto-fill
         initHsnDropdown();
+        initHsnModal();
+
+        // Pre-populate existing category and company IDs if available
+        initializeExistingData();
     });
+
+    function initializeExistingData() {
+        // Set existing category ID if available
+        @if ($product->category_id)
+            let categoryIdField = document.getElementById('hidden_category_id');
+            if (!categoryIdField) {
+                categoryIdField = document.createElement('input');
+                categoryIdField.type = 'hidden';
+                categoryIdField.id = 'hidden_category_id';
+                categoryIdField.name = 'category_id';
+                document.getElementById('product_category').parentNode.appendChild(categoryIdField);
+            }
+            categoryIdField.value = '{{ $product->category_id }}';
+        @endif
+
+        // Set existing company ID if available
+        @if ($product->company_id)
+            let companyIdField = document.getElementById('hidden_company_id');
+            if (!companyIdField) {
+                companyIdField = document.createElement('input');
+                companyIdField.type = 'hidden';
+                companyIdField.id = 'hidden_company_id';
+                companyIdField.name = 'company_id';
+                document.getElementById('product_company').parentNode.appendChild(companyIdField);
+            }
+            companyIdField.value = '{{ $product->company_id }}';
+        @endif
+    }
+
+    // Function to select HSN code and auto-fill GST - NOW GLOBAL
+    function selectHsnCode(hsnCode, gstData, hsnId = null) {
+        const input = document.getElementById('hsn_code');
+        const dropdown = document.getElementById('hsnDropdown');
+
+        dropdown.classList.remove('show');
+
+        let displayText = hsnCode;
+
+        if (gstData) {
+            try {
+                // Handle both string and number GST values
+                let gstValue;
+                if (typeof gstData === 'string') {
+                    try {
+                        const parsedGst = JSON.parse(gstData);
+                        gstValue = parsedGst.gst || parsedGst;
+                    } catch (e) {
+                        gstValue = parseFloat(gstData);
+                    }
+                } else {
+                    gstValue = gstData;
+                }
+
+                const sgst = gstValue / 2 || 0;
+                const cgst = gstValue / 2 || 0;
+                const igst = gstValue || 0;
+
+                displayText += ` (SGST: ${sgst}%, CGST: ${cgst}%, IGST: ${igst}%)`;
+
+            } catch (e) {
+                console.error('Error parsing GST data:', e);
+            }
+        }
+
+        // Set display value to input field
+        input.value = displayText;
+
+        // Update hidden fields
+        const hiddenHsnField = document.getElementById('hidden_hsn_code');
+        const hiddenHsnIdField = document.getElementById('hidden_hsn_id');
+
+        if (hiddenHsnField) {
+            hiddenHsnField.value = hsnCode;
+        }
+
+        if (hiddenHsnIdField) {
+            hiddenHsnIdField.value = hsnId || '';
+        }
+
+        console.log('HSN updated:', {
+            hsnCode: hsnCode,
+            hsnId: hsnId,
+            displayText: displayText
+        });
+    }
+
+    // Function to open HSN modal
+    function openHsnModal(hsnCode) {
+        console.log('✅ openHsnModal CALLED with HSN:', hsnCode);
+        const modal = document.getElementById('hsn-modal');
+        const modalHsnInput = document.getElementById('modal-hsn-code');
+        const modalGstInput = document.getElementById('modal-gst');
+        const dropdown = document.getElementById('hsnDropdown');
+
+        // Close dropdown
+        dropdown.classList.remove('show');
+
+        // Set HSN code in modal
+        modalHsnInput.value = hsnCode;
+        modalGstInput.value = '';
+
+        // Show modal
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        modal.style.marginTop = '50px';
+        modal.style.marginLeft = '0';
+        modal.classList.add('show');
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+
+        // Focus on GST input
+        setTimeout(() => {
+            modalGstInput.focus();
+        }, 100);
+    }
+
+    // Function to close HSN modal
+    function closeHsnModal() {
+        const modal = document.getElementById('hsn-modal');
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        modal.style.visibility = 'hidden';
+        modal.style.opacity = '0';
+    }
+
+    // Initialize modal functionality
+    function initHsnModal() {
+        const modal = document.getElementById('hsn-modal');
+        const cancelBtn = document.getElementById('cancel-hsn-modal');
+        const form = modal.querySelector('form');
+        const modalHsnInput = document.getElementById('modal-hsn-code');
+        const modalGstInput = document.getElementById('modal-gst');
+
+        // Cancel button
+        cancelBtn.addEventListener('click', closeHsnModal);
+
+        // Handle form submission with AJAX
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent normal form submission
+
+            // Use existing element references - fastest approach
+            const hsnCode = modalHsnInput.value.trim();
+            const gst = modalGstInput.value.trim();
+
+            // Quick validation
+            if (!hsnCode || !gst) {
+                alert('HSN Code and GST are required');
+                return;
+            }
+
+            // Fastest approach - direct URLSearchParams
+            const params = new URLSearchParams();
+            params.append('hsn_code', hsnCode);
+            params.append('gst', gst);
+
+            // Add branch_id if needed
+            const branchSelect = document.getElementById('branch');
+            if (branchSelect?.value) {
+                params.append('branch_id', branchSelect.value);
+            }
+
+            // Show loading state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Saving...';
+            submitBtn.disabled = true;
+
+            fetch(form.action, {
+                    method: 'POST',
+                    body: params,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Success response:', data);
+
+                    if (data.success) {
+                        // Close modal first
+                        closeHsnModal();
+
+                        // Update HSN field using global function with HSN ID
+                        selectHsnCode(data.data.hsn_code, data.data.gst, data.data.id);
+
+                        // Clear form values
+                        modalHsnInput.value = '';
+                        modalGstInput.value = '';
+
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to create HSN Code'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error creating HSN Code: ' + error.message);
+                })
+                .finally(() => {
+                    // Reset button state
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                });
+        });
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeHsnModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('show')) {
+                closeHsnModal();
+            }
+        });
+
+        // Handle Enter key in modal GST input
+        modalGstInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+    }
 
     // HSN dropdown and GST autofill
     function initHsnDropdown() {
@@ -607,17 +969,23 @@
                     currentHsnData = data.hsn_codes || [];
 
                     let html = '';
+
+                    // Show existing HSN codes first
                     currentHsnData.forEach((item, index) => {
+                        // Show HSN code with GST info for better identification
+                        console.log(item);
+                        const gstInfo = item.gst ?
+                            // ` (GST: ${typeof item.gst === 'string' ? JSON.parse(item.gst).gst || 'N/A' : item.gst.gst || 'N/A'}%)` :
+                            ` (GST: ${item.gst}%)` :
+                            '';
                         html +=
-                            `<div class="dropdown-item" data-index="${index}">${item.hsn_code}</div>`;
+                            `<div class="dropdown-item" data-index="${index}">${item.hsn_code}${gstInfo}</div>`;
                     });
 
-                    // Add create new option
-                    const hsnExists = currentHsnData.some(item => item.hsn_code.toLowerCase() ===
-                        value.toLowerCase());
-                    if (!hsnExists) {
+                    // ALWAYS add "Create new" option - regardless of existing entries
+                    if (value) { // Only show if user has typed something
                         html +=
-                            `<div class="dropdown-item create-new" data-new-value="${value}">Create new: "${value}"</div>`;
+                            `<div class="dropdown-item create-new" data-new-value="${value}">+ Create new: "${value}" with custom GST</div>`;
                     }
 
                     dropdown.innerHTML = html;
@@ -630,12 +998,13 @@
                             e.preventDefault();
                             if (this.dataset.newValue) {
                                 // Creating new HSN code
-                                selectHsnCode(this.dataset.newValue, null);
+                                openHsnModal(this.dataset.newValue);
                             } else if (this.dataset.index !== undefined) {
                                 // Selecting existing HSN code
                                 const index = parseInt(this.dataset.index);
                                 selectHsnCode(currentHsnData[index].hsn_code,
-                                    currentHsnData[index].gst);
+                                    currentHsnData[index].gst, currentHsnData[
+                                        index].id);
                             }
                         });
                     });
@@ -665,15 +1034,7 @@
             } else if (e.key === 'Enter') {
                 e.preventDefault();
                 if (selectedIndex >= 0 && items[selectedIndex]) {
-                    const selectedItem = items[selectedIndex];
-                    if (selectedItem.dataset.newValue) {
-                        // Creating new HSN code
-                        selectHsnCode(selectedItem.dataset.newValue, null);
-                    } else if (selectedItem.dataset.index !== undefined) {
-                        // Selecting existing HSN code
-                        const index = parseInt(selectedItem.dataset.index);
-                        selectHsnCode(currentHsnData[index].hsn_code, currentHsnData[index].gst);
-                    }
+                    handleHsnDropdownItemClick(items[selectedIndex]);
                 }
             } else if (e.key === 'Escape') {
                 dropdown.classList.remove('show');
@@ -689,51 +1050,19 @@
             }
         });
 
-        // Function to select HSN code and auto-fill GST
-        function selectHsnCode(hsnCode, gstData) {
-            input.value = hsnCode;
+        // Handle dropdown item selection
+        function handleHsnDropdownItemClick(item) {
             dropdown.classList.remove('show');
 
-            if (gstData) {
-                try {
-                    // Parse GST data if it's a string
-                    const gst = typeof gstData === 'string' ? JSON.parse(gstData) : gstData;
-
-                    // Fill GST fields
-                    const sgstField = document.getElementById('product_sgst');
-                    const cgstField = document.getElementById('product_cgst');
-                    const igstField = document.getElementById('product_igst');
-                    const cessField = document.getElementById('product_cess');
-
-                    if (sgstField) sgstField.value = gst.SGST || 0;
-                    if (cgstField) cgstField.value = gst.CGST || 0;
-                    if (igstField) igstField.value = gst.IGST || 0;
-                    if (cessField) cessField.value = gst.CESS || 0;
-
-                    console.log('GST fields filled:', gst);
-
-                } catch (e) {
-                    console.error('Error parsing GST data:', e);
-                    clearGstFields();
-                }
-            } else {
-                clearGstFields();
+            if (item.dataset.newValue) {
+                openHsnModal(item.dataset.newValue);
+            } else if (item.dataset.index !== undefined) {
+                const index = parseInt(item.dataset.index);
+                selectHsnCode(currentHsnData[index].hsn_code, currentHsnData[index].gst, currentHsnData[index].id);
             }
         }
-
-        // Helper function to clear GST fields
-        function clearGstFields() {
-            const sgstField = document.getElementById('product_sgst');
-            const cgstField = document.getElementById('product_cgst');
-            const igstField = document.getElementById('product_igst');
-            const cessField = document.getElementById('product_cess');
-
-            if (sgstField) sgstField.value = '';
-            if (cgstField) cgstField.value = '';
-            if (igstField) igstField.value = '';
-            if (cessField) cessField.value = '';
-        }
     }
+
 
     // search dropdown
     function initSearchDropdown(inputId, dropdownId, searchUrl) {

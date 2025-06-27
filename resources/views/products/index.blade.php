@@ -2,7 +2,6 @@
 
 @section('content')
     @php
-        $isSuperAdmin = strtolower($role->role_name) === 'super admin';
         $isPaginated = method_exists($products, 'links');
     @endphp
     <div class="content">
@@ -12,16 +11,16 @@
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
                 <a href="{{ Route('products.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add Product</a>
-                @if (!$isSuperAdmin)
-                    <form action="{{ route('products.import') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <label for="excel_file">Import Products (Excel):</label>
-                        <input type="file" name="excel_file" required accept=".csv, .xlsx, .xls">
-                        <button type="submit">Import</button>
-                    </form>
-                @endif
+                {{-- @if (!$isSuperAdmin) --}}
+                <form action="{{ route('products.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <label for="excel_file">Import Products (Excel):</label>
+                    <input type="file" name="excel_file" required accept=".csv, .xlsx, .xls">
+                    <button type="submit">Import</button>
+                </form>
+                {{-- @endif --}}
 
-                @if ($isSuperAdmin)
+                {{-- @if ($isSuperAdmin)
                     <div class="flex items-center gap-2 ml-auto">
                         <label for="branch_select" class="text-sm font-medium">Select Branch:</label>
                         <select id="branch_select" class="form-select border-gray-300 rounded-md" onchange="changeBranch()">
@@ -34,143 +33,127 @@
                             @endforeach
                         </select>
                     </div>
-                @endif
+                @endif --}}
 
             </div>
 
             <div class="intro-y col-span-12 overflow-auto">
-                @if ($isSuperAdmin && isset($showNoBranchMessage) && $showNoBranchMessage)
+                {{-- @if ($isSuperAdmin && isset($showNoBranchMessage) && $showNoBranchMessage)
                     <div class="text-center py-8">
                         <div class="text-gray-500 text-lg">
                             <p>Please select a branch to view products</p>
                         </div>
                     </div>
-                @else
-                    <table id="DataTable" class="display table table-bordered w-full">
-                        <thead>
-                            <tr class="bg-primary text-white">
-                                <th>#</th>
-                                <th>Image</th>
-                                <th>Product</th>
-                                <th>Category</th>
-                                <th>HSN</th>
-                                <th>MRP</th>
-                                @if ($isSuperAdmin && isset($selectedBranch))
-                                    <th>Branch</th>
-                                @endif
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($products as $product)
-                                <tr>
-                                    <td>
-                                        @if ($isPaginated)
-                                            {{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}
-                                        @else
-                                            {{ $loop->iteration }}
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if ($product->image)
-                                            {{-- <img src="{{ asset('storage/' . $product->image) }}" alt="Product Image"
-                                                width="80"> --}}
-                                            <img src="{{ asset($product->image) }}" alt="Product Image"
-                                                width="80">
-                                        @else
-                                            No Image
-                                        @endif
-                                    </td>
-                                    <td>{{ $product->product_name }}</td>
-                                    <td>{{ $product->category->name ?? '-' }}</td>
-                                    <td>{{ $product->hsnCode->hsn_code ?? '-' }}</td>
-                                    <td>{{ $product->mrp }}</td>
-                                    @if ($isSuperAdmin && isset($selectedBranch))
-                                        <td>{{ $selectedBranch->name }}</td>
+                @else --}}
+                <table id="DataTable" class="display table table-bordered w-full">
+                    <thead>
+                        <tr class="bg-primary text-white">
+                            <th>#</th>
+                            <th>Image</th>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>HSN</th>
+                            <th>MRP</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($products as $product)
+                            <tr>
+                                <td>
+                                    @if ($isPaginated)
+                                        {{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}
+                                    @else
+                                        {{ $loop->iteration }}
                                     @endif
-                                    <td>
-                                        <div class="flex gap-2">
-                                            <a href="{{ $isSuperAdmin && isset($selectedBranch)
-                                                ? route('products.show', ['id' => $product->id, 'branch' => $selectedBranch->id])
-                                                : route('products.show', ['id' => $product->id]) }}"
-                                                class="btn btn-primary">View</a>
-                                            <a href="{{ $isSuperAdmin && isset($selectedBranch)
-                                                ? route('products.edit', ['id' => $product->id, 'branch' => $selectedBranch->id])
-                                                : route('products.edit', $product->id) }}"
-                                                class="btn btn-primary">Edit</a>
-                                            <form
-                                                action="{{ $isSuperAdmin && isset($selectedBranch)
-                                                    ? route('products.destroy', ['id' => $product->id, 'branch' => $selectedBranch->id])
-                                                    : route('products.destroy', $product->id) }}"
-                                                method="POST" onsubmit="return confirm('Are you sure?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-danger">Delete</button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
+                                </td>
+                                <td>
+                                    @if ($product->image)
+                                        {{-- <img src="{{ asset('storage/' . $product->image) }}" alt="Product Image"
+                                                width="80"> --}}
+                                        <img src="{{ asset($product->image) }}" alt="Product Image" width="80">
+                                    @else
+                                        No Image
+                                    @endif
+                                </td>
+                                <td>{{ $product->product_name }}</td>
+                                <td>{{ $product->category->name ?? '-' }}</td>
+                                <td>{{ $product->hsnCode->hsn_code ?? '-' }}</td>
+                                <td>{{ $product->mrp }}</td>
+                                <td>
+                                    <div class="flex gap-2">
+                                        <a href="{{ route('products.show', $product->id) }}"
+                                            class="btn btn-primary">View</a>
+                                        <a href="{{ route('products.edit', $product->id) }}"
+                                            class="btn btn-primary">Edit</a>
+                                        <form action="{{ route('products.destroy', $product->id) }}" method="POST"
+                                            onsubmit="return confirm('Are you sure?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
                             @empty
                                 <tr>
                                     <td colspan="{{ $isSuperAdmin && isset($selectedBranch) ? '8' : '7' }}"
                                         class="text-center">No Products Found</td>
                                 </tr>
                             @endforelse
-                        </tbody>
-                    </table>
+                    </tbody>
+                </table>
 
-                    <!-- Show pagination only for branch users (when data is paginated) -->
-                    @if ($isPaginated)
-                        <div class="pagination-wrapper">
-                            <div class="pagination-info">
-                                Showing {{ $products->firstItem() }} to {{ $products->lastItem() }} of
-                                {{ $products->total() }} entries
-                            </div>
-                            <div class="pagination-nav">
-                                <nav role="navigation" aria-label="Pagination Navigation">
-                                    <ul class="pagination">
-                                        {{-- Previous Page Link --}}
-                                        @if ($products->onFirstPage())
-                                            <li class="page-item disabled" aria-disabled="true">
-                                                <span class="page-link">‹</span>
-                                            </li>
-                                        @else
-                                            <li class="page-item">
-                                                <a class="page-link" href="{{ $products->previousPageUrl() }}"
-                                                    rel="prev">‹</a>
-                                            </li>
-                                        @endif
-
-                                        {{-- Page Numbers --}}
-                                        @for ($i = 1; $i <= $products->lastPage(); $i++)
-                                            @if ($i == $products->currentPage())
-                                                <li class="page-item active">
-                                                    <span class="page-link">{{ $i }}</span>
-                                                </li>
-                                            @else
-                                                <li class="page-item">
-                                                    <a class="page-link"
-                                                        href="{{ $products->url($i) }}">{{ $i }}</a>
-                                                </li>
-                                            @endif
-                                        @endfor
-
-                                        {{-- Next Page Link --}}
-                                        @if ($products->hasMorePages())
-                                            <li class="page-item">
-                                                <a class="page-link" href="{{ $products->nextPageUrl() }}"
-                                                    rel="next">›</a>
-                                            </li>
-                                        @else
-                                            <li class="page-item disabled" aria-disabled="true">
-                                                <span class="page-link">›</span>
-                                            </li>
-                                        @endif
-                                    </ul>
-                                </nav>
-                            </div>
+                <!-- Show pagination only for branch users (when data is paginated) -->
+                @if ($isPaginated)
+                    <div class="pagination-wrapper">
+                        <div class="pagination-info">
+                            Showing {{ $products->firstItem() }} to {{ $products->lastItem() }} of
+                            {{ $products->total() }} entries
                         </div>
-                    @endif
+                        <div class="pagination-nav">
+                            <nav role="navigation" aria-label="Pagination Navigation">
+                                <ul class="pagination">
+                                    {{-- Previous Page Link --}}
+                                    @if ($products->onFirstPage())
+                                        <li class="page-item disabled" aria-disabled="true">
+                                            <span class="page-link">‹</span>
+                                        </li>
+                                    @else
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $products->previousPageUrl() }}"
+                                                rel="prev">‹</a>
+                                        </li>
+                                    @endif
+
+                                    {{-- Page Numbers --}}
+                                    @for ($i = 1; $i <= $products->lastPage(); $i++)
+                                        @if ($i == $products->currentPage())
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ $i }}</span>
+                                            </li>
+                                        @else
+                                            <li class="page-item">
+                                                <a class="page-link"
+                                                    href="{{ $products->url($i) }}">{{ $i }}</a>
+                                            </li>
+                                        @endif
+                                    @endfor
+
+                                    {{-- Next Page Link --}}
+                                    @if ($products->hasMorePages())
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $products->nextPageUrl() }}" rel="next">›</a>
+                                        </li>
+                                    @else
+                                        <li class="page-item disabled" aria-disabled="true">
+                                            <span class="page-link">›</span>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
                 @endif
             </div>
         </div>
