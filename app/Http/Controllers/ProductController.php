@@ -571,14 +571,14 @@ class ProductController extends Controller
                     if (!empty($row[0]) || !empty($row[1])) { // Check if name exists
 
                         $companyId = null;
-                        if (!empty($row[6])) {
+                        if (!empty($row[5])) {
                             $company = Company::on($branch->connection_name)
-                                ->where('name', $row[6])
+                                ->where('name', $row[5])
                                 ->first();
 
                             if (!$company) {
                                 $companyId = Company::on($branch->connection_name)->insertGetId([
-                                    'name' => $row[6],
+                                    'name' => $row[5],
                                     'created_at' => now(),
                                     'updated_at' => now(),
                                 ]);
@@ -589,14 +589,14 @@ class ProductController extends Controller
 
                         // Handle Category - create or get existing
                         $categoryId = null;
-                        if (!empty($row[7])) {
+                        if (!empty($row[6])) {
                             $category = Category::on($branch->connection_name)
-                                ->where('name', $row[7])
+                                ->where('name', $row[6])
                                 ->first();
 
                             if (!$category) {
                                 $categoryId = Category::on($branch->connection_name)->insertGetId([
-                                    'name' => $row[7],
+                                    'name' => $row[6],
                                     'created_at' => now(),
                                     'updated_at' => now(),
                                 ]);
@@ -607,14 +607,19 @@ class ProductController extends Controller
 
                         // Handle HSN Code - create or get existing
                         $hsnCodeId = null;
-                        if (!empty($row[8])) {
+                        if (!empty($row[7])) {
+                            $gst = $row[8] ?? '';
+                            $shortName = $row[9] ?? '';
                             $hsnCode = HsnCode::on($branch->connection_name)
-                                ->where('hsn_code', $row[8])
+                                ->where('hsn_code', $row[7])
+                                ->where('gst', $gst)
                                 ->first();
 
                             if (!$hsnCode) {
                                 $hsnCodeId = HsnCode::on($branch->connection_name)->insertGetId([
-                                    'hsn_code' => $row[8],
+                                    'hsn_code' => $row[7],
+                                    'gst' => $gst,
+                                    'short_name' => $shortName,
                                     'created_at' => now(),
                                     'updated_at' => now(),
                                 ]);
@@ -625,32 +630,33 @@ class ProductController extends Controller
                         $data = [
                             'product_name' => $row[0] ?? '',
                             'barcode' => $row[1] ?? '',
-                            // 'image'=> $row[2] ?? '',
-                            'search_option' => $row[3] ?? '',
-                            'unit_types' => $row[4] ?? '',
-                            'decimal_btn' => $row[5] ?? '',
+                            'search_option' => $row[2] ?? '',
+                            'unit_types' => $row[3] ?? '',
+                            'decimal_btn' => $row[4] ?? '',
                             'company' => $companyId ?? '',
                             'category_id' => $categoryId ?? '',
                             'hsn_code_id' => $hsnCodeId ?? '',
-                            'sgst' => $row[9] ?? '',
-                            'cgst1' => $row[10] ?? '',
-                            'cgst2' => $row[11] ?? '',
-                            'cess' => $row[12] ?? '',
-                            'mrp' => $row[13] ?? '',
-                            'purchase_rate' => $row[14] ?? '',
-                            'sale_rate_a' => $row[15] ?? '',
-                            'sale_rate_b' => $row[16] ?? '',
-                            'sale_rate_c' => $row[17] ?? '',
-                            'sale_online' => $row[18] ?? '',
-                            'converse_carton' => $row[19] ?? '',
-                            'converse_box' => $row[20] ?? '',
-                            'negative_billing' => $row[22] ?? '',
-                            'min_qty' => $row[23] ?? '',
-                            'reorder_qty' => $row[24] ?? '',
-                            'discount' => $row[25] ?? '',
-                            'max_discount' => $row[26] ?? '',
-                            'discount_scheme' => $row[27] ?? '',
-                            'bonus_use' => strtoupper($row[28]) === 'YES' ? 1 : 0,
+                            // 'sgst' => $row[9] ?? '',
+                            // 'cgst1' => $row[10] ?? '',
+                            // 'cgst2' => $row[11] ?? '',
+                            'cess' => $row[10] ?? '',
+                            'mrp' => $row[11] ?? '',
+                            'purchase_rate' => $row[12] ?? '',
+                            'sale_rate_a' => $row[13] ?? '',
+                            'sale_rate_b' => $row[14] ?? '',
+                            'sale_rate_c' => $row[15] ?? '',
+                            'sale_online' => $row[16] ?? '',
+                            'converse_carton' => $row[17] ?? '',
+                            'carton_barcode' => $row[18] ?? '',
+                            'converse_box' => $row[19] ?? '',
+                            'box_barcode' => $row[20] ?? '',
+                            'negative_billing' => $row[21] ?? '',
+                            'min_qty' => $row[22] ?? '',
+                            'reorder_qty' => $row[23] ?? '',
+                            'discount' => $row[24] ?? '',
+                            'max_discount' => $row[25] ?? '',
+                            'discount_scheme' => $row[26] ?? '',
+                            'bonus_use' => strtoupper($row[27]) === 'YES' ? 1 : 0,
                         ];
                         // dd($data);
                         Product::on($branch->connection_name)->insert($data);
