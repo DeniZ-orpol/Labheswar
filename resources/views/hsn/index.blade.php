@@ -1,9 +1,5 @@
 @extends('app')
 @section('content')
-    @php
-        // $isSuperAdmin = strtolower($role->role_name) === 'super admin';
-        $isPaginated = method_exists($hsns, 'links');
-    @endphp
     <!-- BEGIN: Content -->
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
@@ -116,54 +112,6 @@
 
 
             <!-- END: Users Layout -->
-            @if ($isPaginated && $hsns->count() > 0)
-                <div class="pagination-wrapper">
-                    <div class="pagination-info">
-                        Showing {{ $hsns->firstItem() }} to {{ $hsns->lastItem() }} of
-                        {{ $hsns->total() }} entries
-                    </div>
-                    <div class="pagination-nav">
-                        <nav role="navigation" aria-label="Pagination Navigation">
-                            <ul class="pagination">
-                                {{-- Previous Page Link --}}
-                                @if ($hsns->onFirstPage())
-                                    <li class="page-item disabled" aria-disabled="true">
-                                        <span class="page-link">‹</span>
-                                    </li>
-                                @else
-                                    <li class="page-item">
-                                        <a class="page-link" href="{{ $hsns->previousPageUrl() }}" rel="prev">‹</a>
-                                    </li>
-                                @endif
-
-                                {{-- Page Numbers --}}
-                                @for ($i = 1; $i <= $hsns->lastPage(); $i++)
-                                    @if ($i == $hsns->currentPage())
-                                        <li class="page-item active">
-                                            <span class="page-link">{{ $i }}</span>
-                                        </li>
-                                    @else
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ $hsns->url($i) }}">{{ $i }}</a>
-                                        </li>
-                                    @endif
-                                @endfor
-
-                                {{-- Next Page Link --}}
-                                @if ($hsns->hasMorePages())
-                                    <li class="page-item">
-                                        <a class="page-link" href="{{ $hsns->nextPageUrl() }}" rel="next">›</a>
-                                    </li>
-                                @else
-                                    <li class="page-item disabled" aria-disabled="true">
-                                        <span class="page-link">›</span>
-                                    </li>
-                                @endif
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
-            @endif
         </div>
     </div>
 @endsection
@@ -172,12 +120,12 @@
     <style>
         /* Custom Pagination Styles */
         .pagination-wrapper {
-            justify-content: center;
-            flex-direction: column;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0 1rem;
         }
-
 
         .pagination-info {
             display: none;
@@ -305,7 +253,7 @@
 @endpush
 
 @push('scripts')
-    {{-- <script>
+    <script>
         function changeBranch() {
             const branchSelect = document.getElementById('branch_select');
             const selectedBranchId = branchSelect.value;
@@ -325,5 +273,5 @@
             // Redirect to new URL
             window.location.href = currentUrl.toString();
         }
-    </script> --}}
+    </script>
 @endpush

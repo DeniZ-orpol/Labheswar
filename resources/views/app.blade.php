@@ -1259,13 +1259,13 @@ License: You must have a valid license purchased only from themeforest(the above
                                     <div class="side-menu__title"> Company </div>
                                 </a>
                             </li>
-                            <li>
+                            {{-- <li>
                                 <a href="{{ route('inventory.index') }}"
                                     class="side-menu {{ request()->routeIs('inventory.*') ? 'side-menu--active' : '' }}">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title"> Inventory </div>
                                 </a>
-                            </li>
+                            </li> --}}
                             <li>
                                 <a href="{{ route('hsn_codes.index') }}"
                                     class="side-menu {{ request()->routeIs('hsn_codes.*') ? 'side-menu--active' : '' }}">
