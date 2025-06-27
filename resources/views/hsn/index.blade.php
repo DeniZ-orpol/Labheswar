@@ -36,7 +36,7 @@
                             <td>{{ $hsn->hsn_code }}</td>
                             <td>{{ number_format((float) $hsn->gst / 2, 2) }}%</td>
                             <td>{{ number_format((float) $hsn->gst / 2, 2) }}%</td>
-                            <td>{{ number_format((float) $hsn->gst  , 2) }}%</td>
+                            <td>{{ number_format((float) $hsn->gst, 2) }}%</td>
 
                             <td>
                                 <!-- Add buttons for actions like 'View', 'Edit' etc. -->
@@ -63,6 +63,57 @@
                     @endforeach
                 </tbody>
             </table>
+            @if ($hsns instanceof \Illuminate\Pagination\LengthAwarePaginator && $hsns->hasPages())
+                {{-- Pagination --}}
+                <div class="pagination-wrapper">
+                    <div class="pagination-info">
+                        Showing {{ $hsns->firstItem() }} to {{ $hsns->lastItem() }} of
+                        {{ $hsns->total() }} entries
+                    </div>
+                    <div class="pagination-nav">
+                        <nav role="navigation" aria-label="Pagination Navigation">
+                            <ul class="pagination">
+                                {{-- Previous Page Link --}}
+                                @if ($hsns->onFirstPage())
+                                    <li class="page-item disabled" aria-disabled="true">
+                                        <span class="page-link">‹</span>
+                                    </li>
+                                @else
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ $hsns->previousPageUrl() }}" rel="prev">‹</a>
+                                    </li>
+                                @endif
+
+                                {{-- Page Numbers --}}
+                                @for ($i = 1; $i <= $hsns->lastPage(); $i++)
+                                    @if ($i == $hsns->currentPage())
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ $i }}</span>
+                                        </li>
+                                    @else
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $hsns->url($i) }}">{{ $i }}</a>
+                                        </li>
+                                    @endif
+                                @endfor
+
+                                {{-- Next Page Link --}}
+                                @if ($hsns->hasMorePages())
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ $hsns->nextPageUrl() }}" rel="next">›</a>
+                                    </li>
+                                @else
+                                    <li class="page-item disabled" aria-disabled="true">
+                                        <span class="page-link">›</span>
+                                    </li>
+                                @endif
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            @endif
+
+
 
             <!-- END: Users Layout -->
             @if ($isPaginated && $hsns->count() > 0)
@@ -121,14 +172,15 @@
     <style>
         /* Custom Pagination Styles */
         .pagination-wrapper {
-            display: flex;
-            justify-content: space-between;
+            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            margin-top: 1rem;
-            padding: 0 1rem;
+            gap: 0.5rem;
         }
 
+
         .pagination-info {
+            display: none;
             font-size: 14px;
             color: #6b7280;
             font-weight: 500;
