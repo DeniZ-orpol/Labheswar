@@ -90,9 +90,6 @@
     </style>
 @endpush
 @section('content')
-    @php
-        $isSuperAdmin = strtolower($role->role_name) === 'super admin';
-    @endphp
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             Create Product
@@ -103,21 +100,6 @@
             <div class="row">
                 <div class="column p-5">
                     {{-- <div class="grid grid-cols-12 gap-2 grid-updated"> --}}
-
-                    <!-- Branch Dropdown for Super admin only -->
-                    @if ($isSuperAdmin)
-                        <div class="input-form col-span-3 mt-3">
-                            <label for="branch" class="form-label w-full flex flex-col sm:flex-row">
-                                Branch<p style="color: red;margin-left: 3px;"> *</p>
-                            </label>
-                            <select id="branch" name="branch" class="form-control field-new" required>
-                                <option value="" selected>Choose...</option>
-                                @foreach ($branch as $br)
-                                    <option value="{{ $br->id }}"> {{ $br->name }} </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endif
 
                     <!-- barcode -->
                     <div class="input-form col-span-3 mt-3">

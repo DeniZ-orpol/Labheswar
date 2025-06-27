@@ -36,39 +36,38 @@ class ProductController extends Controller
 
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
             // Get the selected branch ID from request
-            $selectedBranchId = $request->get('branch_id');
-            $availableBranches = $branch; // All active branches for dropdown
+            // // $selectedBranchId = $request->get('branch_id');
+            // // $availableBranches = $branch; // All active branches for dropdown
 
-            if (!$selectedBranchId) {
-                // No branch selected - return empty collection with message
-                $products = collect();
-                $selectedBranch = null;
-                $showNoBranchMessage = true;
+            // if (!$selectedBranchId) {
+            //     // No branch selected - return empty collection with message
+            //     $products = collect();
+            //     $selectedBranch = null;
+            //     $showNoBranchMessage = true;
 
-                return view('products.index', compact(
-                    'products',
-                    'role',
-                    'availableBranches',
-                    'selectedBranch',
-                    'showNoBranchMessage'
-                ));
-            }
+            //     return view('products.index', compact(
+            //         'products',
+            //         'role',
+            //         'availableBranches',
+            //         'selectedBranch',
+            //         'showNoBranchMessage'
+            //     ));
+            // }
 
             // Find the selected branch
-            $selectedBranch = $branch->where('id', $selectedBranchId)->first();
+            // $selectedBranch = $branch->where('id', $selectedBranchId)->first();
 
-            if (!$selectedBranch) {
-                // Invalid branch ID - redirect with error
-                return redirect()->route('products.index')
-                    ->with('error', 'Invalid branch selected');
-            }
+            // if (!$selectedBranch) {
+            //     // Invalid branch ID - redirect with error
+            //     return redirect()->route('products.index')
+            //         ->with('error', 'Invalid branch selected');
+            // }
 
             // Configure connection for selected branch
-            configureBranchConnection($selectedBranch);
+            // configureBranchConnection($selectedBranch);
 
             // Get products for the selected branch with pagination
-            $products = Product::on($selectedBranch->connection_name)
-                ->with(['category', 'hsnCode', 'pCompany'])
+            $products = Product::with(['category', 'hsnCode', 'pCompany'])
                 ->orderByDesc('id')
                 ->paginate(10);
 
@@ -80,8 +79,6 @@ class ProductController extends Controller
             return view('products.index', compact(
                 'products',
                 'role',
-                'availableBranches',
-                'selectedBranch',
                 'showNoBranchMessage'
             ));
 
@@ -299,78 +296,67 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, string $id)
+    public function show(string $id)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $role = $auth['role'];
+        $branch = $auth['branch'];
 
         // If Super Admin, use `branch` from route or query
         if (strtolower($role->role_name) === 'super admin') {
-            $branchId = $request->branch;
-            $branch = Branch::findOrFail($branchId);
+            $product = Product::with(['category', 'hsnCode', 'pCompany'])
+                ->where('id', $id)
+                ->firstOrFail();
 
-            configureBranchConnection($branch);
+            return view('products.show', compact('product'));
         } else {
-            // Normal user — get branch from auth
-            $branch = $auth['branch'];
+            $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
+                ->where('id', $id)
+                ->firstOrFail();
+
+            return view('products.show', compact('product'));
         }
 
-        $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
-            ->where('id', $id)
-            ->firstOrFail();
-
-        return view('products.show', compact('product', 'role', 'branch'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Request $request, $id)
+    public function edit($id)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $role = $auth['role'];
+        $branch = $auth['branch'];
 
         // If Super Admin, use `branch` from route or query
         if (strtolower($role->role_name) === 'super admin') {
-            $branchId = $request->branch;
-            $branch = Branch::findOrFail($branchId);
+            $product = Product::with(['category', 'hsnCode', 'pCompany'])
+                ->where('id', $id)
+                ->firstOrFail();
 
-            configureBranchConnection($branch);
+            return view('products.edit', compact('product'));
         } else {
-            // Normal user — get branch from auth
-            $branch = $auth['branch'];
+            $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
+                ->where('id', $id)
+                ->firstOrFail();
+
+            return view('products.edit', compact('product'));
         }
-
-        $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
-            ->where('id', $id)
-            ->firstOrFail();
-
-        return view('products.edit', compact('product', 'role', 'branch'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id, ?string $branchId = null)
+    public function update(Request $request, string $id)
     {
         try {
 
             $auth = $this->authenticateAndConfigureBranch();
             $user = $auth['user'];
             $role = $auth['role'];
-
-            if (strtolower($role->role_name) === 'super admin') {
-                if (!$branchId) {
-                    return redirect()->back()->with('error', 'Branch ID is required for Super Admin.');
-                }
-
-                $branch = Branch::findOrFail($branchId);
-                configureBranchConnection($branch);
-            } else {
-                $branch = $auth['branch'];
-            }
+            $branch = $auth['branch'];
 
             $validate = $request->validate([
                 'product_barcode' => 'required|string|max:255',
@@ -381,6 +367,7 @@ class ProductController extends Controller
                 'product_company' => 'nullable|string',
                 'product_category' => 'nullable|string',
                 'hsn_code' => 'nullable|string',
+                'hsn_code_id' => 'nullable',
                 'sgst' => 'nullable|numeric|min:0',
                 'cgst' => 'nullable|numeric|min:0',
                 'igst' => 'nullable|numeric|min:0',
@@ -406,24 +393,19 @@ class ProductController extends Controller
                 'sale_online' => 'nullable',
                 // 'gst_active' => 'nullable'
             ]);
-
-            // get single product data
-            $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
-                ->where('id', $id)
-                ->first();
+            // dd($request->all());
+            if (strtolower($role->role_name) === 'super admin') {
+                $product = Product::with(['category', 'hsnCode', 'pCompany'])
+                    ->where('id', $id)
+                    ->first();
+            } else {
+                $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
+                    ->where('id', $id)
+                    ->first();
+            }
 
             // Upload new image if available
             $path = $product->image; // Keep existing image by default
-            // if ($request->hasFile('product_image')) {
-            //     $file = $request->file('product_image');
-            //     $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
-            //     $path = $file->storeAs('products', $filename, 'public');
-
-            //     // Optionally delete old image
-            //     if ($product->image && \Storage::disk('public')->exists($product->image)) {
-            //         \Storage::disk('public')->delete($product->image);
-            //     }
-            // }
             if ($request->hasFile('product_image')) {
                 // Delete old image if exists
                 if ($product->image) {
@@ -470,29 +452,28 @@ class ProductController extends Controller
             }
 
             // Handle HSN Code - use branch connection
-            $hsnCodeId = $product->hsn_code_id; // Keep existing HSN code by default
-            if (!empty($validate['hsn_code'])) {
-                // Prepare GST data as JSON
-                $gstData = [
-                    'SGST' => (float) ($validate['sgst'] ?? 0),
-                    'CGST' => (float) ($validate['cgst'] ?? 0),
-                    'IGST' => (float) ($validate['igst'] ?? 0),
-                    'CESS' => (float) ($validate['cess'] ?? 0)
-                ];
+            // $hsnCodeId = $product->hsn_code_id; // Keep existing HSN code by default
+            // if (!empty($validate['hsn_code'])) {
+            //     // Prepare GST data as JSON
+            //     $gstData = [
+            //         'SGST' => (float) ($validate['sgst'] ?? 0),
+            //         'CGST' => (float) ($validate['cgst'] ?? 0),
+            //         'IGST' => (float) ($validate['igst'] ?? 0),
+            //         'CESS' => (float) ($validate['cess'] ?? 0)
+            //     ];
 
-                $hsnCode = HsnCode::on($branch->connection_name)->firstOrCreate(
-                    ['hsn_code' => $validate['hsn_code']],
-                    [
-                        'hsn_code' => $validate['hsn_code'],
-                        'gst' => json_encode($gstData)
-                    ]
-                );
-                // Update GST if HSN code already exists
-                if (!$hsnCode->wasRecentlyCreated) {
-                    $hsnCode->update(['gst' => json_encode($gstData)]);
-                }
-                $hsnCodeId = $hsnCode->id;
-            }
+            //     $hsnCode = HsnCode::on($branch->connection_name)->first(
+            //         [
+            //             'hsn_code' => $validate['hsn_code'],
+            //             // 'gst' => $validate['gst']
+            //         ] 
+            //     );
+            //     // Update GST if HSN code already exists
+            //     if (!$hsnCode->wasRecentlyCreated) {
+            //         $hsnCode->update(['gst' => json_encode($gstData)]);
+            //     }
+            //     $hsnCodeId = $hsnCode->id;
+            // }
 
             // Prepare update data
             $data = [
@@ -504,7 +485,7 @@ class ProductController extends Controller
                 'decimal_btn' => isset($validate['decimal_btn']) ? 1 : 0,
                 'company' => $companyId,
                 'category_id' => $categoryId,
-                'hsn_code_id' => $hsnCodeId,
+                'hsn_code_id' => $validate['hsn_code_id'],
                 'sgst' => $validate['sgst'] ?? 0,
                 'cgst1' => $validate['cgst'] ?? 0,
                 'cgst2' => $validate['igst'] ?? 0,
