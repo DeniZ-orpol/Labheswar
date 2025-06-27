@@ -547,19 +547,117 @@
     </div>
     <!-- END: HSN Modal -->
 
+    <!-- BEGIN: Category Modal -->
+    <div id="category-modal" class="modal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!-- BEGIN: Modal Header -->
+                <div class="modal-header">
+                    <h2 class="font-medium text-base mr-auto">Create New Category</h2>
+                </div>
+                <!-- END: Modal Header -->
+
+                {{-- <form action="{{ route('categories.modalstore') }}" id="category-form" method="POST"> --}}
+                <form action="#" id="category-form" method="POST">
+                    @csrf
+                    <!-- BEGIN: Modal Body -->
+                    <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
+                        <div class="col-span-12">
+                            <label for="modal-category-name" class="form-label">Category Name</label>
+                            <input id="modal-category-name" name="category_name" type="text" class="form-control"
+                                placeholder="Enter category name" required>
+                        </div>
+                        <div class="col-span-12">
+                            <label for="modal-category-description" class="form-label">Description (Optional)</label>
+                            <textarea id="modal-category-description" name="description" class="form-control"
+                                placeholder="Enter category description" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <!-- END: Modal Body -->
+
+                    <!-- BEGIN: Modal Footer -->
+                    <div class="modal-footer">
+                        <button type="button" id="cancel-category-modal"
+                            class="btn btn-outline-secondary w-20 mr-1">Cancel</button>
+                        <button type="submit" class="btn btn-primary w-20">Save</button>
+                    </div>
+                    <!-- END: Modal Footer -->
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- END: Category Modal -->
+
+    <!-- BEGIN: Company Modal -->
+    <div id="company-modal" class="modal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!-- BEGIN: Modal Header -->
+                <div class="modal-header">
+                    <h2 class="font-medium text-base mr-auto">Create New Company</h2>
+                </div>
+                <!-- END: Modal Header -->
+
+                {{-- <form action="{{ route('companies.modalstore') }}" id="company-form" method="POST"> --}}
+                <form action="#" id="company-form" method="POST">
+                    @csrf
+                    <!-- BEGIN: Modal Body -->
+                    <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
+                        <div class="col-span-12">
+                            <label for="modal-company-name" class="form-label">Company Name</label>
+                            <input id="modal-company-name" name="company_name" type="text" class="form-control"
+                                placeholder="Enter company name" required>
+                        </div>
+                        {{-- <div class="col-span-6">
+                            <label for="modal-company-email" class="form-label">Email (Optional)</label>
+                            <input id="modal-company-email" name="email" type="email" class="form-control"
+                                placeholder="Enter email">
+                        </div>
+                        <div class="col-span-6">
+                            <label for="modal-company-phone" class="form-label">Phone (Optional)</label>
+                            <input id="modal-company-phone" name="phone" type="text" class="form-control"
+                                placeholder="Enter phone number">
+                        </div>
+                        <div class="col-span-12">
+                            <label for="modal-company-address" class="form-label">Address (Optional)</label>
+                            <textarea id="modal-company-address" name="address" class="form-control" placeholder="Enter company address"
+                                rows="2"></textarea>
+                        </div> --}}
+                    </div>
+                    <!-- END: Modal Body -->
+
+                    <!-- BEGIN: Modal Footer -->
+                    <div class="modal-footer">
+                        <button type="button" id="cancel-company-modal"
+                            class="btn btn-outline-secondary w-20 mr-1">Cancel</button>
+                        <button type="submit" class="btn btn-primary w-20">Save</button>
+                    </div>
+                    <!-- END: Modal Footer -->
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- END: Company Modal -->
+
 @endsection
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Company dropdown (existing)
-        initSearchDropdown('product_company', 'companyDropdown', '{{ route('companies.search') }}');
+        initSearchDropdown('product_company', 'companyDropdown', '{{ route('companies.search') }}', 'company');
         // Category dropdown
-        initSearchDropdown('product_category', 'categoryDropdown', '{{ route('categories.search') }}');
+        initSearchDropdown('product_category', 'categoryDropdown', '{{ route('categories.search') }}', 'category');
 
         // HSN Code dropdown with GST auto-fill
         initHsnDropdown();
         initHsnModal();
+        initCategoryModal();
+        initCompanyModal();
     });
+
+    // Global variables to store selected IDs
+    let selectedCategoryId = null;
+    let selectedCompanyId = null;
 
     // Function to select HSN code and auto-fill GST - NOW GLOBAL
     function selectHsnCode(hsnCode, gstData, hsnId = null) {
@@ -898,12 +996,296 @@
         }
     }
 
+    // Function to select category and store ID
+    function selectCategory(categoryName, categoryId = null) {
+        const input = document.getElementById('product_category');
+        const dropdown = document.getElementById('categoryDropdown');
+
+        dropdown.classList.remove('show');
+        input.value = categoryName;
+        selectedCategoryId = categoryId;
+
+        // Store category ID in hidden field
+        let hiddenCategoryIdField = document.getElementById('hidden_category_id');
+        if (!hiddenCategoryIdField) {
+            hiddenCategoryIdField = document.createElement('input');
+            hiddenCategoryIdField.type = 'hidden';
+            hiddenCategoryIdField.id = 'hidden_category_id';
+            hiddenCategoryIdField.name = 'category_id';
+            input.parentNode.appendChild(hiddenCategoryIdField);
+        }
+        hiddenCategoryIdField.value = categoryId || '';
+
+        console.log('Category selected:', {
+            categoryName: categoryName,
+            categoryId: categoryId,
+            hiddenFieldValue: hiddenCategoryIdField.value
+        });
+    }
+
+    // Function to select company and store ID
+    function selectCompany(companyName, companyId = null) {
+        const input = document.getElementById('product_company');
+        const dropdown = document.getElementById('companyDropdown');
+
+        dropdown.classList.remove('show');
+        input.value = companyName;
+        selectedCompanyId = companyId;
+
+        // Store company ID in hidden field
+        let hiddenCompanyIdField = document.getElementById('hidden_company_id');
+        if (!hiddenCompanyIdField) {
+            hiddenCompanyIdField = document.createElement('input');
+            hiddenCompanyIdField.type = 'hidden';
+            hiddenCompanyIdField.id = 'hidden_company_id';
+            hiddenCompanyIdField.name = 'company_id';
+            input.parentNode.appendChild(hiddenCompanyIdField);
+        }
+        hiddenCompanyIdField.value = companyId || '';
+
+        console.log('Company selected:', {
+            companyName: companyName,
+            companyId: companyId,
+            hiddenFieldValue: hiddenCompanyIdField.value
+        });
+    }
+
+    // Functions to open modals
+    function openCategoryModal(categoryName) {
+        showModal('category-modal', 'modal-category-name', categoryName, 'modal-category-name');
+    }
+
+    function openCompanyModal(companyName) {
+        showModal('company-modal', 'modal-company-name', companyName, 'modal-company-name');
+    }
+
+    // Generic function to show modal
+    function showModal(modalId, inputId, value, focusId) {
+        const modal = document.getElementById(modalId);
+        const input = document.getElementById(inputId);
+        const focusInput = document.getElementById(focusId);
+
+        // Set value and show modal
+        input.value = value;
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        modal.style.marginTop = '50px';
+        modal.style.marginLeft = '0';
+        modal.classList.add('show');
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+
+        // Focus on input
+        setTimeout(() => {
+            focusInput.focus();
+        }, 100);
+    }
+
+    // Functions to close modals
+    function closeCategoryModal() {
+        closeModal('category-modal');
+    }
+
+    function closeCompanyModal() {
+        closeModal('company-modal');
+    }
+
+    // Generic function to close modal
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        modal.style.visibility = 'hidden';
+        modal.style.opacity = '0';
+    }
+
+    // Initialize Category Modal
+    function initCategoryModal() {
+        const modal = document.getElementById('category-modal');
+        const cancelBtn = document.getElementById('cancel-category-modal');
+        const form = modal.querySelector('form');
+        const modalCategoryInput = document.getElementById('modal-category-name');
+        const modalDescriptionInput = document.getElementById('modal-category-description');
+
+        cancelBtn.addEventListener('click', closeCategoryModal);
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const categoryName = modalCategoryInput.value.trim();
+
+            if (!categoryName) {
+                alert('Category name is required');
+                return;
+            }
+
+            const params = new URLSearchParams();
+            params.append('category_name', categoryName);
+            params.append('description', modalDescriptionInput.value.trim());
+
+            const branchSelect = document.getElementById('branch');
+            if (branchSelect?.value) {
+                params.append('branch_id', branchSelect.value);
+            }
+
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Saving...';
+            submitBtn.disabled = true;
+
+            fetch(form.action, {
+                    method: 'POST',
+                    body: params,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Category creation response:', data);
+
+                    if (data.success) {
+                        closeCategoryModal();
+                        selectCategory(data.data.category_name, data.data.id);
+                        modalCategoryInput.value = '';
+                        modalDescriptionInput.value = '';
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to create category'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error creating category: ' + error.message);
+                })
+                .finally(() => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                });
+        });
+
+        // Close modal when clicking outside or pressing Escape
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeCategoryModal();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('show')) {
+                closeCategoryModal();
+            }
+        });
+
+        // Handle Enter key
+        modalCategoryInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+    }
+
+    // Initialize Company Modal
+    function initCompanyModal() {
+        const modal = document.getElementById('company-modal');
+        const cancelBtn = document.getElementById('cancel-company-modal');
+        const form = modal.querySelector('form');
+        const modalCompanyInput = document.getElementById('modal-company-name');
+
+        cancelBtn.addEventListener('click', closeCompanyModal);
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const companyName = modalCompanyInput.value.trim();
+
+            if (!companyName) {
+                alert('Company name is required');
+                return;
+            }
+
+            const params = new URLSearchParams();
+            params.append('company_name', companyName);
+            // params.append('email', document.getElementById('modal-company-email').value.trim());
+            // params.append('phone', document.getElementById('modal-company-phone').value.trim());
+            // params.append('address', document.getElementById('modal-company-address').value.trim());
+
+            const branchSelect = document.getElementById('branch');
+            if (branchSelect?.value) {
+                params.append('branch_id', branchSelect.value);
+            }
+
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Saving...';
+            submitBtn.disabled = true;
+
+            fetch(form.action, {
+                    method: 'POST',
+                    body: params,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Company creation response:', data);
+
+                    if (data.success) {
+                        closeCompanyModal();
+                        selectCompany(data.data.company_name, data.data.id);
+                        form.reset();
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to create company'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error creating company: ' + error.message);
+                })
+                .finally(() => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                });
+        });
+
+        // Close modal when clicking outside or pressing Escape
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeCompanyModal();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('show')) {
+                closeCompanyModal();
+            }
+        });
+
+        // Handle Enter key
+        modalCompanyInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+    }
+
     // search dropdown
-    function initSearchDropdown(inputId, dropdownId, searchUrl) {
+    function initSearchDropdown(inputId, dropdownId, searchUrl, type) {
         const input = document.getElementById(inputId);
         const dropdown = document.getElementById(dropdownId);
         let timeout;
         let selectedIndex = -1;
+        let currentData = []; // Store current search results
 
         input.addEventListener('input', function() {
             clearTimeout(timeout);
@@ -912,6 +1294,7 @@
 
             if (value.length < 1) {
                 dropdown.classList.remove('show');
+                currentData = [];
                 return;
             }
 
@@ -933,27 +1316,97 @@
                     });
 
                     const data = await response.json();
-                    const items = data.items || data.companies || data.categories || data
-                        .hsn_codes || [];
+
+                    // Handle different response structures
+                    let items = [];
+                    if (type === 'category') {
+                        currentData = data.categories || [];
+                        items = currentData.map(item => typeof item === 'object' ? item
+                            .category_name : item);
+                    } else if (type === 'company') {
+                        currentData = data.companies || [];
+                        items = currentData.map(item => typeof item === 'object' ? item
+                            .company_name : item);
+                    } else {
+                        items = data.items || data.companies || data.categories || [];
+                    }
 
                     let html = '';
-                    items.forEach(item => {
-                        html +=
-                            `<div class="dropdown-item" onclick="selectItem('${inputId}', '${dropdownId}', '${item}')">${item}</div>`;
-                    });
 
-                    // Add create new option
-                    if (!items.includes(value)) {
-                        html +=
+                    // Show existing items
+                    if (type === 'category' || type === 'company') {
+                        // For category and company, show items with their IDs if available
+                        currentData.forEach((item, index) => {
+                            const itemName = typeof item === 'object' ? (item
+                                .category_name || item.company_name) : item;
+                            html +=
+                                `<div class="dropdown-item" data-index="${index}">${itemName}</div>`;
+                        });
+                    } else {
+                        // For other types, show simple items
+                        items.forEach(item => {
+                            html +=
+                                `<div class="dropdown-item" onclick="selectItem('${inputId}', '${dropdownId}', '${item}')">${item}</div>`;
+                        });
+                    }
+
+                    // Always add create new option
+                    let createNewText = '';
+                    if (type === 'category') {
+                        createNewText =
+                            `<div class="dropdown-item create-new" onclick="openCategoryModal('${value}')">+ Create new category: "${value}"</div>`;
+                    } else if (type === 'company') {
+                        createNewText =
+                            `<div class="dropdown-item create-new" onclick="openCompanyModal('${value}')">+ Create new company: "${value}"</div>`;
+                    } else {
+                        createNewText =
                             `<div class="dropdown-item create-new" onclick="selectItem('${inputId}', '${dropdownId}', '${value}')">Create new: "${value}"</div>`;
                     }
+
+                    html += createNewText;
 
                     dropdown.innerHTML = html;
                     dropdown.classList.add('show');
                     selectedIndex = -1;
 
+                    // Add click listeners for category and company dropdowns
+                    if (type === 'category' || type === 'company') {
+                        dropdown.querySelectorAll('.dropdown-item:not(.create-new)').forEach(
+                            item => {
+                                item.addEventListener('mousedown', function(e) {
+                                    e.preventDefault();
+                                    const index = parseInt(this.dataset.index);
+                                    const selectedItem = currentData[index];
+
+                                    console.log('Selecting from dropdown:', {
+                                        type: type,
+                                        index: index,
+                                        selectedItem: selectedItem
+                                    });
+
+                                    if (type === 'category') {
+                                        const categoryName = typeof selectedItem ===
+                                            'object' ? selectedItem.category_name :
+                                            selectedItem;
+                                        const categoryId = typeof selectedItem ===
+                                            'object' ? selectedItem.id : null;
+                                        selectCategory(categoryName, categoryId);
+                                    } else if (type === 'company') {
+                                        const companyName = typeof selectedItem ===
+                                            'object' ? selectedItem.company_name :
+                                            selectedItem;
+                                        const companyId = typeof selectedItem ===
+                                            'object' ? selectedItem.id : null;
+                                        selectCompany(companyName, companyId);
+                                    }
+                                });
+                            });
+                    }
+
                 } catch (error) {
+                    console.error('Search error:', error);
                     dropdown.classList.remove('show');
+                    currentData = [];
                 }
             }, 200);
         });
@@ -991,6 +1444,7 @@
             }
         });
     }
+    // end search dropdown
 
     function updateHighlight(dropdown, items, selectedIndex) {
         items.forEach((item, index) => {
@@ -1005,12 +1459,9 @@
             const itemTop = selectedItem.offsetTop;
             const itemHeight = selectedItem.offsetHeight;
 
-            // Check if item is above visible area
             if (itemTop < dropdownScrollTop) {
                 dropdown.scrollTop = itemTop;
-            }
-            // Check if item is below visible area
-            else if (itemTop + itemHeight > dropdownScrollTop + dropdownHeight) {
+            } else if (itemTop + itemHeight > dropdownScrollTop + dropdownHeight) {
                 dropdown.scrollTop = itemTop + itemHeight - dropdownHeight;
             }
         }
@@ -1019,8 +1470,18 @@
     function selectItem(inputId, dropdownId, value) {
         document.getElementById(inputId).value = value;
         document.getElementById(dropdownId).classList.remove('show');
+
+        // Clear the stored ID when selecting existing item from dropdown
+        if (inputId === 'product_category') {
+            selectedCategoryId = null;
+            let hiddenField = document.getElementById('hidden_category_id');
+            if (hiddenField) hiddenField.value = '';
+        } else if (inputId === 'product_company') {
+            selectedCompanyId = null;
+            let hiddenField = document.getElementById('hidden_company_id');
+            if (hiddenField) hiddenField.value = '';
+        }
     }
-    // end search dropdown
 
     // preview image box
     function previewImage(input) {
