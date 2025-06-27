@@ -18,7 +18,7 @@
                     <label for="gst" class="form-label">GST(%)<span style="color: red;margin-left: 3px;">
                             *</span></label>
                     <input type="text" name="gst" id="gst" class="form-control field-new" required
-                        value="{{ $hsn->gst }}" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                        value="{{ $hsn->gst }}"oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')">
                 </div>
             </div>
             <a onclick="goBack()" class="btn btn-outline-primary shadow-md mr-2">Back </a>
