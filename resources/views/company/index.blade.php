@@ -45,62 +45,60 @@
                             </td>
                         </tr>
                     @endforeach
-
-                    @if ($companies instanceof \Illuminate\Pagination\LengthAwarePaginator && $companies->hasPages())
-                        {{-- Pagination --}}
-                        <div class="pagination-wrapper">
-                            <div class="pagination-info">
-                                Showing {{ $companies->firstItem() }} to {{ $companies->lastItem() }} of
-                                {{ $companies->total() }} entries
-                            </div>
-                            <div class="pagination-nav">
-                                <nav role="navigation" aria-label="Pagination Navigation">
-                                    <ul class="pagination">
-                                        {{-- Previous Page Link --}}
-                                        @if ($companies->onFirstPage())
-                                            <li class="page-item disabled" aria-disabled="true">
-                                                <span class="page-link">‹</span>
-                                            </li>
-                                        @else
-                                            <li class="page-item">
-                                                <a class="page-link" href="{{ $companies->previousPageUrl() }}"
-                                                    rel="prev">‹</a>
-                                            </li>
-                                        @endif
-
-                                        {{-- Page Numbers --}}
-                                        @for ($i = 1; $i <= $companies->lastPage(); $i++)
-                                            @if ($i == $companies->currentPage())
-                                                <li class="page-item active">
-                                                    <span class="page-link">{{ $i }}</span>
-                                                </li>
-                                            @else
-                                                <li class="page-item">
-                                                    <a class="page-link"
-                                                        href="{{ $companies->url($i) }}">{{ $i }}</a>
-                                                </li>
-                                            @endif
-                                        @endfor
-
-                                        {{-- Next Page Link --}}
-                                        @if ($companies->hasMorePages())
-                                            <li class="page-item">
-                                                <a class="page-link" href="{{ $companies->nextPageUrl() }}"
-                                                    rel="next">›</a>
-                                            </li>
-                                        @else
-                                            <li class="page-item disabled" aria-disabled="true">
-                                                <span class="page-link">›</span>
-                                            </li>
-                                        @endif
-                                    </ul>
-                                </nav>
-                            </div>
-                        </div>
-                    @endif
-
                 </tbody>
             </table>
+            <!-- END: Users Layout -->
+
+            {{-- Move pagination here --}}
+            @if ($companies instanceof \Illuminate\Pagination\LengthAwarePaginator && $companies->hasPages())
+                <div class="pagination-wrapper">
+                    <div class="pagination-info">
+                        Showing {{ $companies->firstItem() }} to {{ $companies->lastItem() }} of
+                        {{ $companies->total() }} entries
+                    </div>
+                    <div class="pagination-nav">
+                        <nav role="navigation" aria-label="Pagination Navigation">
+                            <ul class="pagination">
+                                {{-- Previous Page Link --}}
+                                @if ($companies->onFirstPage())
+                                    <li class="page-item disabled" aria-disabled="true">
+                                        <span class="page-link">‹</span>
+                                    </li>
+                                @else
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ $companies->previousPageUrl() }}" rel="prev">‹</a>
+                                    </li>
+                                @endif
+
+                                {{-- Page Numbers --}}
+                                @for ($i = 1; $i <= $companies->lastPage(); $i++)
+                                    @if ($i == $companies->currentPage())
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ $i }}</span>
+                                        </li>
+                                    @else
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $companies->url($i) }}">{{ $i }}</a>
+                                        </li>
+                                    @endif
+                                @endfor
+
+                                {{-- Next Page Link --}}
+                                @if ($companies->hasMorePages())
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ $companies->nextPageUrl() }}" rel="next">›</a>
+                                    </li>
+                                @else
+                                    <li class="page-item disabled" aria-disabled="true">
+                                        <span class="page-link">›</span>
+                                    </li>
+                                @endif
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            @endif
+
 
             <!-- END: Users Layout -->
         </div>
@@ -116,9 +114,12 @@
             align-items: center;
             margin-top: 1rem;
             padding: 0 1rem;
+            flex-wrap: wrap;
         }
 
+
         .pagination-info {
+            display: none  ;
             font-size: 14px;
             color: #6b7280;
             font-weight: 500;
