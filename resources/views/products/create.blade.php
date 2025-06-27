@@ -540,30 +540,26 @@
                 <!-- END: Modal Header -->
 
                 {{-- <form action="{{ route('categories.modalstore') }}" id="category-form" method="POST"> --}}
-                <form action="#" id="category-form" method="POST">
+                <form action="{{ route('categories.modalstore') }}" id="category-form" method="POST"
+                    enctype="multipart/form-data">
                     @csrf
-                    <!-- BEGIN: Modal Body -->
                     <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
                         <div class="col-span-12">
                             <label for="modal-category-name" class="form-label">Category Name</label>
-                            <input id="modal-category-name" name="category_name" type="text" class="form-control"
+                            <input id="modal-category-name" name="name" type="text" class="form-control"
                                 placeholder="Enter category name" required>
                         </div>
                         <div class="col-span-12">
-                            <label for="modal-category-description" class="form-label">Description (Optional)</label>
-                            <textarea id="modal-category-description" name="description" class="form-control"
-                                placeholder="Enter category description" rows="3"></textarea>
+                            <label for="modal-category-image" class="form-label">Category Image (Optional)</label>
+                            <input id="modal-category-image" name="image" type="file" class="form-control"
+                                accept="image/*">
                         </div>
                     </div>
-                    <!-- END: Modal Body -->
-
-                    <!-- BEGIN: Modal Footer -->
                     <div class="modal-footer">
                         <button type="button" id="cancel-category-modal"
                             class="btn btn-outline-secondary w-20 mr-1">Cancel</button>
                         <button type="submit" class="btn btn-primary w-20">Save</button>
                     </div>
-                    <!-- END: Modal Footer -->
                 </form>
             </div>
         </div>
@@ -581,30 +577,15 @@
                 <!-- END: Modal Header -->
 
                 {{-- <form action="{{ route('companies.modalstore') }}" id="company-form" method="POST"> --}}
-                <form action="#" id="company-form" method="POST">
+                <form action="{{ route('company.modalstore') }}" id="company-form" method="POST">
                     @csrf
                     <!-- BEGIN: Modal Body -->
                     <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
                         <div class="col-span-12">
-                            <label for="modal-company-name" class="form-label">Company Name</label>
-                            <input id="modal-company-name" name="company_name" type="text" class="form-control"
+                            <label for="name" class="form-label">Company Name</label>
+                            <input id="name" name="name" type="text" class="form-control"
                                 placeholder="Enter company name" required>
                         </div>
-                        {{-- <div class="col-span-6">
-                            <label for="modal-company-email" class="form-label">Email (Optional)</label>
-                            <input id="modal-company-email" name="email" type="email" class="form-control"
-                                placeholder="Enter email">
-                        </div>
-                        <div class="col-span-6">
-                            <label for="modal-company-phone" class="form-label">Phone (Optional)</label>
-                            <input id="modal-company-phone" name="phone" type="text" class="form-control"
-                                placeholder="Enter phone number">
-                        </div>
-                        <div class="col-span-12">
-                            <label for="modal-company-address" class="form-label">Address (Optional)</label>
-                            <textarea id="modal-company-address" name="address" class="form-control" placeholder="Enter company address"
-                                rows="2"></textarea>
-                        </div> --}}
                     </div>
                     <!-- END: Modal Body -->
 
@@ -625,10 +606,32 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('company-modal');
+        const openModalBtn = document.getElementById('open-company-modal'); // You need this
+        const cancelBtn = document.getElementById('cancel-company-modal');
+
+        // OPEN
+        if (openModalBtn) {
+            openModalBtn.addEventListener('click', function() {
+                modal.classList.add('modal-open');
+                modal.style.display = 'flex'; // show it
+            });
+        }
+
+        // CLOSE
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                modal.classList.remove('modal-open');
+                modal.style.display = 'none'; // hide it
+            });
+        }
+    });
+    document.addEventListener('DOMContentLoaded', function() {
         // Company dropdown (existing)
         initSearchDropdown('product_company', 'companyDropdown', '{{ route('companies.search') }}', 'company');
         // Category dropdown
-        initSearchDropdown('product_category', 'categoryDropdown', '{{ route('categories.search') }}', 'category');
+        initSearchDropdown('product_category', 'categoryDropdown', '{{ route('categories.search') }}',
+            'category');
 
         // HSN Code dropdown with GST auto-fill
         initHsnDropdown();
@@ -654,9 +657,9 @@
             try {
                 const gst = typeof gstData === 'string' ? JSON.parse(gstData) : gstData;
 
-                const sgst = gst || 0;
-                const cgst = gst || 0;
-                const igst = gst * 2 || 0;
+                const sgst = gst / 2 || 0;
+                const cgst = gst / 2 || 0;
+                const igst = gst || 0;
 
                 displayText += ` (SGST: ${sgst}%, CGST: ${cgst}%, IGST: ${igst}%)`;
 
@@ -1037,8 +1040,61 @@
         showModal('category-modal', 'modal-category-name', categoryName, 'modal-category-name');
     }
 
+    function showModal(modalId, inputId, inputValue = '', focusId = '') {
+        const modal = document.getElementById(modalId);
+        const input = document.getElementById(inputId);
+
+        if (!modal) {
+            console.error(`Modal with ID '${modalId}' not found.`);
+            return;
+        }
+
+        // Set input value if provided
+        if (input) {
+            input.value = inputValue || '';
+        }
+
+        // Show the modal
+        modal.classList.add('modal-open');
+        modal.style.display = 'flex';
+
+        // Focus input after short delay
+        if (focusId) {
+            setTimeout(() => {
+                const focusInput = document.getElementById(focusId);
+                if (focusInput) focusInput.focus();
+            }, 100);
+        }
+
+        // Cancel button: close modal (add listener only once)
+        const cancelBtn = modal.querySelector(
+            '.btn-outline-secondary, .modal-cancel, #cancel-category-modal'
+        );
+        if (cancelBtn && !cancelBtn.hasAttribute('data-close-bound')) {
+            cancelBtn.addEventListener('click', function() {
+                modal.classList.remove('modal-open');
+                modal.style.display = 'none';
+            });
+            cancelBtn.setAttribute('data-close-bound', 'true');
+        }
+
+        // Click outside modal to close (add listener only once)
+        if (!modal.hasAttribute('data-overlay-close-bound')) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.classList.remove('modal-open');
+                    modal.style.display = 'none';
+                }
+            });
+            modal.setAttribute('data-overlay-close-bound', 'true');
+        }
+    }
+
+
+
+
     function openCompanyModal(companyName) {
-        showModal('company-modal', 'modal-company-name', companyName, 'modal-company-name');
+        showModal('company-modal', 'name', companyName, 'name');
     }
 
     // Generic function to show modal
@@ -1087,7 +1143,8 @@
         const cancelBtn = document.getElementById('cancel-category-modal');
         const form = modal.querySelector('form');
         const modalCategoryInput = document.getElementById('modal-category-name');
-        const modalDescriptionInput = document.getElementById('modal-category-description');
+        const modalImageInput = document.getElementById('modal-category-image'); // <-- add image input
+        const submitBtn = form.querySelector('button[type="submit"]');
 
         cancelBtn.addEventListener('click', closeCategoryModal);
 
@@ -1101,23 +1158,25 @@
                 return;
             }
 
-            const params = new URLSearchParams();
-            params.append('category_name', categoryName);
-            params.append('description', modalDescriptionInput.value.trim());
+            const formData = new FormData();
+            formData.append('name', categoryName);
+
+            if (modalImageInput?.files[0]) {
+                formData.append('image', modalImageInput.files[0]); // append image
+            }
 
             const branchSelect = document.getElementById('branch');
             if (branchSelect?.value) {
-                params.append('branch_id', branchSelect.value);
+                formData.append('branch_id', branchSelect.value);
             }
 
-            const submitBtn = form.querySelector('button[type="submit"]');
             const originalText = submitBtn.textContent;
             submitBtn.textContent = 'Saving...';
             submitBtn.disabled = true;
 
             fetch(form.action, {
                     method: 'POST',
-                    body: params,
+                    body: formData,
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'X-Requested-With': 'XMLHttpRequest'
@@ -1125,25 +1184,34 @@
                 })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        return response.json().then(err => Promise.reject(err));
                     }
                     return response.json();
                 })
                 .then(data => {
                     console.log('Category creation response:', data);
 
-                    if (data.success) {
+                    if (data.success && data.data?.name && data.data?.id) {
                         closeCategoryModal();
-                        selectCategory(data.data.category_name, data.data.id);
-                        modalCategoryInput.value = '';
-                        modalDescriptionInput.value = '';
+                        selectCategory(data.data.name, data.data.id);
+                        form.reset();
+                        modalImageInput.value = '';
+                    } else if (data.success) {
+                        // Success true, but data is malformed
+                        console.warn('Success response but incomplete data:', data);
+                        closeCategoryModal();
+                        form.reset();
+                        modalImageInput.value = '';
+                        // Don’t show any error popup in this case
                     } else {
                         alert('Error: ' + (data.message || 'Failed to create category'));
                     }
                 })
+
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error creating category: ' + error.message);
+                    const errorMessage = error?.errors?.name?.[0] || error.message || 'Unknown error';
+                    alert('Error creating category: ' + errorMessage);
                 })
                 .finally(() => {
                     submitBtn.textContent = originalText;
@@ -1171,12 +1239,14 @@
         });
     }
 
+
+
     // Initialize Company Modal
     function initCompanyModal() {
         const modal = document.getElementById('company-modal');
         const cancelBtn = document.getElementById('cancel-company-modal');
         const form = modal.querySelector('form');
-        const modalCompanyInput = document.getElementById('modal-company-name');
+        const modalCompanyInput = document.getElementById('name');
 
         cancelBtn.addEventListener('click', closeCompanyModal);
 
@@ -1191,10 +1261,7 @@
             }
 
             const params = new URLSearchParams();
-            params.append('company_name', companyName);
-            // params.append('email', document.getElementById('modal-company-email').value.trim());
-            // params.append('phone', document.getElementById('modal-company-phone').value.trim());
-            // params.append('address', document.getElementById('modal-company-address').value.trim());
+            params.append('name', companyName); // ✅ Corrected field name
 
             const branchSelect = document.getElementById('branch');
             if (branchSelect?.value) {
@@ -1216,7 +1283,7 @@
                 })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        return response.json().then(err => Promise.reject(err));
                     }
                     return response.json();
                 })
@@ -1225,15 +1292,18 @@
 
                     if (data.success) {
                         closeCompanyModal();
-                        selectCompany(data.data.company_name, data.data.id);
+                        selectCompany(data.data.name, data.data
+                            .id); // ✅ Use 'name' instead of 'company_name'
                         form.reset();
                     } else {
-                        alert('Error: ' + (data.message || 'Failed to create company'));
+                        const errorMessage = data.message || 'Failed to create company';
+                        alert('Error: ' + errorMessage);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error creating company: ' + error.message);
+                    const errorMessage = error?.errors?.name?.[0] || error.message || 'Unknown error';
+                    alert('Error creating company: ' + errorMessage);
                 })
                 .finally(() => {
                     submitBtn.textContent = originalText;
@@ -1260,6 +1330,7 @@
             }
         });
     }
+
 
     // search dropdown
     function initSearchDropdown(inputId, dropdownId, searchUrl, type) {
