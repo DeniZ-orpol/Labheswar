@@ -149,4 +149,83 @@ class PurchasePartyController extends Controller
 
         return redirect()->route('purchase.party.index')->with('success', 'Product deleted successfully!');
     }
+
+    /**
+     * Search parties for dropdown
+     */
+    public function partySearch(Request $request)
+    {
+        // Authenticate and get branch configuration
+        $authResult = $this->authenticateAndConfigureBranch();
+
+        if (is_array($authResult) && isset($authResult['success']) && !$authResult['success']) {
+            return response()->json(['parties' => []]);
+        }
+
+        $user = $authResult['user'];
+        $branch = $authResult['branch'];
+        $role = $authResult['role'];
+
+        try {
+            // Get branch connection
+            $branchConnection = $branch->connection_name;
+
+            $search = $request->get('search', '');
+
+            $parties = PurchaseParty::on($branchConnection)
+                ->where('party_name', 'LIKE', "%{$search}%")
+                ->limit(10)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'parties' => $parties
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'parties' => [],
+                'message' => 'Error searching parties: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function modalStore(Request $request)
+    {
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
+
+        $validate = $request->validate([
+            'party_name' => 'required|string',
+            'company_name' => 'required|string',
+            'gst_number' => 'required|string',
+            'acc_no' => 'required|string',
+            'ifsc_code' => 'required|string',
+            'station' => 'required|string',
+            'pincode' => 'string',
+            'mobile_no' => 'string',
+            'email' => 'string',
+            'address' => 'string',
+        ]);
+        // dd($request->all());
+
+        $data = [
+            'party_name' => $validate['party_name'],
+            'company_name' => $validate['party_name'],
+            'gst_number' => $validate['party_name'],
+            'acc_no' => $validate['party_name'],
+            'ifsc_code' => $validate['party_name'],
+            'station' => $validate['party_name'],
+            'pincode' => $validate['party_name'],
+            'mobile_no' => $validate['party_name'],
+            'email' => $validate['party_name'],
+            'address' => $validate['party_name'],
+        ];
+
+        PurchaseParty::on($branch->connection_name)->create($data);
+
+        return redirect()->route('purchase.party.index')->with('success', 'Purchase Party Created Successfully!');
+    }
 }

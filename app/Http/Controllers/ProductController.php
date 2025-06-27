@@ -806,4 +806,44 @@ class ProductController extends Controller
             return response()->json(['hsn_codes' => []]);
         }
     }
+
+    public function searchProduct(Request $request)
+    {
+        $search = $request->get('search', '');
+
+        try {
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $role = $auth['role'];
+            $branch = $auth['branch'];
+
+            // If Super Admin, use `branch` from route or query
+            if (strtolower($role->role_name) === 'super admin') {
+                $products = Product::where('product_name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
+                    ->limit(10)
+                    ->get();
+
+                return response()->json([
+                    'success' => true,
+                    'parties' => $products
+                ]);
+            } else {
+                $products = Product::on($branch->connection_name)
+                    ->where('product_name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
+                    ->limit(10)
+                    ->get();
+
+                return response()->json([
+                    'success' => true,
+                    'parties' => $products
+                ]);
+            }
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'products' => [],
+                'message' => 'Error searching parties: ' . $e->getMessage()
+            ]);
+        }
+    }
 }
