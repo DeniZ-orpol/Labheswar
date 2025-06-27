@@ -168,10 +168,17 @@ class HsnController extends Controller
             'gst' => $validate['gst']
         ];
         // dd($data);
-        HsnCode::on($branch->connection_name)->create($data);
-        // dd(123);
+        $hsnCode = HsnCode::on($branch->connection_name)->create($data);
 
-        return back();
+        return response()->json([
+            'success' => true,
+            'message' => 'HSN Code created successfully',
+            'data' => [
+                'id' => $hsnCode->id,
+                'hsn_code' => $hsnCode->hsn_code,
+                'gst' => $hsnCode->gst
+            ]
+        ]);
 
         // dd($hsn);
         // } catch (Exception $ex) {

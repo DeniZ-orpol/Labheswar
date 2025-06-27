@@ -517,7 +517,7 @@
                 </div>
                 <!-- END: Modal Header -->
 
-                <form action="{{ route('hsn_codes.modalstore') }}" method="POST">
+                <form action="{{ route('hsn_codes.modalstore') }}" id="hsn-form" method="POST">
                     @csrf
                     <!-- BEGIN: Modal Body -->
                     <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
@@ -545,7 +545,6 @@
             </div>
         </div>
     </div>
-
     <!-- END: HSN Modal -->
 
 @endsection
@@ -561,6 +560,62 @@
         initHsnDropdown();
         initHsnModal();
     });
+
+    // Function to select HSN code and auto-fill GST - NOW GLOBAL
+    function selectHsnCode(hsnCode, gstData, hsnId = null) {
+        const input = document.getElementById('hsn_code');
+        const dropdown = document.getElementById('hsnDropdown');
+
+        dropdown.classList.remove('show');
+
+        let displayText = hsnCode;
+
+        if (gstData) {
+            try {
+                const gst = typeof gstData === 'string' ? JSON.parse(gstData) : gstData;
+
+                const sgst = gst || 0;
+                const cgst = gst || 0;
+                const igst = gst * 2 || 0;
+
+                displayText += ` (SGST: ${sgst}%, CGST: ${cgst}%, IGST: ${igst}%)`;
+
+            } catch (e) {
+                console.error('Error parsing GST data:', e);
+                clearGstFields();
+            }
+        } else {
+            clearGstFields();
+        }
+
+        // Set display value to input field
+        input.value = displayText;
+
+        // Store hidden actual HSN code for form submission
+        let hiddenHsnField = document.getElementById('hidden_hsn_code');
+        if (!hiddenHsnField) {
+            hiddenHsnField = document.createElement('input');
+            hiddenHsnField.type = 'hidden';
+            hiddenHsnField.id = 'hidden_hsn_code';
+            hiddenHsnField.name = 'hsn_code';
+            input.parentNode.appendChild(hiddenHsnField);
+
+            // Prevent visible field from being submitted
+            input.name = 'hsn_code_display';
+        }
+        hiddenHsnField.value = hsnCode;
+
+        // Store HSN ID for backend submission
+        let hiddenHsnIdField = document.getElementById('hidden_hsn_id');
+        if (!hiddenHsnIdField) {
+            hiddenHsnIdField = document.createElement('input');
+            hiddenHsnIdField.type = 'hidden';
+            hiddenHsnIdField.id = 'hidden_hsn_id';
+            hiddenHsnIdField.name = 'hsn_code_id';
+            input.parentNode.appendChild(hiddenHsnIdField);
+        }
+        hiddenHsnIdField.value = hsnId || '';
+    }
 
     // Function to open HSN modal
     function openHsnModal(hsnCode) {
@@ -578,17 +633,13 @@
         modalGstInput.value = '';
 
         // Show modal
-        // Show the modal using Tailwind logic
-        // Override the problematic CSS directly
         modal.style.visibility = 'visible';
         modal.style.opacity = '1';
-        modal.style.marginTop = '50';
+        modal.style.marginTop = '50px';
         modal.style.marginLeft = '0';
         modal.classList.add('show');
         modal.classList.remove('hidden');
         modal.setAttribute('aria-hidden', 'false');
-        console.log(modal);
-
 
         // Focus on GST input
         setTimeout(() => {
@@ -601,18 +652,94 @@
         const modal = document.getElementById('hsn-modal');
         modal.classList.remove('show');
         modal.style.display = 'none';
+        modal.style.visibility = 'hidden';
+        modal.style.opacity = '0';
     }
 
-    // Initialize modal functionality - ADD THIS TO YOUR EXISTING document.addEventListener('DOMContentLoaded')
+    // Initialize modal functionality
     function initHsnModal() {
         const modal = document.getElementById('hsn-modal');
         const cancelBtn = document.getElementById('cancel-hsn-modal');
-        const saveBtn = document.getElementById('save-hsn-modal');
+        const form = modal.querySelector('form');
         const modalHsnInput = document.getElementById('modal-hsn-code');
         const modalGstInput = document.getElementById('modal-gst');
 
         // Cancel button
         cancelBtn.addEventListener('click', closeHsnModal);
+
+        // Handle form submission with AJAX
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent normal form submission
+
+            // Use existing element references - fastest approach
+            const hsnCode = modalHsnInput.value.trim();
+            const gst = modalGstInput.value.trim();
+
+            // Quick validation
+            if (!hsnCode || !gst) {
+                alert('HSN Code and GST are required');
+                return;
+            }
+
+            // Fastest approach - direct URLSearchParams
+            const params = new URLSearchParams();
+            params.append('hsn_code', hsnCode);
+            params.append('gst', gst);
+
+            // Add branch_id if needed
+            const branchSelect = document.getElementById('branch');
+            if (branchSelect?.value) {
+                params.append('branch_id', branchSelect.value);
+            }
+
+            // Show loading state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Saving...';
+            submitBtn.disabled = true;
+
+            fetch(form.action, {
+                    method: 'POST',
+                    body: params,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Success response:', data);
+
+                    if (data.success) {
+                        // Close modal first
+                        closeHsnModal();
+
+                        // Update HSN field using global function with HSN ID
+                        selectHsnCode(data.data.hsn_code, data.data.gst, data.data.id);
+
+                        // Clear form values
+                        modalHsnInput.value = '';
+                        modalGstInput.value = '';
+
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to create HSN Code'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error creating HSN Code: ' + error.message);
+                })
+                .finally(() => {
+                    // Reset button state
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                });
+        });
 
         // Close modal when clicking outside
         modal.addEventListener('click', function(e) {
@@ -632,11 +759,10 @@
         modalGstInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                saveBtn.click();
+                form.dispatchEvent(new Event('submit'));
             }
         });
     }
-
 
     // HSN dropdown and GST autofill
     function initHsnDropdown() {
@@ -678,18 +804,23 @@
                     currentHsnData = data.hsn_codes || [];
 
                     let html = '';
+
+                    // Show existing HSN codes first
                     currentHsnData.forEach((item, index) => {
-                        // Show only HSN code in dropdown
+                        // Show HSN code with GST info for better identification
+                        console.log(item);
+                        const gstInfo = item.gst ?
+                            // ` (GST: ${typeof item.gst === 'string' ? JSON.parse(item.gst).gst || 'N/A' : item.gst.gst || 'N/A'}%)` :
+                            ` (GST: ${item.gst}%)` :
+                            '';
                         html +=
-                            `<div class="dropdown-item" data-index="${index}">${item.hsn_code}</div>`;
+                            `<div class="dropdown-item" data-index="${index}">${item.hsn_code}${gstInfo}</div>`;
                     });
 
-                    // Add create new option
-                    const hsnExists = currentHsnData.some(item => item.hsn_code.toLowerCase() ===
-                        value.toLowerCase());
-                    if (!hsnExists) {
+                    // ALWAYS add "Create new" option - regardless of existing entries
+                    if (value) { // Only show if user has typed something
                         html +=
-                            `<div class="dropdown-item create-new" data-new-value="${value}">Create new: "${value}"</div>`;
+                            `<div class="dropdown-item create-new" data-new-value="${value}">+ Create new: "${value}" with custom GST</div>`;
                     }
 
                     dropdown.innerHTML = html;
@@ -702,12 +833,13 @@
                             e.preventDefault();
                             if (this.dataset.newValue) {
                                 // Creating new HSN code
-                                openHsnModal(this.dataset.newValue, null);
+                                openHsnModal(this.dataset.newValue);
                             } else if (this.dataset.index !== undefined) {
                                 // Selecting existing HSN code
                                 const index = parseInt(this.dataset.index);
                                 selectHsnCode(currentHsnData[index].hsn_code,
-                                    currentHsnData[index].gst);
+                                    currentHsnData[index].gst, currentHsnData[
+                                        index].id);
                             }
                         });
                     });
@@ -739,17 +871,6 @@
                 if (selectedIndex >= 0 && items[selectedIndex]) {
                     handleHsnDropdownItemClick(items[selectedIndex]);
                 }
-                // if (selectedIndex >= 0 && items[selectedIndex]) {
-                //     const selectedItem = items[selectedIndex];
-                //     if (selectedItem.dataset.newValue) {
-                //         // Creating new HSN code - OPEN MODAL
-                //         openHsnModal(selectedItem.dataset.newValue);
-                //     } else if (selectedItem.dataset.index !== undefined) {
-                //         // Selecting existing HSN code
-                //         const index = parseInt(selectedItem.dataset.index);
-                //         selectHsnCode(currentHsnData[index].hsn_code, currentHsnData[index].gst);
-                //     }
-                // }
             } else if (e.key === 'Escape') {
                 dropdown.classList.remove('show');
                 selectedIndex = -1;
@@ -772,77 +893,8 @@
                 openHsnModal(item.dataset.newValue);
             } else if (item.dataset.index !== undefined) {
                 const index = parseInt(item.dataset.index);
-                selectHsnCode(currentHsnData[index].hsn_code, currentHsnData[index].gst);
+                selectHsnCode(currentHsnData[index].hsn_code, currentHsnData[index].gst, currentHsnData[index].id);
             }
-        }
-
-        // Function to select HSN code and auto-fill GST
-        function selectHsnCode(hsnCode, gstData) {
-            dropdown.classList.remove('show');
-
-            let displayText = hsnCode;
-
-            if (gstData) {
-                // dd($gstData);
-                try {
-                    const gst = typeof gstData === 'string' ? JSON.parse(gstData) : gstData;
-
-                    // Prefer splitting gst.gst into SGST/CGST if present
-                    const sgst = gst.gst ? gst.gst / 2 : (gst.SGST || 0);
-                    const cgst = gst.gst ? gst.gst / 2 : (gst.CGST || 0);
-                    const igst = gst.gst ? gst.gst * 2 : (gst.IGST || 0);
-
-                    displayText += ` (SGST: ${sgst}%, CGST: ${cgst}%, IGST: ${igst}%)`;
-
-                    // Fill GST fields
-                    const sgstField = document.getElementById('product_sgst');
-                    const cgstField = document.getElementById('product_cgst');
-                    const igstField = document.getElementById('product_igst');
-
-                    if (sgstField) sgstField.value = sgst;
-                    if (cgstField) cgstField.value = cgst;
-                    if (igstField) igstField.value = igst;
-
-                    console.log('GST fields filled:', gst);
-
-                } catch (e) {
-                    console.error('Error parsing GST data:', e);
-                    clearGstFields();
-                }
-            } else {
-                clearGstFields();
-            }
-
-            // Set display value to input field
-            input.value = displayText;
-
-            // Store hidden actual HSN code
-            let hiddenHsnField = document.getElementById('hidden_hsn_code');
-            if (!hiddenHsnField) {
-                hiddenHsnField = document.createElement('input');
-                hiddenHsnField.type = 'hidden';
-                hiddenHsnField.id = 'hidden_hsn_code';
-                hiddenHsnField.name = 'hsn_code';
-                input.parentNode.appendChild(hiddenHsnField);
-
-                // Prevent visible field from being submitted
-                input.name = 'hsn_code_display';
-            }
-            hiddenHsnField.value = hsnCode;
-        }
-
-
-        // Helper function to clear GST fields
-        function clearGstFields() {
-            const sgstField = document.getElementById('product_sgst');
-            const cgstField = document.getElementById('product_cgst');
-            const igstField = document.getElementById('product_igst');
-            // const cessField = document.getElementById('product_cess');
-
-            if (sgstField) sgstField.value = '';
-            if (cgstField) cgstField.value = '';
-            if (igstField) igstField.value = '';
-            // if (cessField) cessField.value = '';
         }
     }
 

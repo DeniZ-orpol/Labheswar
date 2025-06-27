@@ -147,6 +147,7 @@ class ProductController extends Controller
                 'product_company' => 'nullable|string',
                 'product_category' => 'nullable|string',
                 'hsn_code' => 'nullable|string',
+                'hsn_code_id' => 'nullable',
                 'sgst' => 'nullable|numeric|min:0',
                 'cgst' => 'nullable|numeric|min:0',
                 'igst' => 'nullable|numeric|min:0',
@@ -222,29 +223,29 @@ class ProductController extends Controller
             }
 
             // Handle HSN Code - use branch connection
-            $hsnCodeId = null;
-            if (!empty($validate['hsn_code'])) {
-                // Prepare GST data as JSON
-                $gstData = [
-                    'SGST' => (float) ($validate['sgst'] ?? 0),
-                    'CGST' => (float) ($validate['cgst'] ?? 0),
-                    'IGST' => (float) ($validate['igst'] ?? 0), // cgst_2 is IGST
-                    'CESS' => (float) ($validate['cess'] ?? 0)
-                ];
+            // $hsnCodeId = null;
+            // if (!empty($validate['hsn_code'])) {
+            //     // Prepare GST data as JSON
+            //     $gstData = [
+            //         'SGST' => (float) ($validate['sgst'] ?? 0),
+            //         'CGST' => (float) ($validate['cgst'] ?? 0),
+            //         'IGST' => (float) ($validate['igst'] ?? 0), // cgst_2 is IGST
+            //         'CESS' => (float) ($validate['cess'] ?? 0)
+            //     ];
 
-                $hsnCode = HsnCode::on($branch->connection_name)->firstOrCreate(
-                    ['hsn_code' => $validate['hsn_code']],
-                    [
-                        'hsn_code' => $validate['hsn_code'],
-                        'gst' => json_encode($gstData)
-                    ]
-                );
-                // Update GST if HSN code already exists
-                if (!$hsnCode->wasRecentlyCreated) {
-                    $hsnCode->update(['gst' => json_encode($gstData)]);
-                }
-                $hsnCodeId = $hsnCode->id;
-            }
+            //     $hsnCode = HsnCode::on($branch->connection_name)->firstOrCreate(
+            //         ['hsn_code' => $validate['hsn_code']],
+            //         [
+            //             'hsn_code' => $validate['hsn_code'],
+            //             'gst' => json_encode($gstData)
+            //         ]
+            //     );
+            //     // Update GST if HSN code already exists
+            //     if (!$hsnCode->wasRecentlyCreated) {
+            //         $hsnCode->update(['gst' => json_encode($gstData)]);
+            //     }
+            //     $hsnCodeId = $hsnCode->id;
+            // }
 
             // Prepare product data
             $data = [
@@ -256,7 +257,7 @@ class ProductController extends Controller
                 'decimal_btn' => isset($validate['decimal_btn']) ? 1 : 0,
                 'company' => $companyId,
                 'category_id' => $categoryId,
-                'hsn_code_id' => $hsnCodeId,
+                'hsn_code_id' => $validate['hsn_code_id'] ?? null,
                 'sgst' => $validate['sgst'] ?? 0,
                 'cgst1' => $validate['cgst'] ?? 0,
                 'cgst2' => $validate['igst'] ?? 0, //igst
@@ -806,13 +807,12 @@ class ProductController extends Controller
                 ->get()
                 ->map(function ($item) {
                     return [
+                        'id' => $item->id,
                         'hsn_code' => $item->hsn_code,
                         'gst' => $item->gst // This will be JSON string or array depending on your cast
                     ];
                 })
                 ->toArray();
-
-            // dd($hsn_codes);
 
             return response()->json(['hsn_codes' => $hsn_codes]);
         } catch (\Throwable $th) {
