@@ -432,24 +432,24 @@ class ProductController extends Controller
             }
 
             // Handle Company - use branch connection
-            $companyId = $product->company; // Keep existing company by default
-            if (!empty($validate['product_company'])) {
-                $company = Company::on($branch->connection_name)->firstOrCreate(
-                    ['name' => $validate['product_company']],
-                    ['name' => $validate['product_company'], 'status' => 1]
-                );
-                $companyId = $company->id;
-            }
+            // $companyId = $product->company; // Keep existing company by default
+            // if (!empty($validate['product_company'])) {
+            //     $company = Company::on($branch->connection_name)->firstOrCreate(
+            //         ['name' => $validate['product_company']],
+            //         ['name' => $validate['product_company'], 'status' => 1]
+            //     );
+            //     $companyId = $company->id;
+            // }
 
             // Handle Category - use branch connection
-            $categoryId = $product->category_id; // Keep existing category by default
-            if (!empty($validate['product_category'])) {
-                $category = Category::on($branch->connection_name)->firstOrCreate(
-                    ['name' => $validate['product_category']],
-                    ['name' => $validate['product_category'], 'status' => 1]
-                );
-                $categoryId = $category->id;
-            }
+            // $categoryId = $product->category_id; // Keep existing category by default
+            // if (!empty($validate['product_category'])) {
+            //     $category = Category::on($branch->connection_name)->firstOrCreate(
+            //         ['name' => $validate['product_category']],
+            //         ['name' => $validate['product_category'], 'status' => 1]
+            //     );
+            //     $categoryId = $category->id;
+            // }
 
             // Handle HSN Code - use branch connection
             // $hsnCodeId = $product->hsn_code_id; // Keep existing HSN code by default
@@ -483,8 +483,8 @@ class ProductController extends Controller
                 'search_option' => $validate['search_option'] ?? null,
                 'unit_types' => $validate['unit_type'] ?? null,
                 'decimal_btn' => isset($validate['decimal_btn']) ? 1 : 0,
-                'company' => $companyId,
-                'category_id' => $categoryId,
+                'company' => $validate['company_id'],
+                'category_id' => $validate['category_id'],
                 'hsn_code_id' => $validate['hsn_code_id'],
                 'sgst' => $validate['sgst'] ?? 0,
                 'cgst1' => $validate['cgst'] ?? 0,
