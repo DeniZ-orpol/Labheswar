@@ -146,22 +146,23 @@
                         <tr class="text-center">
                             <!-- Product -->
                             <td class="table__item-desc w-2/5">
-                                <div class="search-dropdown">
+                                {{-- <div class="search-dropdown">
                                     <input type="text" name="product_search[]"
                                         class="form-control search-input product-search-input"
                                         placeholder="Search product by name or barcode..." autocomplete="off"
                                         onkeyup="searchProducts(this)" onfocus="showProductDropdown(this)">
                                     <div class="dropdown-list product-dropdown"></div>
-                                </div>
+                                </div> --}}
 
                                 <!-- Hidden select to maintain existing functionality -->
-                                <select name="product[]" class="form-select text-sm w-full rounded-md hidden-product-select"
-                                    style="display: none;" onchange="loadProductDetails(this)">
+                                <select name="product[]" class="form-select text-sm w-full rounded-md py-2 px-3"
+                                    onchange="loadProductDetails(this)">
                                     <option value="">Please Select product</option>
                                     @foreach ($products as $product)
                                         <option value="{{ $product->id }}" data-mrp="{{ $product->mrp ?? 0 }}"
-                                            data-name="{{ $product->product_name }}" data-sgst="{{ $product->sgst ?? 0 }}"
-                                            data-cgst="{{ $product->cgst1 ?? 0 }}"
+                                            data-name="{{ $product->product_name }}"
+                                            data-box-pcs="{{ $product->converse_box ?? 1 }}"
+                                            data-sgst="{{ $product->sgst ?? 0 }}" data-cgst="{{ $product->cgst1 ?? 0 }}"
                                             data-purchase-rate="{{ $product->purchase_rate ?? 0 }}"
                                             data-barcode="{{ $product->barcode ?? '' }}"
                                             data-category="{{ $product->category_id ?? '' }}"
@@ -485,7 +486,7 @@
         } else {
             products.forEach((product, index) => {
                 html += `
-                    <div class="dropdown-item" 
+                    <div class="dropdown-item"
                          data-index="${index}"
                          style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
                         ${product.product_name}

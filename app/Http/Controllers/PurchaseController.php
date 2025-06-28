@@ -56,8 +56,8 @@ class PurchaseController extends Controller
         $parties = PurchaseParty::on($branch->connection_name)->get();
         $products = Product::on($branch->connection_name)->get();
         // dd($products);
-
-        return view('purchase.create', compact(['parties', 'products']));
+        $purchaseItems = Purchase::on($branch->connection_name)->get();
+        return view('purchase.create', compact(['parties', 'products', 'purchaseItems']));
     }
 
     /**
@@ -211,7 +211,6 @@ class PurchaseController extends Controller
 
                 return redirect()->route('purchase.index')
                     ->with('success', 'Purchase Receipt #' . $purchaseReceiptId . ' created successfully in ' . session('branch_name') . '! Total Amount: ₹' . number_format($validate['receipt_total_amount'], 2));
-
             } catch (Exception $e) {
                 dd($e->getMessage());
                 \DB::rollback();
@@ -220,7 +219,6 @@ class PurchaseController extends Controller
                     ->with('error', 'Error creating purchase: ' . $e->getMessage())
                     ->withInput();
             }
-
         } catch (ValidationException $e) {
             dd($e->getMessage());
             return redirect()->back()
@@ -451,7 +449,6 @@ class PurchaseController extends Controller
 
                 return redirect()->route('purchase.index')
                     ->with('success', 'Purchase Receipt #' . $id . ' updated successfully! Total Amount: ₹' . number_format($validate['receipt_total_amount'], 2));
-
             } catch (Exception $e) {
                 dd('aaa: ', $e->getMessage());
                 \DB::rollback();
@@ -460,7 +457,6 @@ class PurchaseController extends Controller
                     ->with('error', 'Error updating purchase: ' . $e->getMessage())
                     ->withInput();
             }
-
         } catch (ValidationException $e) {
             dd('validate: ', $e->getMessage());
             return redirect()->back()
@@ -514,14 +510,12 @@ class PurchaseController extends Controller
 
                 return redirect()->route('purchase.index')
                     ->with('success', 'Purchase Receipt #' . $id . ' deleted successfully!');
-
             } catch (Exception $e) {
                 \DB::rollback();
                 \Log::error('Purchase deletion failed: ' . $e->getMessage());
                 return redirect()->back()
                     ->with('error', 'Error deleting purchase: ' . $e->getMessage());
             }
-
         } catch (Exception $ex) {
             \Log::error('Purchase destroy error: ' . $ex->getMessage());
             return redirect()->back()
@@ -589,7 +583,6 @@ class PurchaseController extends Controller
 
                 // Sort all results by date and take latest 3
                 $purchaseHistory = $purchaseHistory->sortByDesc('created_at')->take(3);
-
             } else {
                 // Regular user - only their branch history
                 if (!testBranchConnection($branch)) {
@@ -626,7 +619,6 @@ class PurchaseController extends Controller
                 'success' => true,
                 'history' => $purchaseHistory->values()
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
