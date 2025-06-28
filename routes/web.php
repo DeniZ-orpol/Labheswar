@@ -118,7 +118,7 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     Route::get('/companies/search', [ProductController::class, 'searchCompany'])->name('companies.search');
     Route::get('/categories/search', [ProductController::class, 'searchCategory'])->name('categories.search');
     Route::get('/hsn-code/search', [ProductController::class, 'searchHsnCode'])->name('hsn.search');
-    Route::get('/products/search', [ProductController::class, 'searchProduct'])->name('products.search');
+    Route::get('/products-search', [ProductController::class, 'searchProduct'])->name('products.search');
     Route::get('/purchase/party/search', [PurchasePartyController::class, 'partySearch'])->name('purchase.party.search');
 
     Route::resource('hsn_codes', HsnController::class);

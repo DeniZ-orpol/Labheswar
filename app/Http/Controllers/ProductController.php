@@ -820,40 +820,50 @@ class ProductController extends Controller
 
     public function searchProduct(Request $request)
     {
-        $search = $request->get('search', '');
+        // Authenticate and get branch configuration
+        $authResult = $this->authenticateAndConfigureBranch();
+
+        if (is_array($authResult) && isset($authResult['success']) && !$authResult['success']) {
+            return response()->json(['products' => []]);
+        }
+
+        $user = $authResult['user'];
+        $branch = $authResult['branch'];
+        $role = $authResult['role'];
 
         try {
-            $auth = $this->authenticateAndConfigureBranch();
-            $user = $auth['user'];
-            $role = $auth['role'];
-            $branch = $auth['branch'];
+            // For Super Admin, you need to handle differently since $branch is a collection
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                // For Super Admin, search in the default connection or specify a branch
+                $search = $request->get('search', '');
 
-            // If Super Admin, use `branch` from route or query
-            if (strtolower($role->role_name) === 'super admin') {
-                $products = Product::where('product_name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
+                $products = Product::where('product_name', 'LIKE', "%{$search}%")
+                    ->orWhere('barcode', 'LIKE', "%{$search}%")
                     ->limit(10)
                     ->get();
-
-                return response()->json([
-                    'success' => true,
-                    'parties' => $products
-                ]);
             } else {
-                $products = Product::on($branch->connection_name)
-                    ->where('product_name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
+                // Get branch connection for regular users
+                $branchConnection = $branch->connection_name;
+
+                $search = $request->get('search', '');
+
+                $products = Product::on($branchConnection)
+                    ->where('product_name', 'LIKE', "%{$search}%")
+                    ->orWhere('barcode', 'LIKE', "%{$search}%")
                     ->limit(10)
                     ->get();
-
-                return response()->json([
-                    'success' => true,
-                    'parties' => $products
-                ]);
             }
+
+            return response()->json([
+                'success' => true,
+                'products' => $products
+            ]);
+
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
                 'products' => [],
-                'message' => 'Error searching parties: ' . $e->getMessage()
+                'message' => 'Error searching products: ' . $e->getMessage()
             ]);
         }
     }

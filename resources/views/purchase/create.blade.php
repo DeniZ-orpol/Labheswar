@@ -146,23 +146,22 @@
                         <tr class="text-center">
                             <!-- Product -->
                             <td class="table__item-desc w-2/5">
-                                {{-- <div class="search-dropdown">
+                                <div class="search-dropdown">
                                     <input type="text" name="product_search[]"
                                         class="form-control search-input product-search-input"
-                                        placeholder="Search product by name or barcode..." autocomplete="off"
-                                        onkeyup="searchProducts(this)" onfocus="showProductDropdown(this)">
+                                        placeholder="Search product by name or barcode..." autocomplete="off">
+                                    {{-- onkeyup="searchProducts(this)" onfocus="showProductDropdown(this)"> --}}
                                     <div class="dropdown-list product-dropdown"></div>
-                                </div> --}}
+                                </div>
 
                                 <!-- Hidden select to maintain existing functionality -->
-                                <select name="product[]" class="form-select text-sm w-full rounded-md py-2 px-3"
-                                    onchange="loadProductDetails(this)">
+                                <select name="product[]" class="form-select text-sm w-full rounded-md hidden-product-select"
+                                    style="display: none;" onchange="loadProductDetails(this)">
                                     <option value="">Please Select product</option>
                                     @foreach ($products as $product)
                                         <option value="{{ $product->id }}" data-mrp="{{ $product->mrp ?? 0 }}"
-                                            data-name="{{ $product->product_name }}"
-                                            data-box-pcs="{{ $product->converse_box ?? 1 }}"
-                                            data-sgst="{{ $product->sgst ?? 0 }}" data-cgst="{{ $product->cgst1 ?? 0 }}"
+                                            data-name="{{ $product->product_name }}" data-sgst="{{ $product->sgst ?? 0 }}"
+                                            data-cgst="{{ $product->cgst1 ?? 0 }}"
                                             data-purchase-rate="{{ $product->purchase_rate ?? 0 }}"
                                             data-barcode="{{ $product->barcode ?? '' }}"
                                             data-category="{{ $product->category_id ?? '' }}"
@@ -444,114 +443,240 @@
 
 <script>
     let productRowCounter = 0;
-    let allProducts = @json($products); // Get all products from blade
-    let selectedIndex = -1;
+    let allProducts = @json($products);
     let currentProductData = [];
+    let productSelectedIndex = -1;
 
-    // Product Search Functions
-    function searchProducts(input) {
-        const searchValue = input.value.toLowerCase().trim();
-        const dropdown = input.nextElementSibling;
+    // ==================================
 
-        if (searchValue.length < 1) {
-            dropdown.classList.remove('show');
-            currentProductData = [];
-            selectedIndex = -1;
-            return;
-        }
+    // Initialize Product Dropdown (similar to initPartyDropdown)
+    function initProductDropdown() {
+        // Store allProducts globally for the selectProduct function
+        window.allProducts = allProducts;
 
-        // Filter products based on name or barcode
-        currentProductData = allProducts.filter(product =>
-            product.product_name.toLowerCase().includes(searchValue) ||
-            (product.barcode && product.barcode.toLowerCase().includes(searchValue))
-        );
+        // Get all product search inputs (for multiple rows)
+        const productInputs = document.querySelectorAll('.product-search-input');
 
-        renderProductDropdown(dropdown, currentProductData);
-    }
-
-    function showProductDropdown(input) {
-        if (input.value.trim() === '') {
-            currentProductData = allProducts.slice(0, 20); // Show first 20 products
-            const dropdown = input.nextElementSibling;
-            renderProductDropdown(dropdown, currentProductData);
-        }
-    }
-
-    function renderProductDropdown(dropdown, products) {
-        let html = '';
-
-        if (products.length === 0) {
-            html =
-                '<div class="dropdown-item no-select" style="padding: 8px 12px; color: #999;">No products found</div>';
-        } else {
-            products.forEach((product, index) => {
-                html += `
-                    <div class="dropdown-item"
-                         data-index="${index}"
-                         style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
-                        ${product.product_name}
-                    </div>
-                `;
-            });
-        }
-
-        dropdown.innerHTML = html;
-        dropdown.classList.add('show');
-        selectedIndex = -1;
-
-        // Add mouse event listeners to dropdown items
-        const items = dropdown.querySelectorAll('.dropdown-item:not(.no-select)');
-        items.forEach((item, index) => {
-            item.addEventListener('mousedown', function(e) {
-                e.preventDefault();
-                selectProductFromDropdown(index);
-            });
-
-            item.addEventListener('mouseenter', function() {
-                selectedIndex = index;
-                updateProductHighlight(items);
-            });
+        productInputs.forEach(input => {
+            setupProductInput(input);
         });
     }
 
-    function selectProductFromDropdown(index) {
-        if (index < 0 || index >= currentProductData.length) return;
+    // Setup individual product input (like party dropdown)
+    function setupProductInput(input) {
+        const dropdown = input.nextElementSibling;
+        const searchUrl = '{{ route('products.search') }}'; // Your search route
+        let timeout;
+        let selectedIndex = -1;
+        let currentData = [];
 
-        const product = currentProductData[index];
+        input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const value = this.value.trim();
+            selectedIndex = -1;
+
+            if (value.length < 1) {
+                dropdown.classList.remove('show');
+                currentData = [];
+                return;
+            }
+
+            timeout = setTimeout(async () => {
+                try {
+                    let url = `${searchUrl}?search=${encodeURIComponent(value)}`;
+
+                    // Add branch_id if needed
+                    const branchSelect = document.getElementById('branch');
+                    if (branchSelect && branchSelect.value) {
+                        url += `&branch_id=${encodeURIComponent(branchSelect.value)}`;
+                    }
+
+                    console.log('Fetching products from:', url); // Debug log
+
+                    const response = await fetch(url, {
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector(
+                                'meta[name="csrf-token"]').content,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const data = await response.json();
+                    console.log('Product search response:', data); // Debug log
+
+                    currentData = data.products || [];
+                    // Store in global variable for selectProduct function
+                    window.currentProductData = currentData;
+
+                    let html = '';
+
+                    // Show existing products
+                    currentData.forEach((product, index) => {
+                        const productInfo = product.barcode ? ` (${product.barcode})` : '';
+                        html +=
+                            `<div class="dropdown-item" data-index="${index}">${product.product_name}${productInfo}</div>`;
+                    });
+
+                    dropdown.innerHTML = html;
+                    dropdown.classList.add('show');
+                    selectedIndex = -1;
+
+                    // Add click listeners to dropdown items
+                    dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                        item.addEventListener('mousedown', function(e) {
+                            e.preventDefault();
+                            const index = parseInt(this.dataset.index);
+                            selectProduct(currentData[index].product_name,
+                                currentData[index].id);
+                        });
+                    });
+
+                } catch (error) {
+                    console.error('Product search error:', error);
+                    dropdown.classList.remove('show');
+                    currentData = [];
+                }
+            }, 200);
+        });
+
+        // Arrow key navigation (same as party dropdown)
+        input.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.dropdown-item');
+
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
+                updateProductHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
+                updateProductHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    const index = parseInt(items[selectedIndex].dataset.index);
+                    selectProduct(currentData[index].product_name, currentData[index].id);
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
+    }
+
+    // Update highlight function (same as party dropdown) - make it global
+    function updateProductHighlight(dropdown, items, selectedIndex) {
+        items.forEach((item, index) => {
+            item.style.backgroundColor = index === selectedIndex ? '#e9ecef' : '';
+        });
+
+        if (selectedIndex >= 0 && items[selectedIndex]) {
+            const selectedItem = items[selectedIndex];
+            const dropdownScrollTop = dropdown.scrollTop;
+            const dropdownHeight = dropdown.clientHeight;
+            const itemTop = selectedItem.offsetTop;
+            const itemHeight = selectedItem.offsetHeight;
+
+            if (itemTop < dropdownScrollTop) {
+                dropdown.scrollTop = itemTop;
+            } else if (itemTop + itemHeight > dropdownScrollTop + dropdownHeight) {
+                dropdown.scrollTop = itemTop + itemHeight - dropdownHeight;
+            }
+        }
+    }
+
+    // Select product function (like selectParty)
+    function selectProduct(productName, productId = null) {
+        // Find the currently active product input
         const activeInput = document.activeElement;
+        let input, dropdown;
 
-        if (!activeInput || !activeInput.classList.contains('product-search-input')) return;
+        // If no active input or not a product input, find the one that was just interacted with
+        if (!activeInput || !activeInput.classList.contains('product-search-input')) {
+            // Find the dropdown that's currently shown
+            const visibleDropdown = document.querySelector('.product-dropdown.show');
+            if (visibleDropdown) {
+                input = visibleDropdown.previousElementSibling;
+                dropdown = visibleDropdown;
+            } else {
+                console.log('Could not find active product input');
+                return;
+            }
+        } else {
+            input = activeInput;
+            dropdown = input.nextElementSibling;
+        }
 
-        const searchInput = activeInput;
-        const dropdown = searchInput.nextElementSibling;
-        const hiddenSelect = searchInput.closest('td').querySelector('.hidden-product-select');
-        const row = searchInput.closest('tr');
+        const hiddenSelect = input.closest('td').querySelector('.hidden-product-select');
+        const row = input.closest('tr');
+
+        // Close dropdown
+        dropdown.classList.remove('show');
 
         // Update search input
-        searchInput.value = product.product_name;
+        input.value = productName;
+
+        // Find the product data from currentData or allProducts
+        let productData = null;
+
+        // Try to find in currentData first
+        if (window.currentProductData) {
+            productData = window.currentProductData.find(p => p.id == productId);
+        }
+
+        // If not found, try in allProducts
+        if (!productData && window.allProducts) {
+            productData = window.allProducts.find(p => p.id == productId);
+        }
 
         // Update hidden select with all product data
         hiddenSelect.innerHTML = '';
         const newOption = document.createElement('option');
-        newOption.value = product.id;
-        newOption.textContent = product.product_name;
+        newOption.value = productId;
+        newOption.textContent = productName;
         newOption.selected = true;
 
-        // Set all data attributes
-        newOption.setAttribute('data-mrp', product.mrp || 0);
-        newOption.setAttribute('data-name', product.product_name);
-        newOption.setAttribute('data-sgst', product.sgst || 0);
-        newOption.setAttribute('data-cgst', product.cgst1 || 0);
-        newOption.setAttribute('data-purchase-rate', product.purchase_rate || 0);
-        newOption.setAttribute('data-barcode', product.barcode || '');
-        newOption.setAttribute('data-category', product.category_id || '');
-        newOption.setAttribute('data-unit-type', product.unit_types || '');
+        // Set all data attributes using productData if available
+        if (productData) {
+            newOption.setAttribute('data-mrp', productData.mrp || 0);
+            newOption.setAttribute('data-name', productData.product_name);
+            newOption.setAttribute('data-sgst', productData.sgst || 0);
+            newOption.setAttribute('data-cgst', productData.cgst1 || productData.cgst || 0);
+            newOption.setAttribute('data-purchase-rate', productData.purchase_rate || 0);
+            newOption.setAttribute('data-barcode', productData.barcode || '');
+            newOption.setAttribute('data-category', productData.category_id || '');
+            newOption.setAttribute('data-unit-type', productData.unit_types || '');
+            newOption.setAttribute('data-box-pcs', productData.box_pcs || productData.converse_box || 1);
+        } else {
+            // Fallback values if productData not found
+            newOption.setAttribute('data-mrp', 0);
+            newOption.setAttribute('data-name', productName);
+            newOption.setAttribute('data-sgst', 0);
+            newOption.setAttribute('data-cgst', 0);
+            newOption.setAttribute('data-purchase-rate', 0);
+            newOption.setAttribute('data-barcode', '');
+            newOption.setAttribute('data-category', '');
+            newOption.setAttribute('data-unit-type', '');
+            newOption.setAttribute('data-box-pcs', 1);
+        }
 
         hiddenSelect.appendChild(newOption);
 
-        // Hide dropdown
-        dropdown.classList.remove('show');
-        selectedIndex = -1;
+        console.log('Product selected:', {
+            productName: productName,
+            productId: productId,
+            hiddenFieldValue: hiddenSelect.value
+        });
 
         // Trigger existing functionality
         loadProductDetails(hiddenSelect);
@@ -564,6 +689,16 @@
             }, 100);
         }
     }
+
+    // Function to setup new product rows (for when you add new rows)
+    function setupNewProductRow(row) {
+        const productInput = row.querySelector('.product-search-input');
+        if (productInput) {
+            setupProductInput(productInput);
+        }
+    }
+
+    // ==================================
 
     // START: Set up Enter navigation
     function setupEnterNavigation() {
@@ -793,84 +928,9 @@
         // Initialize Party dropdown
         initPartyDropdown();
         initPartyModal();
-    });
 
-    // Handle keyboard navigation for product dropdown
-    document.addEventListener('keydown', function(e) {
-        const activeInput = document.activeElement;
+        initProductDropdown();
 
-        // Only handle if we're in a product search input and dropdown is visible
-        if (activeInput &&
-            activeInput.classList.contains('product-search-input') &&
-            activeInput.nextElementSibling.classList.contains('show')) {
-
-            const dropdown = activeInput.nextElementSibling;
-            const items = dropdown.querySelectorAll('.dropdown-item:not(.no-select)');
-
-            if (items.length === 0) return;
-
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                e.stopPropagation();
-                selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
-                updateProductHighlight(items);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                e.stopPropagation();
-                selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
-                updateProductHighlight(items);
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                e.stopPropagation();
-
-                // Select the highlighted item or first item if none highlighted
-                const indexToSelect = selectedIndex >= 0 ? selectedIndex : 0;
-                selectProductFromDropdown(indexToSelect);
-                return false; // Prevent event bubbling
-            } else if (e.key === 'Escape') {
-                e.preventDefault();
-                dropdown.classList.remove('show');
-                selectedIndex = -1;
-            }
-        }
-    });
-
-    function updateProductHighlight(items) {
-        items.forEach((item, index) => {
-            if (index === selectedIndex) {
-                item.style.backgroundColor = '#007bff';
-                item.style.color = 'white';
-            } else {
-                item.style.backgroundColor = '';
-                item.style.color = '';
-            }
-        });
-
-        // Scroll to selected item if needed
-        if (selectedIndex >= 0 && items[selectedIndex]) {
-            const selectedItem = items[selectedIndex];
-            const dropdown = selectedItem.closest('.dropdown-list');
-            const dropdownScrollTop = dropdown.scrollTop;
-            const dropdownHeight = dropdown.clientHeight;
-            const itemTop = selectedItem.offsetTop;
-            const itemHeight = selectedItem.offsetHeight;
-
-            if (itemTop < dropdownScrollTop) {
-                dropdown.scrollTop = itemTop;
-            } else if (itemTop + itemHeight > dropdownScrollTop + dropdownHeight) {
-                dropdown.scrollTop = itemTop + itemHeight - dropdownHeight;
-            }
-        }
-    }
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.search-dropdown')) {
-            document.querySelectorAll('.product-dropdown').forEach(dropdown => {
-                dropdown.classList.remove('show');
-            });
-            selectedIndex = -1;
-        }
     });
 
     // Global function to select party and store ID
@@ -1234,6 +1294,8 @@
         }
 
         tableBody.appendChild(newRow);
+
+        setupNewProductRow(newRow);
 
         // Update delete button states
         updateDeleteButtons();
