@@ -44,6 +44,16 @@
         color: #007bff;
         font-style: italic;
     }
+
+    /* Product dropdown specific styles */
+    .product-dropdown {
+        max-height: 300px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .product-dropdown .dropdown-item:last-child {
+        border-bottom: none;
+    }
 </style>
 @section('content')
     <div class="content">
@@ -136,17 +146,27 @@
                         <tr class="text-center">
                             <!-- Product -->
                             <td class="table__item-desc w-2/5">
-                                <select name="product[]" id="product" class="form-select text-sm w-full rounded-md"
-                                    onchange="loadProductDetails(this)">
+                                <div class="search-dropdown">
+                                    <input type="text" name="product_search[]"
+                                        class="form-control search-input product-search-input"
+                                        placeholder="Search product by name or barcode..." autocomplete="off"
+                                        onkeyup="searchProducts(this)" onfocus="showProductDropdown(this)">
+                                    <div class="dropdown-list product-dropdown"></div>
+                                </div>
+
+                                <!-- Hidden select to maintain existing functionality -->
+                                <select name="product[]" class="form-select text-sm w-full rounded-md hidden-product-select"
+                                    style="display: none;" onchange="loadProductDetails(this)">
                                     <option value="">Please Select product</option>
                                     @foreach ($products as $product)
                                         <option value="{{ $product->id }}" data-mrp="{{ $product->mrp ?? 0 }}"
-                                            data-name="{{ $product->product_name }}"
-                                            data-sgst="{{ $product->sgst ?? 0 }}" data-cgst="{{ $product->cgst1 ?? 0 }}"
+                                            data-name="{{ $product->product_name }}" data-sgst="{{ $product->sgst ?? 0 }}"
+                                            data-cgst="{{ $product->cgst1 ?? 0 }}"
                                             data-purchase-rate="{{ $product->purchase_rate ?? 0 }}"
                                             data-barcode="{{ $product->barcode ?? '' }}"
                                             data-category="{{ $product->category_id ?? '' }}"
-                                            data-unit-type="{{ $product->unit_types ?? '' }}">{{ $product->product_name }}
+                                            data-unit-type="{{ $product->unit_types ?? '' }}">
+                                            {{ $product->product_name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -272,6 +292,33 @@
             </div>
         </form>
 
+        <!-- Purchase History Section -->
+        <div id="purchase-history-section" class="box rounded-md mt-5 p-5" style="display: none;">
+            <h3 class="text-lg font-medium mb-4">Recent Purchase History</h3>
+            <p class="text-sm text-gray-600 mb-3">Product: <span id="history-product-name">-</span></p>
+
+            <div class="overflow-x-auto">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="text-center">Date</th>
+                            <th class="text-center">Party Name</th>
+                            <th class="text-center">Bill No</th>
+                            <th class="text-center">BOX</th>
+                            <th class="text-center">PCS</th>
+                            <th class="text-center">Rate</th>
+                            <th class="text-center">Discount(%)</th>
+                            <th class="text-center">Discount(₹)</th>
+                            <th class="text-center">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="purchase-history-body">
+                        <!-- Purchase history rows will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <style>
             /* Hide number input arrows/spinners */
             input[type="number"]::-webkit-outer-spin-button,
@@ -289,22 +336,22 @@
 
         <!-- END: Validation Form -->
         <!-- BEGIN: Success Notification Content -->
-        <div id="success-notification-content" class="toastify-content hidden flex">
+        {{-- <div id="success-notification-content" class="toastify-content hidden flex">
             <i class="text-success" data-lucide="check-circle"></i>
             <div class="ml-4 mr-4">
                 <div class="font-medium">Registration success!</div>
                 <div class="text-slate-500 mt-1"> Please check your e-mail for further info! </div>
             </div>
-        </div>
+        </div> --}}
         <!-- END: Success Notification Content -->
         <!-- BEGIN: Failed Notification Content -->
-        <div id="failed-notification-content" class="toastify-content hidden flex">
+        {{-- <div id="failed-notification-content" class="toastify-content hidden flex">
             <i class="text-danger" data-lucide="x-circle"></i>
             <div class="ml-4 mr-4">
                 <div class="font-medium">Registration failed!</div>
                 <div class="text-slate-500 mt-1"> Please check the fileld form. </div>
             </div>
-        </div>
+        </div> --}}
         <!-- END: Failed Notification Content -->
     </div>
 
@@ -323,32 +370,38 @@
                     <!-- BEGIN: Modal Body -->
                     <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
                         <div class="col-span-6">
-                            <label for="modal-party-name" class="form-label">Party Name<span style="color: red;margin-left: 3px;">*</span></label>
+                            <label for="modal-party-name" class="form-label">Party Name<span
+                                    style="color: red;margin-left: 3px;">*</span></label>
                             <input id="modal-party-name" name="party_name" type="text" class="form-control"
                                 placeholder="Enter party name" required>
                         </div>
                         <div class="col-span-6">
-                            <label for="modal-company-name" class="form-label">Company Name<span style="color: red;margin-left: 3px;">*</span></label>
+                            <label for="modal-company-name" class="form-label">Company Name<span
+                                    style="color: red;margin-left: 3px;">*</span></label>
                             <input id="modal-company-name" name="company_name" type="text" class="form-control"
                                 placeholder="Enter company name" required>
                         </div>
                         <div class="col-span-12">
-                            <label for="modal-gst-number" class="form-label">Gst No.<span style="color: red;margin-left: 3px;">*</span></label>
+                            <label for="modal-gst-number" class="form-label">Gst No.<span
+                                    style="color: red;margin-left: 3px;">*</span></label>
                             <input id="modal-gst-number" name="gst_number" type="text" class="form-control"
                                 placeholder="Enter GST Number" required>
                         </div>
                         <div class="col-span-6">
-                            <label for="modal-acc-no" class="form-label">Bank Account Number<span style="color: red;margin-left: 3px;">*</span></label>
+                            <label for="modal-acc-no" class="form-label">Bank Account Number<span
+                                    style="color: red;margin-left: 3px;">*</span></label>
                             <input id="modal-acc-no" name="acc_no" type="text" class="form-control"
                                 placeholder="Enter Bank Account Number" required>
                         </div>
                         <div class="col-span-6">
-                            <label for="modal-ifsc-code" class="form-label">IFSC Code<span style="color: red;margin-left: 3px;">*</span></label>
+                            <label for="modal-ifsc-code" class="form-label">IFSC Code<span
+                                    style="color: red;margin-left: 3px;">*</span></label>
                             <input id="modal-ifsc-code" name="ifsc_code" type="text" class="form-control"
                                 placeholder="Enter IFSC Code" required>
                         </div>
                         <div class="col-span-6">
-                            <label for="modal-station" class="form-label">Station<span style="color: red;margin-left: 3px;">*</span></label>
+                            <label for="modal-station" class="form-label">Station<span
+                                    style="color: red;margin-left: 3px;">*</span></label>
                             <input id="modal-station" name="station" type="text" class="form-control"
                                 placeholder="Enter station" required>
                         </div>
@@ -390,6 +443,126 @@
 
 <script>
     let productRowCounter = 0;
+    let allProducts = @json($products); // Get all products from blade
+    let selectedIndex = -1;
+    let currentProductData = [];
+
+    // Product Search Functions
+    function searchProducts(input) {
+        const searchValue = input.value.toLowerCase().trim();
+        const dropdown = input.nextElementSibling;
+
+        if (searchValue.length < 1) {
+            dropdown.classList.remove('show');
+            currentProductData = [];
+            selectedIndex = -1;
+            return;
+        }
+
+        // Filter products based on name or barcode
+        currentProductData = allProducts.filter(product =>
+            product.product_name.toLowerCase().includes(searchValue) ||
+            (product.barcode && product.barcode.toLowerCase().includes(searchValue))
+        );
+
+        renderProductDropdown(dropdown, currentProductData);
+    }
+
+    function showProductDropdown(input) {
+        if (input.value.trim() === '') {
+            currentProductData = allProducts.slice(0, 20); // Show first 20 products
+            const dropdown = input.nextElementSibling;
+            renderProductDropdown(dropdown, currentProductData);
+        }
+    }
+
+    function renderProductDropdown(dropdown, products) {
+        let html = '';
+
+        if (products.length === 0) {
+            html =
+                '<div class="dropdown-item no-select" style="padding: 8px 12px; color: #999;">No products found</div>';
+        } else {
+            products.forEach((product, index) => {
+                html += `
+                    <div class="dropdown-item" 
+                         data-index="${index}"
+                         style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
+                        ${product.product_name}
+                    </div>
+                `;
+            });
+        }
+
+        dropdown.innerHTML = html;
+        dropdown.classList.add('show');
+        selectedIndex = -1;
+
+        // Add mouse event listeners to dropdown items
+        const items = dropdown.querySelectorAll('.dropdown-item:not(.no-select)');
+        items.forEach((item, index) => {
+            item.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                selectProductFromDropdown(index);
+            });
+
+            item.addEventListener('mouseenter', function() {
+                selectedIndex = index;
+                updateProductHighlight(items);
+            });
+        });
+    }
+
+    function selectProductFromDropdown(index) {
+        if (index < 0 || index >= currentProductData.length) return;
+
+        const product = currentProductData[index];
+        const activeInput = document.activeElement;
+
+        if (!activeInput || !activeInput.classList.contains('product-search-input')) return;
+
+        const searchInput = activeInput;
+        const dropdown = searchInput.nextElementSibling;
+        const hiddenSelect = searchInput.closest('td').querySelector('.hidden-product-select');
+        const row = searchInput.closest('tr');
+
+        // Update search input
+        searchInput.value = product.product_name;
+
+        // Update hidden select with all product data
+        hiddenSelect.innerHTML = '';
+        const newOption = document.createElement('option');
+        newOption.value = product.id;
+        newOption.textContent = product.product_name;
+        newOption.selected = true;
+
+        // Set all data attributes
+        newOption.setAttribute('data-mrp', product.mrp || 0);
+        newOption.setAttribute('data-name', product.product_name);
+        newOption.setAttribute('data-sgst', product.sgst || 0);
+        newOption.setAttribute('data-cgst', product.cgst1 || 0);
+        newOption.setAttribute('data-purchase-rate', product.purchase_rate || 0);
+        newOption.setAttribute('data-barcode', product.barcode || '');
+        newOption.setAttribute('data-category', product.category_id || '');
+        newOption.setAttribute('data-unit-type', product.unit_types || '');
+
+        hiddenSelect.appendChild(newOption);
+
+        // Hide dropdown
+        dropdown.classList.remove('show');
+        selectedIndex = -1;
+
+        // Trigger existing functionality
+        loadProductDetails(hiddenSelect);
+
+        // Move to next field (box input)
+        const nextField = row.querySelector('input[name="box[]"]');
+        if (nextField) {
+            setTimeout(() => {
+                nextField.focus();
+            }, 100);
+        }
+    }
 
     // START: Set up Enter navigation
     function setupEnterNavigation() {
@@ -420,7 +593,7 @@
         ];
 
         const productFields = [
-            'select[name="product[]"]',
+            '.product-search-input', // Changed to use search input instead of select
             'input[name="box[]"]',
             'input[name="pcs[]"]',
             'input[name="free[]"]',
@@ -602,9 +775,6 @@
         // Initialize calculations
         calculateAllTotals();
 
-        // Add event listener to document to catch all number inputs
-        // document.addEventListener('keydown', disableArrowKeys);
-
         // Enter navigation setup call
         setupEnterNavigation();
         // Delete product row
@@ -612,6 +782,84 @@
         // Initialize Party dropdown
         initPartyDropdown();
         initPartyModal();
+    });
+
+    // Handle keyboard navigation for product dropdown
+    document.addEventListener('keydown', function(e) {
+        const activeInput = document.activeElement;
+
+        // Only handle if we're in a product search input and dropdown is visible
+        if (activeInput &&
+            activeInput.classList.contains('product-search-input') &&
+            activeInput.nextElementSibling.classList.contains('show')) {
+
+            const dropdown = activeInput.nextElementSibling;
+            const items = dropdown.querySelectorAll('.dropdown-item:not(.no-select)');
+
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                e.stopPropagation();
+                selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
+                updateProductHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                e.stopPropagation();
+                selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
+                updateProductHighlight(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Select the highlighted item or first item if none highlighted
+                const indexToSelect = selectedIndex >= 0 ? selectedIndex : 0;
+                selectProductFromDropdown(indexToSelect);
+                return false; // Prevent event bubbling
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
+            }
+        }
+    });
+
+    function updateProductHighlight(items) {
+        items.forEach((item, index) => {
+            if (index === selectedIndex) {
+                item.style.backgroundColor = '#007bff';
+                item.style.color = 'white';
+            } else {
+                item.style.backgroundColor = '';
+                item.style.color = '';
+            }
+        });
+
+        // Scroll to selected item if needed
+        if (selectedIndex >= 0 && items[selectedIndex]) {
+            const selectedItem = items[selectedIndex];
+            const dropdown = selectedItem.closest('.dropdown-list');
+            const dropdownScrollTop = dropdown.scrollTop;
+            const dropdownHeight = dropdown.clientHeight;
+            const itemTop = selectedItem.offsetTop;
+            const itemHeight = selectedItem.offsetHeight;
+
+            if (itemTop < dropdownScrollTop) {
+                dropdown.scrollTop = itemTop;
+            } else if (itemTop + itemHeight > dropdownScrollTop + dropdownHeight) {
+                dropdown.scrollTop = itemTop + itemHeight - dropdownHeight;
+            }
+        }
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.search-dropdown')) {
+            document.querySelectorAll('.product-dropdown').forEach(dropdown => {
+                dropdown.classList.remove('show');
+            });
+            selectedIndex = -1;
+        }
     });
 
     // Global function to select party and store ID
@@ -950,8 +1198,16 @@
         newRow.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
 
         // Update event handlers for new row
-        const productSelect = newRow.querySelector('select[name="product[]"]');
-        productSelect.setAttribute('onchange', 'loadProductDetails(this)');
+        const productSearchInput = newRow.querySelector('.product-search-input');
+        if (productSearchInput) {
+            productSearchInput.setAttribute('onkeyup', 'searchProducts(this)');
+            productSearchInput.setAttribute('onfocus', 'showProductDropdown(this)');
+        }
+
+        const hiddenSelect = newRow.querySelector('.hidden-product-select');
+        if (hiddenSelect) {
+            hiddenSelect.setAttribute('onchange', 'loadProductDetails(this)');
+        }
 
         const inputs = newRow.querySelectorAll(
             'input[name="box[]"], input[name="pcs[]"], input[name="purchase_rate[]"], input[name="discount_percent[]"], input[name="discount_lumpsum[]"]'
@@ -960,7 +1216,16 @@
             input.setAttribute('onchange', 'calculateRowAmount(this)');
         });
 
+        // Ensure the delete button has the correct onclick handler
+        const deleteButton = newRow.querySelector('button[onclick*="removeRow"]');
+        if (deleteButton) {
+            deleteButton.setAttribute('onclick', 'removeRow(this)');
+        }
+
         tableBody.appendChild(newRow);
+
+        // Update delete button states
+        updateDeleteButtons();
     }
 
     function removeRow(button) {
@@ -980,6 +1245,16 @@
 
             // Re-enable/disable delete buttons based on row count
             updateDeleteButtons();
+
+            // Hide purchase history if no product is selected in any row
+            const hasSelectedProducts = Array.from(remainingRows).some(row => {
+                const hiddenSelect = row.querySelector('.hidden-product-select');
+                return hiddenSelect && hiddenSelect.value;
+            });
+
+            if (!hasSelectedProducts) {
+                hidePurchaseHistory();
+            }
         } else {
             alert('At least one product row is required.');
         }
@@ -1007,39 +1282,6 @@
         }
     }
 
-    // Add product row
-    function addProductRow() {
-        const tableBody = document.getElementById('product-table-body');
-        const existingRow = tableBody.querySelector('tr');
-        const newRow = existingRow.cloneNode(true);
-
-        // Clear all input values
-        newRow.querySelectorAll('input').forEach(input => input.value = '');
-        newRow.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
-
-        // Update event handlers for new row
-        const productSelect = newRow.querySelector('select[name="product[]"]');
-        productSelect.setAttribute('onchange', 'loadProductDetails(this)');
-
-        const inputs = newRow.querySelectorAll(
-            'input[name="box[]"], input[name="pcs[]"], input[name="purchase_rate[]"], input[name="discount_percent[]"], input[name="discount_lumpsum[]"]'
-        );
-        inputs.forEach(input => {
-            input.setAttribute('onchange', 'calculateRowAmount(this)');
-        });
-
-        // Ensure the delete button has the correct onclick handler
-        const deleteButton = newRow.querySelector('button[onclick*="removeRow"]');
-        if (deleteButton) {
-            deleteButton.setAttribute('onclick', 'removeRow(this)');
-        }
-
-        tableBody.appendChild(newRow);
-
-        // Update delete button states
-        updateDeleteButtons();
-    }
-
     function loadProductDetails(selectElement) {
         const selectedOption = selectElement.options[selectElement.selectedIndex];
         const productName = selectedOption.getAttribute('data-name') || '-';
@@ -1047,6 +1289,7 @@
         const productPurchaseRate = selectedOption.getAttribute('data-purchase-rate') || '0.00';
         const sgstRate = selectedOption.getAttribute('data-sgst') || '0';
         const cgstRate = selectedOption.getAttribute('data-cgst') || '0';
+        const productId = selectedOption.value;
 
         // Update current item details
         document.getElementById('current-item').textContent = productName;
@@ -1059,7 +1302,79 @@
             purchaseRateInput.value = parseFloat(productPurchaseRate).toFixed(2);
         }
 
+        // Load purchase history for this product
+        if (productId && productName !== '-') {
+            loadPurchaseHistory(productId, productName);
+        } else {
+            hidePurchaseHistory();
+        }
+
         calculateAllTotals();
+    }
+
+    // Function to load purchase history for selected product
+    function loadPurchaseHistory(productId, productName) {
+        // Show the purchase history section
+        const historySection = document.getElementById('purchase-history-section');
+        const historyProductName = document.getElementById('history-product-name');
+        const historyBody = document.getElementById('purchase-history-body');
+
+        historySection.style.display = 'block';
+        historyProductName.textContent = productName;
+
+        // Show loading state
+        historyBody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+
+        // Make API call to get purchase history
+        fetch(`{{ route('purchase.history') }}?product_id=${productId}`, {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.history && data.history.length > 0) {
+                    let historyHtml = '';
+                    data.history.forEach(purchase => {
+                        const date = new Date(purchase.bill_date).toLocaleDateString('en-GB');
+                        // const qty = purchase.pcs || (purchase.box + purchase.pcs);
+                        const rate = parseFloat(purchase.p_rate || 0).toFixed(2);
+                        const amount = parseFloat(purchase.amount || 0).toFixed(2);
+                        const discount = parseFloat(purchase.discount || 0).toFixed(2);
+                        const discountRs = purchase.lumpsum || 0;
+
+                        historyHtml += `
+                        <tr>
+                            <td class="text-center">${date}</td>
+                            <td class="text-center">${purchase.party_name || '-'}</td>
+                            <td class="text-center">${purchase.bill_no || '-'}</td>
+                            <td class="text-center">${purchase.box}</td>
+                            <td class="text-center">${purchase.pcs}</td>
+                            <td class="text-center">₹${rate}</td>
+                            <td class="text-center">${discount}%</td>
+                            <td class="text-center">₹${discountRs}</td>
+                            <td class="text-center">₹${amount}</td>
+                        </tr>
+                    `;
+                    });
+                    historyBody.innerHTML = historyHtml;
+                } else {
+                    historyBody.innerHTML =
+                        '<tr><td colspan="6" class="text-center text-gray-500">No recent purchase history found</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading purchase history:', error);
+                historyBody.innerHTML =
+                    '<tr><td colspan="6" class="text-center text-red-500">Error loading purchase history</td></tr>';
+            });
+    }
+
+    // Function to hide purchase history section
+    function hidePurchaseHistory() {
+        const historySection = document.getElementById('purchase-history-section');
+        historySection.style.display = 'none';
     }
 
     function calculateRowAmount(input) {
@@ -1071,8 +1386,8 @@
         const discountLumpsum = parseFloat(row.querySelector('input[name="discount_lumpsum[]"]')?.value || 0);
 
         // Get product details including SGST and CGST rates
-        const productSelect = row.querySelector('select[name="product[]"]');
-        const selectedOption = productSelect.options[productSelect.selectedIndex];
+        const hiddenSelect = row.querySelector('.hidden-product-select');
+        const selectedOption = hiddenSelect.options[hiddenSelect.selectedIndex];
         const boxToPcs = parseFloat(selectedOption.getAttribute('data-box-pcs') || 1);
         const sgstRate = parseFloat(selectedOption.getAttribute('data-sgst') || 0);
         const cgstRate = parseFloat(selectedOption.getAttribute('data-cgst') || 0);
@@ -1155,8 +1470,8 @@
 
         rows.forEach(row => {
             // Get product MRP and box conversion
-            const productSelect = row.querySelector('select[name="product[]"]');
-            const selectedOption = productSelect.options[productSelect.selectedIndex];
+            const hiddenSelect = row.querySelector('.hidden-product-select');
+            const selectedOption = hiddenSelect.options[hiddenSelect.selectedIndex];
             const mrp = parseFloat(selectedOption.getAttribute('data-mrp') || 0);
             const boxToPcs = parseFloat(selectedOption.getAttribute('data-box-pcs') || 1);
 
@@ -1205,7 +1520,7 @@
         document.getElementById('total-gst').textContent = totalGstAmount.toFixed(2);
         document.getElementById('final-amount').textContent = totalFinalAmount.toFixed(2);
 
-        document.getElementById('total-invoice-value').textContent = totalFinalAmount.toFixed(2);
+        document.getElementById('total-invoice-value').value = totalFinalAmount.toFixed(2);
 
         // Update S.Rate (average rate per piece)
         const averageRate = totalQuantity > 0 ? (totalBaseAmount / totalQuantity) : 0;

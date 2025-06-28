@@ -10,6 +10,7 @@ use App\Models\PurchaseReceipt;
 use App\Traits\BranchAuthTrait;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class PurchaseController extends Controller
@@ -525,6 +526,112 @@ class PurchaseController extends Controller
             \Log::error('Purchase destroy error: ' . $ex->getMessage());
             return redirect()->back()
                 ->with('error', 'Error deleting purchase: ' . $ex->getMessage());
+        }
+    }
+
+    public function getPurchaseHistory(Request $request)
+    {
+        $authResult = $this->authenticateAndConfigureBranch();
+
+        if (isset($authResult['success']) && $authResult['success'] === false) {
+            return response()->json($authResult);
+        }
+
+        $user = $authResult['user'];
+        $branch = $authResult['branch'];
+        $role = $authResult['role'];
+        $productId = $request->get('product_id');
+
+        if (!$productId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product ID is required'
+            ]);
+        }
+
+        try {
+            $purchaseHistory = collect();
+
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                // Super admin can see history from all active branches
+                $branches = $branch; // This is a collection for super admin
+
+                foreach ($branches as $branchItem) {
+                    if (!testBranchConnection($branchItem)) {
+                        continue;
+                    }
+
+                    $branchConnection = getBranchConnection($branchItem);
+
+                    // Get purchase history from purchase_details and purchase_receipts tables
+                    $branchHistory = DB::table('purchase_details as pd')
+                        ->join('purchase_receipts as pr', 'pd.purchase_receipt_id', '=', 'pr.id')
+                        ->leftJoin('parties as p', 'pr.party_id', '=', 'p.id')
+                        ->where('pd.product_id', $productId)
+                        ->select([
+                            'pr.bill_date',
+                            'pr.bill_no',
+                            'p.party_name',
+                            'pd.box',
+                            'pd.pcs',
+                            'pd.total_pcs',
+                            'pd.purchase_rate',
+                            'pd.final_amount',
+                            'pr.created_at',
+                            DB::raw("'{$branchItem->branch_name}' as branch_name")
+                        ])
+                        ->orderBy('pr.created_at', 'desc')
+                        ->limit(10) // Get more from each branch, we'll limit final result
+                        ->get();
+
+                    $purchaseHistory = $purchaseHistory->merge($branchHistory);
+                }
+
+                // Sort all results by date and take latest 3
+                $purchaseHistory = $purchaseHistory->sortByDesc('created_at')->take(3);
+
+            } else {
+                // Regular user - only their branch history
+                if (!testBranchConnection($branch)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot connect to branch database'
+                    ]);
+                }
+
+                $branchConnection = getBranchConnection($branch);
+
+                $purchaseHistory = $branchConnection->table('purchase as pd')
+                    ->join('purchase_receipt as pr', 'pd.purchase_receipt_id', '=', 'pr.id')
+                    ->leftJoin('purchase_party as p', 'pr.purchase_party_id', '=', 'p.id')
+                    ->where('pd.product_id', $productId)
+                    ->select([
+                        'pr.bill_date',
+                        'pr.bill_no',
+                        'p.party_name',
+                        'pd.box',
+                        'pd.pcs',
+                        'pd.p_rate',
+                        'pd.discount',
+                        'pd.lumpsum',
+                        'pd.amount',
+                        'pr.created_at'
+                    ])
+                    ->orderBy('pr.created_at', 'desc')
+                    ->limit(3)
+                    ->get();
+            }
+
+            return response()->json([
+                'success' => true,
+                'history' => $purchaseHistory->values()
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching purchase history: ' . $e->getMessage()
+            ]);
         }
     }
 }
