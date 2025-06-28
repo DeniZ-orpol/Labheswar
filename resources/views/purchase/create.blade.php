@@ -687,8 +687,18 @@
                     }, 100);
                 }
 
-                // Handle final submit
+                // Handle total invoice value to submit button navigation
                 if (target.id === 'total-invoice-value') {
+                    e.preventDefault();
+                    // Move focus to submit button
+                    const submitButton = document.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.focus();
+                    }
+                }
+
+                // Handle submit button enter key
+                if (target.tagName === 'BUTTON' && target.type === 'submit') {
                     e.preventDefault();
                     // Submit the form
                     const form = target.closest('form');
