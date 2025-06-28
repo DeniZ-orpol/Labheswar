@@ -683,33 +683,39 @@ class ProductController extends Controller
             $auth = $this->authenticateAndConfigureBranch();
             $user = $auth['user'];
             $role = $auth['role'];
+            $branch = $auth['branch'];
 
             // If Super Admin, use `branch` from route or query
             if (strtolower($role->role_name) === 'super admin') {
-                $branchId = $request->branch;
-                if (empty($branchId)) {
-                    return response()->json(['companies' => []]);
-                }
+                $companies = Company::where('name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
+                    ->limit(10)
+                    ->get()
+                    ->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'name' => $item->name
+                        ];
+                    })
+                    ->toArray();
 
-                $branch = Branch::findOrFail($branchId);
-                configureBranchConnection($branch);
+                return response()->json(['companies' => $companies]);
             } else {
                 // Normal user — get branch from auth
-                $branch = $auth['branch'];
+                $companies = Company::on($branch->connection_name)
+                    ->where('name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
+                    ->limit(10)
+                    ->get()
+                    ->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'name' => $item->name
+                        ];
+                    })
+                    ->toArray();
+
+                return response()->json(['companies' => $companies]);
             }
 
-            $search = $request->get('search', '');
-            if (empty($search)) {
-                return response()->json(['companies' => []]);
-            }
-
-            $companies = Company::on($branch->connection_name)
-                ->where('name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
-                ->limit(10)
-                ->pluck('name') // Return company names
-                ->toArray();
-
-            return response()->json(['companies' => $companies]);
         } catch (\Throwable $th) {
             //throw $th;
         }
@@ -725,33 +731,38 @@ class ProductController extends Controller
             $auth = $this->authenticateAndConfigureBranch();
             $user = $auth['user'];
             $role = $auth['role'];
+            $branch = $auth['branch'];
 
             // If Super Admin, use `branch` from route or query
             if (strtolower($role->role_name) === 'super admin') {
-                $branchId = $request->branch;
-                if (empty($branchId)) {
-                    return response()->json(['categories' => []]);
-                }
+                $categories = Category::where('name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
+                    ->limit(10)
+                    ->get()
+                    ->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'name' => $item->name
+                        ];
+                    })
+                    ->toArray();
 
-                $branch = Branch::findOrFail($branchId);
-                configureBranchConnection($branch);
+                return response()->json(['categories' => $categories]);
             } else {
-                // Normal user — get branch from auth
-                $branch = $auth['branch'];
+                $categories = Category::on($branch->connection_name)
+                    ->where('name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
+                    ->limit(10)
+                    ->get()
+                    ->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'name' => $item->name
+                        ];
+                    })
+                    ->toArray();
+
+                return response()->json(['categories' => $categories]);
             }
 
-            $search = $request->get('search', '');
-            if (empty($search)) {
-                return response()->json(['categories' => []]);
-            }
-
-            $categories = Category::on($branch->connection_name)
-                ->where('name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
-                ->limit(10)
-                ->pluck('name') // Return category names
-                ->toArray();
-
-            return response()->json(['categories' => $categories]);
         } catch (\Throwable $th) {
             //throw $th;
         }

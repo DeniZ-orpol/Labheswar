@@ -930,7 +930,6 @@
 
         dropdown.classList.remove('show');
         input.value = categoryName;
-        selectedCategoryId = categoryId;
 
         // Store category ID in hidden field
         let hiddenCategoryIdField = document.getElementById('hidden_category_id');
@@ -957,7 +956,6 @@
 
         dropdown.classList.remove('show');
         input.value = companyName;
-        selectedCompanyId = companyId;
 
         // Store company ID in hidden field
         let hiddenCompanyIdField = document.getElementById('hidden_company_id');
@@ -978,300 +976,300 @@
     }
 
     // Functions to open modals
-    function openCategoryModal(categoryName) {
-        showModal('category-modal', 'modal-category-name', categoryName, 'modal-category-name');
-    }
+    // function openCategoryModal(categoryName) {
+    //     showModal('category-modal', 'modal-category-name', categoryName, 'modal-category-name');
+    // }
 
-    function showModal(modalId, inputId, inputValue = '', focusId = '') {
-        const modal = document.getElementById(modalId);
-        const input = document.getElementById(inputId);
+    // function showModal(modalId, inputId, inputValue = '', focusId = '') {
+    //     const modal = document.getElementById(modalId);
+    //     const input = document.getElementById(inputId);
 
-        if (!modal) {
-            console.error(`Modal with ID '${modalId}' not found.`);
-            return;
-        }
+    //     if (!modal) {
+    //         console.error(`Modal with ID '${modalId}' not found.`);
+    //         return;
+    //     }
 
-        // Set input value if provided
-        if (input) {
-            input.value = inputValue || '';
-        }
+    //     // Set input value if provided
+    //     if (input) {
+    //         input.value = inputValue || '';
+    //     }
 
-        // Show the modal
-        modal.classList.add('modal-open');
-        modal.style.display = 'flex';
+    //     // Show the modal
+    //     modal.classList.add('modal-open');
+    //     modal.style.display = 'flex';
 
-        // Focus input after short delay
-        if (focusId) {
-            setTimeout(() => {
-                const focusInput = document.getElementById(focusId);
-                if (focusInput) focusInput.focus();
-            }, 100);
-        }
+    //     // Focus input after short delay
+    //     if (focusId) {
+    //         setTimeout(() => {
+    //             const focusInput = document.getElementById(focusId);
+    //             if (focusInput) focusInput.focus();
+    //         }, 100);
+    //     }
 
-        // Cancel button: close modal (add listener only once)
-        const cancelBtn = modal.querySelector(
-            '.btn-outline-secondary, .modal-cancel, #cancel-category-modal'
-        );
-        if (cancelBtn && !cancelBtn.hasAttribute('data-close-bound')) {
-            cancelBtn.addEventListener('click', function() {
-                modal.classList.remove('modal-open');
-                modal.style.display = 'none';
-            });
-            cancelBtn.setAttribute('data-close-bound', 'true');
-        }
+    //     // Cancel button: close modal (add listener only once)
+    //     const cancelBtn = modal.querySelector(
+    //         '.btn-outline-secondary, .modal-cancel, #cancel-category-modal'
+    //     );
+    //     if (cancelBtn && !cancelBtn.hasAttribute('data-close-bound')) {
+    //         cancelBtn.addEventListener('click', function() {
+    //             modal.classList.remove('modal-open');
+    //             modal.style.display = 'none';
+    //         });
+    //         cancelBtn.setAttribute('data-close-bound', 'true');
+    //     }
 
-        // Click outside modal to close (add listener only once)
-        if (!modal.hasAttribute('data-overlay-close-bound')) {
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    modal.classList.remove('modal-open');
-                    modal.style.display = 'none';
-                }
-            });
-            modal.setAttribute('data-overlay-close-bound', 'true');
-        }
-    }
-
-
+    //     // Click outside modal to close (add listener only once)
+    //     if (!modal.hasAttribute('data-overlay-close-bound')) {
+    //         modal.addEventListener('click', function(e) {
+    //             if (e.target === modal) {
+    //                 modal.classList.remove('modal-open');
+    //                 modal.style.display = 'none';
+    //             }
+    //         });
+    //         modal.setAttribute('data-overlay-close-bound', 'true');
+    //     }
+    // }
 
 
-    function openCompanyModal(companyName) {
-        showModal('company-modal', 'name', companyName, 'name');
-    }
+
+
+    // function openCompanyModal(companyName) {
+    //     showModal('company-modal', 'name', companyName, 'name');
+    // }
 
     // Generic function to show modal
-    function showModal(modalId, inputId, value, focusId) {
-        const modal = document.getElementById(modalId);
-        const input = document.getElementById(inputId);
-        const focusInput = document.getElementById(focusId);
+    // function showModal(modalId, inputId, value, focusId) {
+    //     const modal = document.getElementById(modalId);
+    //     const input = document.getElementById(inputId);
+    //     const focusInput = document.getElementById(focusId);
 
-        // Set value and show modal
-        input.value = value;
-        modal.style.visibility = 'visible';
-        modal.style.opacity = '1';
-        modal.style.marginTop = '50px';
-        modal.style.marginLeft = '0';
-        modal.classList.add('show');
-        modal.classList.remove('hidden');
-        modal.setAttribute('aria-hidden', 'false');
+    //     // Set value and show modal
+    //     input.value = value;
+    //     modal.style.visibility = 'visible';
+    //     modal.style.opacity = '1';
+    //     modal.style.marginTop = '50px';
+    //     modal.style.marginLeft = '0';
+    //     modal.classList.add('show');
+    //     modal.classList.remove('hidden');
+    //     modal.setAttribute('aria-hidden', 'false');
 
-        // Focus on input
-        setTimeout(() => {
-            focusInput.focus();
-        }, 100);
-    }
+    //     // Focus on input
+    //     setTimeout(() => {
+    //         focusInput.focus();
+    //     }, 100);
+    // }
 
     // Functions to close modals
-    function closeCategoryModal() {
-        closeModal('category-modal');
-    }
+    // function closeCategoryModal() {
+    //     closeModal('category-modal');
+    // }
 
-    function closeCompanyModal() {
-        closeModal('company-modal');
-    }
+    // function closeCompanyModal() {
+    //     closeModal('company-modal');
+    // }
 
     // Generic function to close modal
-    function closeModal(modalId) {
-        const modal = document.getElementById(modalId);
-        modal.classList.remove('show');
-        modal.style.display = 'none';
-        modal.style.visibility = 'hidden';
-        modal.style.opacity = '0';
-    }
+    // function closeModal(modalId) {
+    //     const modal = document.getElementById(modalId);
+    //     modal.classList.remove('show');
+    //     modal.style.display = 'none';
+    //     modal.style.visibility = 'hidden';
+    //     modal.style.opacity = '0';
+    // }
 
     // Initialize Category Modal
-    function initCategoryModal() {
-        const modal = document.getElementById('category-modal');
-        const cancelBtn = document.getElementById('cancel-category-modal');
-        const form = modal.querySelector('form');
-        const modalCategoryInput = document.getElementById('modal-category-name');
-        const modalImageInput = document.getElementById('modal-category-image'); // <-- add image input
-        const submitBtn = form.querySelector('button[type="submit"]');
+    // function initCategoryModal() {
+    //     const modal = document.getElementById('category-modal');
+    //     const cancelBtn = document.getElementById('cancel-category-modal');
+    //     const form = modal.querySelector('form');
+    //     const modalCategoryInput = document.getElementById('modal-category-name');
+    //     const modalImageInput = document.getElementById('modal-category-image'); // <-- add image input
+    //     const submitBtn = form.querySelector('button[type="submit"]');
 
-        cancelBtn.addEventListener('click', closeCategoryModal);
+    //     cancelBtn.addEventListener('click', closeCategoryModal);
 
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
+    //     form.addEventListener('submit', function(e) {
+    //         e.preventDefault();
 
-            const categoryName = modalCategoryInput.value.trim();
+    //         const categoryName = modalCategoryInput.value.trim();
 
-            if (!categoryName) {
-                alert('Category name is required');
-                return;
-            }
+    //         if (!categoryName) {
+    //             alert('Category name is required');
+    //             return;
+    //         }
 
-            const formData = new FormData();
-            formData.append('name', categoryName);
+    //         const formData = new FormData();
+    //         formData.append('name', categoryName);
 
-            if (modalImageInput?.files[0]) {
-                formData.append('image', modalImageInput.files[0]); // append image
-            }
+    //         if (modalImageInput?.files[0]) {
+    //             formData.append('image', modalImageInput.files[0]); // append image
+    //         }
 
-            const branchSelect = document.getElementById('branch');
-            if (branchSelect?.value) {
-                formData.append('branch_id', branchSelect.value);
-            }
+    //         const branchSelect = document.getElementById('branch');
+    //         if (branchSelect?.value) {
+    //             formData.append('branch_id', branchSelect.value);
+    //         }
 
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Saving...';
-            submitBtn.disabled = true;
+    //         const originalText = submitBtn.textContent;
+    //         submitBtn.textContent = 'Saving...';
+    //         submitBtn.disabled = true;
 
-            fetch(form.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(err => Promise.reject(err));
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Category creation response:', data);
+    //         fetch(form.action, {
+    //                 method: 'POST',
+    //                 body: formData,
+    //                 headers: {
+    //                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+    //                     'X-Requested-With': 'XMLHttpRequest'
+    //                 }
+    //             })
+    //             .then(response => {
+    //                 if (!response.ok) {
+    //                     return response.json().then(err => Promise.reject(err));
+    //                 }
+    //                 return response.json();
+    //             })
+    //             .then(data => {
+    //                 console.log('Category creation response:', data);
 
-                    if (data.success && data.data?.name && data.data?.id) {
-                        closeCategoryModal();
-                        selectCategory(data.data.name, data.data.id);
-                        form.reset();
-                        modalImageInput.value = '';
-                    } else if (data.success) {
-                        // Success true, but data is malformed
-                        console.warn('Success response but incomplete data:', data);
-                        closeCategoryModal();
-                        form.reset();
-                        modalImageInput.value = '';
-                        // Don’t show any error popup in this case
-                    } else {
-                        alert('Error: ' + (data.message || 'Failed to create category'));
-                    }
-                })
+    //                 if (data.success && data.data?.name && data.data?.id) {
+    //                     closeCategoryModal();
+    //                     selectCategory(data.data.name, data.data.id);
+    //                     form.reset();
+    //                     modalImageInput.value = '';
+    //                 } else if (data.success) {
+    //                     // Success true, but data is malformed
+    //                     console.warn('Success response but incomplete data:', data);
+    //                     closeCategoryModal();
+    //                     form.reset();
+    //                     modalImageInput.value = '';
+    //                     // Don’t show any error popup in this case
+    //                 } else {
+    //                     alert('Error: ' + (data.message || 'Failed to create category'));
+    //                 }
+    //             })
 
-                .catch(error => {
-                    console.error('Error:', error);
-                    const errorMessage = error?.errors?.name?.[0] || error.message || 'Unknown error';
-                    alert('Error creating category: ' + errorMessage);
-                })
-                .finally(() => {
-                    submitBtn.textContent = originalText;
-                    submitBtn.disabled = false;
-                });
-        });
+    //             .catch(error => {
+    //                 console.error('Error:', error);
+    //                 const errorMessage = error?.errors?.name?.[0] || error.message || 'Unknown error';
+    //                 alert('Error creating category: ' + errorMessage);
+    //             })
+    //             .finally(() => {
+    //                 submitBtn.textContent = originalText;
+    //                 submitBtn.disabled = false;
+    //             });
+    //     });
 
-        // Close modal when clicking outside or pressing Escape
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) closeCategoryModal();
-        });
+    //     // Close modal when clicking outside or pressing Escape
+    //     modal.addEventListener('click', function(e) {
+    //         if (e.target === modal) closeCategoryModal();
+    //     });
 
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && modal.classList.contains('show')) {
-                closeCategoryModal();
-            }
-        });
+    //     document.addEventListener('keydown', function(e) {
+    //         if (e.key === 'Escape' && modal.classList.contains('show')) {
+    //             closeCategoryModal();
+    //         }
+    //     });
 
-        // Handle Enter key
-        modalCategoryInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                form.dispatchEvent(new Event('submit'));
-            }
-        });
-    }
+    //     // Handle Enter key
+    //     modalCategoryInput.addEventListener('keydown', function(e) {
+    //         if (e.key === 'Enter') {
+    //             e.preventDefault();
+    //             form.dispatchEvent(new Event('submit'));
+    //         }
+    //     });
+    // }
 
 
 
     // Initialize Company Modal
-    function initCompanyModal() {
-        const modal = document.getElementById('company-modal');
-        const cancelBtn = document.getElementById('cancel-company-modal');
-        const form = modal.querySelector('form');
-        const modalCompanyInput = document.getElementById('name');
+    // function initCompanyModal() {
+    //     const modal = document.getElementById('company-modal');
+    //     const cancelBtn = document.getElementById('cancel-company-modal');
+    //     const form = modal.querySelector('form');
+    //     const modalCompanyInput = document.getElementById('name');
 
-        cancelBtn.addEventListener('click', closeCompanyModal);
+    //     cancelBtn.addEventListener('click', closeCompanyModal);
 
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
+    //     form.addEventListener('submit', function(e) {
+    //         e.preventDefault();
 
-            const companyName = modalCompanyInput.value.trim();
+    //         const companyName = modalCompanyInput.value.trim();
 
-            if (!companyName) {
-                alert('Company name is required');
-                return;
-            }
+    //         if (!companyName) {
+    //             alert('Company name is required');
+    //             return;
+    //         }
 
-            const params = new URLSearchParams();
-            params.append('name', companyName); // ✅ Corrected field name
+    //         const params = new URLSearchParams();
+    //         params.append('name', companyName); // ✅ Corrected field name
 
-            const branchSelect = document.getElementById('branch');
-            if (branchSelect?.value) {
-                params.append('branch_id', branchSelect.value);
-            }
+    //         const branchSelect = document.getElementById('branch');
+    //         if (branchSelect?.value) {
+    //             params.append('branch_id', branchSelect.value);
+    //         }
 
-            const submitBtn = form.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Saving...';
-            submitBtn.disabled = true;
+    //         const submitBtn = form.querySelector('button[type="submit"]');
+    //         const originalText = submitBtn.textContent;
+    //         submitBtn.textContent = 'Saving...';
+    //         submitBtn.disabled = true;
 
-            fetch(form.action, {
-                    method: 'POST',
-                    body: params,
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(err => Promise.reject(err));
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Company creation response:', data);
+    //         fetch(form.action, {
+    //                 method: 'POST',
+    //                 body: params,
+    //                 headers: {
+    //                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+    //                     'X-Requested-With': 'XMLHttpRequest'
+    //                 }
+    //             })
+    //             .then(response => {
+    //                 if (!response.ok) {
+    //                     return response.json().then(err => Promise.reject(err));
+    //                 }
+    //                 return response.json();
+    //             })
+    //             .then(data => {
+    //                 console.log('Company creation response:', data);
 
-                    if (data.success) {
-                        closeCompanyModal();
-                        selectCompany(data.data.name, data.data
-                            .id); // ✅ Use 'name' instead of 'company_name'
-                        form.reset();
-                    } else {
-                        const errorMessage = data.message || 'Failed to create company';
-                        alert('Error: ' + errorMessage);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    const errorMessage = error?.errors?.name?.[0] || error.message || 'Unknown error';
-                    alert('Error creating company: ' + errorMessage);
-                })
-                .finally(() => {
-                    submitBtn.textContent = originalText;
-                    submitBtn.disabled = false;
-                });
-        });
+    //                 if (data.success) {
+    //                     closeCompanyModal();
+    //                     selectCompany(data.data.name, data.data
+    //                         .id); // ✅ Use 'name' instead of 'company_name'
+    //                     form.reset();
+    //                 } else {
+    //                     const errorMessage = data.message || 'Failed to create company';
+    //                     alert('Error: ' + errorMessage);
+    //                 }
+    //             })
+    //             .catch(error => {
+    //                 console.error('Error:', error);
+    //                 const errorMessage = error?.errors?.name?.[0] || error.message || 'Unknown error';
+    //                 alert('Error creating company: ' + errorMessage);
+    //             })
+    //             .finally(() => {
+    //                 submitBtn.textContent = originalText;
+    //                 submitBtn.disabled = false;
+    //             });
+    //     });
 
-        // Close modal when clicking outside or pressing Escape
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) closeCompanyModal();
-        });
+    //     // Close modal when clicking outside or pressing Escape
+    //     modal.addEventListener('click', function(e) {
+    //         if (e.target === modal) closeCompanyModal();
+    //     });
 
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && modal.classList.contains('show')) {
-                closeCompanyModal();
-            }
-        });
+    //     document.addEventListener('keydown', function(e) {
+    //         if (e.key === 'Escape' && modal.classList.contains('show')) {
+    //             closeCompanyModal();
+    //         }
+    //     });
 
-        // Handle Enter key
-        modalCompanyInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                form.dispatchEvent(new Event('submit'));
-            }
-        });
-    }
+    //     // Handle Enter key
+    //     modalCompanyInput.addEventListener('keydown', function(e) {
+    //         if (e.key === 'Enter') {
+    //             e.preventDefault();
+    //             form.dispatchEvent(new Event('submit'));
+    //         }
+    //     });
+    // }
 
 
     function initSearchDropdown(inputId, dropdownId, searchUrl, type) {
@@ -1309,7 +1307,7 @@
                     });
 
                     const data = await response.json();
-                    console.log('Company Data Response:', data);
+                    console.log(`${type} Data Response:`, data);
                     currentData = (type === 'category' ? data.categories : data.companies) || [];
 
                     let html = '';
@@ -1320,35 +1318,30 @@
                             `<div class="dropdown-item" data-index="${index}">${item.name}</div>`;
                     });
 
-                    // Add create new option
+                    // Add create new option if user typed something
                     if (value) {
                         html +=
                             `<div class="dropdown-item create-new" data-new-value="${value}">+ Create new: "${value}"</div>`;
                     }
 
+                    // Show "No results found" if no items and no search value
+                    if (currentData.length === 0 && !value) {
+                        html += `<div class="dropdown-item no-results">No ${type} found</div>`;
+                    }
+
                     dropdown.innerHTML = html;
                     dropdown.classList.add('show');
+                    selectedIndex = -1;
 
                     // Add click listeners
                     dropdown.querySelectorAll('.dropdown-item').forEach(item => {
-                        item.addEventListener('mousedown', function(e) {
-                            e.preventDefault();
-
-                            if (this.classList.contains('create-new')) {
-                                const newValue = this.dataset.newValue;
-                                createItemDirectly(type, newValue);
-                            } else {
-                                const index = parseInt(this.dataset.index);
-                                const selectedItem = currentData[index];
-                                if (type === 'category') {
-                                    selectCategory(selectedItem.name, selectedItem
-                                        .id);
-                                } else {
-                                    selectCompany(selectedItem.name, selectedItem
-                                        .id);
-                                }
-                            }
-                        });
+                        if (!item.classList.contains('no-results')) {
+                            item.addEventListener('mousedown', function(e) {
+                                e.preventDefault();
+                                handleDropdownItemSelection(this, type,
+                                    currentData);
+                            });
+                        }
                     });
 
                 } catch (error) {
@@ -1359,94 +1352,89 @@
             }, 200);
         });
 
-        // ... include blur handling, arrow navigation if needed ...
-    }
+        // Arrow key navigation and Enter key handling
+        input.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.dropdown-item:not(.no-results)');
 
-    function initCompanyDropdown() {
-        const input = document.getElementById('company');
-        const dropdown = document.getElementById('companyDropdown');
-        const searchUrl = '{{ route('company.search') }}';
-        let timeout;
-        let selectedIndex = -1;
-        let currentData = [];
+            if (items.length === 0) return;
 
-        input.addEventListener('input', function() {
-            clearTimeout(timeout);
-            const value = this.value.trim();
-
-            if (!value) {
-                dropdown.innerHTML = '';
-                dropdown.style.display = 'none';
-                return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
+                updateHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
+                updateHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    handleDropdownItemSelection(items[selectedIndex], type, currentData);
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
             }
-
-            timeout = setTimeout(() => {
-                fetch(searchUrl + '?q=' + encodeURIComponent(value))
-                    .then(response => response.json())
-                    .then(data => {
-                        currentData = data;
-                        dropdown.innerHTML = '';
-
-                        if (data.length > 0) {
-                            data.forEach((item, index) => {
-                                const option = document.createElement('div');
-                                option.classList.add('dropdown-item');
-                                option.textContent = item.name ?? item.category_name ?? item
-                                    .company_name ?? 'undefined';
-                                // 'undefined'; // <- Here is the issue!
-                                option.addEventListener('click', () => {
-                                    input.value = item.name;
-                                    dropdown.style.display = 'none';
-                                });
-                                dropdown.appendChild(option);
-                            });
-                            dropdown.style.display = 'block';
-                        } else {
-                            dropdown.innerHTML = '<div class="dropdown-item">No results</div>';
-                            dropdown.style.display = 'block';
-                        }
-                    });
-            }, 300);
         });
-    }
 
-    // end search dropdown
-    function createItemDirectly(type, value) {
-        const url = type === 'category' ? '{{ route('categories.modalstore') }}' :
-            '{{ route('company.modalstore') }}';
-        const branchSelect = document.getElementById('branch');
-        const branchId = branchSelect?.value || null;
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
 
-        const formData = new FormData();
-        formData.append('name', value);
-        if (branchId) formData.append('branch_id', branchId);
+        // Handle dropdown item selection for company and category
+        function handleDropdownItemSelection(item, type, currentData) {
+            const dropdown = item.parentElement;
+            dropdown.classList.remove('show');
 
-        fetch(url, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'X-Requested-With': 'XMLHttpRequest'
+            if (item.classList.contains('create-new')) {
+                // Handle "Create new" option - just set the typed value
+                const newValue = item.dataset.newValue;
+                if (type === 'category') {
+                    selectCategory(newValue, null); // null ID for new items
+                } else if (type === 'company') {
+                    selectCompany(newValue, null); // null ID for new items
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (type === 'category') {
-                        selectCategory(data.data.name || data.data.category_name, data.data.id);
-                    } else {
-                        selectCompany(data.data.name || data.data.company_name, data.data.id);
-                    }
-                } else {
-                    alert('Error: ' + (data.message || 'Failed to create ' + type));
+            } else if (item.dataset.index !== undefined) {
+                // Handle existing item selection
+                const index = parseInt(item.dataset.index);
+                const selectedItem = currentData[index];
+
+                if (type === 'category') {
+                    selectCategory(selectedItem.name, selectedItem.id);
+                } else if (type === 'company') {
+                    selectCompany(selectedItem.name, selectedItem.id);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error creating ' + type + ': ' + error.message);
+            }
+        }
+
+        function updateHighlight(dropdown, items, selectedIndex) {
+            items.forEach((item, index) => {
+                item.style.backgroundColor = index === selectedIndex ? '#e9ecef' : '';
             });
-    }
 
+            // Auto-scroll within dropdown
+            if (selectedIndex >= 0 && items[selectedIndex]) {
+                const selectedItem = items[selectedIndex];
+                const dropdownScrollTop = dropdown.scrollTop;
+                const dropdownHeight = dropdown.clientHeight;
+                const itemTop = selectedItem.offsetTop;
+                const itemHeight = selectedItem.offsetHeight;
+
+                if (itemTop < dropdownScrollTop) {
+                    dropdown.scrollTop = itemTop;
+                } else if (itemTop + itemHeight > dropdownScrollTop + dropdownHeight) {
+                    dropdown.scrollTop = itemTop + itemHeight - dropdownHeight;
+                }
+            }
+        }
+    }
+    // end search dropdown
+
+    // Highlight record in HSN dropdown
     function updateHighlight(dropdown, items, selectedIndex) {
         items.forEach((item, index) => {
             item.style.backgroundColor = index === selectedIndex ? '#e9ecef' : '';
