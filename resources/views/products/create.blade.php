@@ -534,76 +534,11 @@
     <!-- END: HSN Modal -->
 
     <!-- BEGIN: Category Modal -->
-    <div id="category-modal" class="modal" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <!-- BEGIN: Modal Header -->
-                <div class="modal-header">
-                    <h2 class="font-medium text-base mr-auto">Create New Category</h2>
-                </div>
-                <!-- END: Modal Header -->
 
-                {{-- <form action="{{ route('categories.modalstore') }}" id="category-form" method="POST"> --}}
-                <form action="{{ route('categories.modalstore') }}" id="category-form" method="POST"
-                    enctype="multipart/form-data">
-                    @csrf
-                    <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
-                        <div class="col-span-12">
-                            <label for="modal-category-name" class="form-label">Category Name</label>
-                            <input id="modal-category-name" name="name" type="text" class="form-control"
-                                placeholder="Enter category name" required>
-                        </div>
-                        <div class="col-span-12">
-                            <label for="modal-category-image" class="form-label">Category Image (Optional)</label>
-                            <input id="modal-category-image" name="image" type="file" class="form-control"
-                                accept="image/*">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" id="cancel-category-modal"
-                            class="btn btn-outline-secondary w-20 mr-1">Cancel</button>
-                        <button type="submit" class="btn btn-primary w-20">Save</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
     <!-- END: Category Modal -->
 
     <!-- BEGIN: Company Modal -->
-    <div id="company-modal" class="modal" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <!-- BEGIN: Modal Header -->
-                <div class="modal-header">
-                    <h2 class="font-medium text-base mr-auto">Create New Company</h2>
-                </div>
-                <!-- END: Modal Header -->
 
-                {{-- <form action="{{ route('companies.modalstore') }}" id="company-form" method="POST"> --}}
-                <form action="{{ route('company.modalstore') }}" id="company-form" method="POST">
-                    @csrf
-                    <!-- BEGIN: Modal Body -->
-                    <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
-                        <div class="col-span-12">
-                            <label for="name" class="form-label">Company Name</label>
-                            <input id="name" name="name" type="text" class="form-control"
-                                placeholder="Enter company name" required>
-                        </div>
-                    </div>
-                    <!-- END: Modal Body -->
-
-                    <!-- BEGIN: Modal Footer -->
-                    <div class="modal-footer">
-                        <button type="button" id="cancel-company-modal"
-                            class="btn btn-outline-secondary w-20 mr-1">Cancel</button>
-                        <button type="submit" class="btn btn-primary w-20">Save</button>
-                    </div>
-                    <!-- END: Modal Footer -->
-                </form>
-            </div>
-        </div>
-    </div>
     <!-- END: Company Modal -->
 @endsection
 
@@ -763,7 +698,7 @@
             // Use existing element references - fastest approach
             const hsnCode = modalHsnInput.value.trim();
             const gst = modalGstInput.value.trim();
-                    const shortName = document.getElementById('modal-short-name').value.trim();
+            const shortName = document.getElementById('modal-short-name').value.trim();
             // Quick validation
             if (!hsnCode || !gst) {
                 alert('HSN Code and GST are required');
@@ -940,6 +875,7 @@
                 }
             }, 200);
         });
+
 
         // Arrow key navigation
         input.addEventListener('keydown', function(e) {
@@ -1338,13 +1274,12 @@
     }
 
 
-    // search dropdown
     function initSearchDropdown(inputId, dropdownId, searchUrl, type) {
         const input = document.getElementById(inputId);
         const dropdown = document.getElementById(dropdownId);
         let timeout;
         let selectedIndex = -1;
-        let currentData = []; // Store current search results
+        let currentData = [];
 
         input.addEventListener('input', function() {
             clearTimeout(timeout);
@@ -1361,7 +1296,6 @@
                 try {
                     let url = `${searchUrl}?search=${value}`;
 
-                    // Add branch_id if Super Admin
                     const branchSelect = document.getElementById('branch');
                     if (branchSelect && branchSelect.value) {
                         url += `&branch_id=${branchSelect.value}`;
@@ -1375,92 +1309,47 @@
                     });
 
                     const data = await response.json();
-
-                    // Handle different response structures
-                    let items = [];
-                    if (type === 'category') {
-                        currentData = data.categories || [];
-                        items = currentData.map(item => typeof item === 'object' ? item
-                            .category_name : item);
-                    } else if (type === 'company') {
-                        currentData = data.companies || [];
-                        items = currentData.map(item => typeof item === 'object' ? item
-                            .company_name : item);
-                    } else {
-                        items = data.items || data.companies || data.categories || [];
-                    }
+                    console.log('Company Data Response:', data);
+                    currentData = (type === 'category' ? data.categories : data.companies) || [];
 
                     let html = '';
 
                     // Show existing items
-                    if (type === 'category' || type === 'company') {
-                        // For category and company, show items with their IDs if available
-                        currentData.forEach((item, index) => {
-                            const itemName = typeof item === 'object' ? (item
-                                .category_name || item.company_name) : item;
-                            html +=
-                                `<div class="dropdown-item" data-index="${index}">${itemName}</div>`;
-                        });
-                    } else {
-                        // For other types, show simple items
-                        items.forEach(item => {
-                            html +=
-                                `<div class="dropdown-item" onclick="selectItem('${inputId}', '${dropdownId}', '${item}')">${item}</div>`;
-                        });
-                    }
+                    currentData.forEach((item, index) => {
+                        html +=
+                            `<div class="dropdown-item" data-index="${index}">${item.name}</div>`;
+                    });
 
-                    // Always add create new option
-                    let createNewText = '';
-                    if (type === 'category') {
-                        createNewText =
-                            `<div class="dropdown-item create-new" onclick="openCategoryModal('${value}')">+ Create new category: "${value}"</div>`;
-                    } else if (type === 'company') {
-                        createNewText =
-                            `<div class="dropdown-item create-new" onclick="openCompanyModal('${value}')">+ Create new company: "${value}"</div>`;
-                    } else {
-                        createNewText =
-                            `<div class="dropdown-item create-new" onclick="selectItem('${inputId}', '${dropdownId}', '${value}')">Create new: "${value}"</div>`;
+                    // Add create new option
+                    if (value) {
+                        html +=
+                            `<div class="dropdown-item create-new" data-new-value="${value}">+ Create new: "${value}"</div>`;
                     }
-
-                    html += createNewText;
 
                     dropdown.innerHTML = html;
                     dropdown.classList.add('show');
-                    selectedIndex = -1;
 
-                    // Add click listeners for category and company dropdowns
-                    if (type === 'category' || type === 'company') {
-                        dropdown.querySelectorAll('.dropdown-item:not(.create-new)').forEach(
-                            item => {
-                                item.addEventListener('mousedown', function(e) {
-                                    e.preventDefault();
-                                    const index = parseInt(this.dataset.index);
-                                    const selectedItem = currentData[index];
+                    // Add click listeners
+                    dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                        item.addEventListener('mousedown', function(e) {
+                            e.preventDefault();
 
-                                    console.log('Selecting from dropdown:', {
-                                        type: type,
-                                        index: index,
-                                        selectedItem: selectedItem
-                                    });
-
-                                    if (type === 'category') {
-                                        const categoryName = typeof selectedItem ===
-                                            'object' ? selectedItem.category_name :
-                                            selectedItem;
-                                        const categoryId = typeof selectedItem ===
-                                            'object' ? selectedItem.id : null;
-                                        selectCategory(categoryName, categoryId);
-                                    } else if (type === 'company') {
-                                        const companyName = typeof selectedItem ===
-                                            'object' ? selectedItem.company_name :
-                                            selectedItem;
-                                        const companyId = typeof selectedItem ===
-                                            'object' ? selectedItem.id : null;
-                                        selectCompany(companyName, companyId);
-                                    }
-                                });
-                            });
-                    }
+                            if (this.classList.contains('create-new')) {
+                                const newValue = this.dataset.newValue;
+                                createItemDirectly(type, newValue);
+                            } else {
+                                const index = parseInt(this.dataset.index);
+                                const selectedItem = currentData[index];
+                                if (type === 'category') {
+                                    selectCategory(selectedItem.name, selectedItem
+                                        .id);
+                                } else {
+                                    selectCompany(selectedItem.name, selectedItem
+                                        .id);
+                                }
+                            }
+                        });
+                    });
 
                 } catch (error) {
                     console.error('Search error:', error);
@@ -1470,40 +1359,93 @@
             }, 200);
         });
 
-        // Arrow key navigation
-        input.addEventListener('keydown', function(e) {
-            const items = dropdown.querySelectorAll('.dropdown-item');
+        // ... include blur handling, arrow navigation if needed ...
+    }
 
-            if (items.length === 0) return;
+    function initCompanyDropdown() {
+        const input = document.getElementById('company');
+        const dropdown = document.getElementById('companyDropdown');
+        const searchUrl = '{{ route('company.search') }}';
+        let timeout;
+        let selectedIndex = -1;
+        let currentData = [];
 
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
-                updateHighlight(dropdown, items, selectedIndex);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
-                updateHighlight(dropdown, items, selectedIndex);
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                if (selectedIndex >= 0 && items[selectedIndex]) {
-                    items[selectedIndex].click();
-                }
-            } else if (e.key === 'Escape') {
-                dropdown.classList.remove('show');
-                selectedIndex = -1;
+        input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const value = this.value.trim();
+
+            if (!value) {
+                dropdown.innerHTML = '';
+                dropdown.style.display = 'none';
+                return;
             }
-        });
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.classList.remove('show');
-                selectedIndex = -1;
-            }
+            timeout = setTimeout(() => {
+                fetch(searchUrl + '?q=' + encodeURIComponent(value))
+                    .then(response => response.json())
+                    .then(data => {
+                        currentData = data;
+                        dropdown.innerHTML = '';
+
+                        if (data.length > 0) {
+                            data.forEach((item, index) => {
+                                const option = document.createElement('div');
+                                option.classList.add('dropdown-item');
+                                option.textContent = item.name ?? item.category_name ?? item
+                                    .company_name ?? 'undefined';
+                                // 'undefined'; // <- Here is the issue!
+                                option.addEventListener('click', () => {
+                                    input.value = item.name;
+                                    dropdown.style.display = 'none';
+                                });
+                                dropdown.appendChild(option);
+                            });
+                            dropdown.style.display = 'block';
+                        } else {
+                            dropdown.innerHTML = '<div class="dropdown-item">No results</div>';
+                            dropdown.style.display = 'block';
+                        }
+                    });
+            }, 300);
         });
     }
+
     // end search dropdown
+    function createItemDirectly(type, value) {
+        const url = type === 'category' ? '{{ route('categories.modalstore') }}' :
+            '{{ route('company.modalstore') }}';
+        const branchSelect = document.getElementById('branch');
+        const branchId = branchSelect?.value || null;
+
+        const formData = new FormData();
+        formData.append('name', value);
+        if (branchId) formData.append('branch_id', branchId);
+
+        fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (type === 'category') {
+                        selectCategory(data.data.name || data.data.category_name, data.data.id);
+                    } else {
+                        selectCompany(data.data.name || data.data.company_name, data.data.id);
+                    }
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to create ' + type));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error creating ' + type + ': ' + error.message);
+            });
+    }
 
     function updateHighlight(dropdown, items, selectedIndex) {
         items.forEach((item, index) => {

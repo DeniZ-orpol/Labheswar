@@ -866,111 +866,248 @@
     }
 
     // Initialize modal functionality
-    // function initHsnModal() {
-    //     const modal = document.getElementById('hsn-modal');
-    //     const cancelBtn = document.getElementById('cancel-hsn-modal');
-    //     const form = modal.querySelector('form');
-    //     const modalHsnInput = document.getElementById('modal-hsn-code');
-    //     const modalGstInput = document.getElementById('modal-gst');
+    function initHsnModal() {
+        const modal = document.getElementById('hsn-modal');
+        const cancelBtn = document.getElementById('cancel-hsn-modal');
+        const form = modal.querySelector('form');
+        const modalHsnInput = document.getElementById('modal-hsn-code');
+        const modalGstInput = document.getElementById('modal-gst');
 
-    //     // Cancel button
-    //     cancelBtn.addEventListener('click', closeHsnModal);
 
-    //     // Handle form submission with AJAX
-    //     form.addEventListener('submit', function(e) {
-    //         e.preventDefault(); // Prevent normal form submission
 
-    //         // Use existing element references - fastest approach
-    //         const hsnCode = modalHsnInput.value.trim();
-    //         const gst = modalGstInput.value.trim();
 
-    //         // Quick validation
-    //         if (!hsnCode || !gst) {
-    //             alert('HSN Code and GST are required');
+        // Cancel button
+        cancelBtn.addEventListener('click', closeHsnModal);
+
+        // Handle form submission with AJAX
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent normal form submission
+
+            // Use existing element references - fastest approach
+            const hsnCode = modalHsnInput.value.trim();
+            const gst = modalGstInput.value.trim();
+            const shortName = document.getElementById('modal-short-name').value.trim();
+            // Quick validation
+            if (!hsnCode || !gst) {
+                alert('HSN Code and GST are required');
+                return;
+            }
+
+            // Fastest approach - direct URLSearchParams
+            const params = new URLSearchParams();
+            params.append('hsn_code', hsnCode);
+            params.append('gst', gst);
+            params.append('short_name', shortName);
+            // Add branch_id if needed
+            const branchSelect = document.getElementById('branch');
+            if (branchSelect?.value) {
+                params.append('branch_id', branchSelect.value);
+            }
+
+            // Show loading state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Saving...';
+            submitBtn.disabled = true;
+
+            fetch(form.action, {
+                    method: 'POST',
+                    body: params,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Success response:', data);
+
+                    if (data.success) {
+                        // Close modal first
+                        closeHsnModal();
+
+                        // Update HSN field using global function with HSN ID
+                        selectHsnCode(data.data.hsn_code, data.data.gst, data.data.id);
+
+                        // Clear form values
+                        modalHsnInput.value = '';
+                        modalGstInput.value = '';
+
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to create HSN Code'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error creating HSN Code: ' + error.message);
+                })
+                .finally(() => {
+                    // Reset button state
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                });
+        });
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeHsnModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('show')) {
+                closeHsnModal();
+            }
+        });
+
+        // Handle Enter key in modal GST input
+        modalGstInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+    }
+
+    // HSN dropdown and GST autofill
+    // function initHsnDropdown() {
+    //     const input = document.getElementById('hsn_code');
+    //     const dropdown = document.getElementById('hsnDropdown');
+    //     const searchUrl = '{{ route('hsn.search') }}';
+    //     let timeout;
+    //     let selectedIndex = -1;
+    //     let currentHsnData = []; // Store current search results
+
+    //     input.addEventListener('input', function() {
+    //         clearTimeout(timeout);
+    //         const value = this.value.trim();
+    //         selectedIndex = -1;
+
+    //         if (value.length < 1) {
+    //             dropdown.classList.remove('show');
+    //             currentHsnData = [];
     //             return;
     //         }
 
-    //         // Fastest approach - direct URLSearchParams
-    //         const params = new URLSearchParams();
-    //         params.append('hsn_code', hsnCode);
-    //         params.append('gst', gst);
+    //         timeout = setTimeout(async () => {
+    //             try {
+    //                 let url = `${searchUrl}?search=${value}`;
 
-    //         // Add branch_id if needed
-    //         const branchSelect = document.getElementById('branch');
-    //         if (branchSelect?.value) {
-    //             params.append('branch_id', branchSelect.value);
-    //         }
-
-    //         // Show loading state
-    //         const submitBtn = form.querySelector('button[type="submit"]');
-    //         const originalText = submitBtn.textContent;
-    //         submitBtn.textContent = 'Saving...';
-    //         submitBtn.disabled = true;
-
-    //         fetch(form.action, {
-    //                 method: 'POST',
-    //                 body: params,
-    //                 headers: {
-    //                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-    //                     'X-Requested-With': 'XMLHttpRequest'
+    //                 const branchSelect = document.getElementById('branch');
+    //                 if (branchSelect && branchSelect.value) {
+    //                     url += `&branch_id=${branchSelect.value}`;
     //                 }
-    //             })
-    //             .then(response => {
-    //                 if (!response.ok) {
-    //                     throw new Error(`HTTP error! status: ${response.status}`);
+
+    //                 const response = await fetch(url, {
+    //                     headers: {
+    //                         'X-CSRF-TOKEN': document.querySelector(
+    //                             'meta[name="csrf-token"]').content
+    //                     }
+    //                 });
+
+    //                 const data = await response.json();
+    //                 currentHsnData = data.hsn_codes || [];
+
+    //                 let html = '';
+
+    //                 // Show existing HSN codes first
+    //                 currentHsnData.forEach((item, index) => {
+    //                     // Show HSN code with GST info for better identification
+    //                     console.log(item);
+    //                     const gstInfo = item.gst ?
+    //                         // ` (GST: ${typeof item.gst === 'string' ? JSON.parse(item.gst).gst || 'N/A' : item.gst.gst || 'N/A'}%)` :
+    //                         ` (GST: ${item.gst}%)` :
+    //                         '';
+    //                     html +=
+    //                         `<div class="dropdown-item" data-index="${index}">${item.hsn_code}${gstInfo}</div>`;
+    //                 });
+
+    //                 // ALWAYS add "Create new" option - regardless of existing entries
+    //                 if (value) { // Only show if user has typed something
+    //                     html +=
+    //                         `<div class="dropdown-item create-new" data-new-value="${value}">+ Create new: "${value}" with custom GST</div>`;
     //                 }
-    //                 return response.json();
-    //             })
-    //             .then(data => {
-    //                 console.log('Success response:', data);
 
-    //                 if (data.success) {
-    //                     // Close modal first
-    //                     closeHsnModal();
+    //                 dropdown.innerHTML = html;
+    //                 dropdown.classList.add('show');
+    //                 selectedIndex = -1;
 
-    //                     // Update HSN field using global function with HSN ID
-    //                     selectHsnCode(data.data.hsn_code, data.data.gst, data.data.id);
+    //                 // Add click listeners to dropdown items
+    //                 dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+    //                     item.addEventListener('mousedown', function(e) {
+    //                         e.preventDefault();
+    //                         if (this.dataset.newValue) {
+    //                             // Creating new HSN code
+    //                             openHsnModal(this.dataset.newValue);
+    //                         } else if (this.dataset.index !== undefined) {
+    //                             // Selecting existing HSN code
+    //                             const index = parseInt(this.dataset.index);
+    //                             selectHsnCode(currentHsnData[index].hsn_code,
+    //                                 currentHsnData[index].gst, currentHsnData[
+    //                                     index].id);
+    //                         }
+    //                     });
+    //                 });
 
-    //                     // Clear form values
-    //                     modalHsnInput.value = '';
-    //                     modalGstInput.value = '';
-
-    //                 } else {
-    //                     alert('Error: ' + (data.message || 'Failed to create HSN Code'));
-    //                 }
-    //             })
-    //             .catch(error => {
-    //                 console.error('Error:', error);
-    //                 alert('Error creating HSN Code: ' + error.message);
-    //             })
-    //             .finally(() => {
-    //                 // Reset button state
-    //                 submitBtn.textContent = originalText;
-    //                 submitBtn.disabled = false;
-    //             });
+    //             } catch (error) {
+    //                 console.error('HSN search error:', error);
+    //                 dropdown.classList.remove('show');
+    //                 currentHsnData = [];
+    //             }
+    //         }, 200);
     //     });
 
-    //     // Close modal when clicking outside
-    //     modal.addEventListener('click', function(e) {
-    //         if (e.target === modal) {
-    //             closeHsnModal();
-    //         }
-    //     });
+    //     // Arrow key navigation
+    //     input.addEventListener('keydown', function(e) {
+    //         const items = dropdown.querySelectorAll('.dropdown-item');
 
-    //     // Close modal on Escape key
-    //     document.addEventListener('keydown', function(e) {
-    //         if (e.key === 'Escape' && modal.classList.contains('show')) {
-    //             closeHsnModal();
-    //         }
-    //     });
+    //         if (items.length === 0) return;
 
-    //     // Handle Enter key in modal GST input
-    //     modalGstInput.addEventListener('keydown', function(e) {
-    //         if (e.key === 'Enter') {
+    //         if (e.key === 'ArrowDown') {
     //             e.preventDefault();
-    //             form.dispatchEvent(new Event('submit'));
+    //             selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
+    //             updateHighlight(dropdown, items, selectedIndex);
+    //         } else if (e.key === 'ArrowUp') {
+    //             e.preventDefault();
+    //             selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
+    //             updateHighlight(dropdown, items, selectedIndex);
+    //         } else if (e.key === 'Enter') {
+    //             e.preventDefault();
+    //             if (selectedIndex >= 0 && items[selectedIndex]) {
+    //                 handleHsnDropdownItemClick(items[selectedIndex]);
+    //             }
+    //         } else if (e.key === 'Escape') {
+    //             dropdown.classList.remove('show');
+    //             selectedIndex = -1;
     //         }
     //     });
+
+    //     // Close dropdown when clicking outside
+    //     document.addEventListener('click', function(e) {
+    //         if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+    //             dropdown.classList.remove('show');
+    //             selectedIndex = -1;
+    //         }
+    //     });
+
+    //     // Handle dropdown item selection
+    //     function handleHsnDropdownItemClick(item) {
+    //         dropdown.classList.remove('show');
+
+    //         if (item.dataset.newValue) {
+    //             openHsnModal(item.dataset.newValue);
+    //         } else if (item.dataset.index !== undefined) {
+    //             const index = parseInt(item.dataset.index);
+    //             selectHsnCode(currentHsnData[index].hsn_code, currentHsnData[index].gst, currentHsnData[index].id);
+    //         }
+    //     }
     // }
     function initHsnDropdown() {
         const input = document.getElementById('hsn_code');
@@ -1059,731 +1196,640 @@
             }, 200);
         });
 
-        // HSN dropdown and GST autofill
-        function initHsnDropdown() {
-            const input = document.getElementById('hsn_code');
-            const dropdown = document.getElementById('hsnDropdown');
-            const searchUrl = '{{ route('hsn.search') }}';
-            let timeout;
-            let selectedIndex = -1;
-            let currentHsnData = []; // Store current search results
+        // Arrow key navigation
+        input.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.dropdown-item');
 
-            input.addEventListener('input', function() {
-                clearTimeout(timeout);
-                const value = this.value.trim();
-                selectedIndex = -1;
+            if (items.length === 0) return;
 
-                if (value.length < 1) {
-                    dropdown.classList.remove('show');
-                    currentHsnData = [];
-                    return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
+                updateHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
+                updateHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    handleHsnDropdownItemClick(items[selectedIndex]);
                 }
-
-                timeout = setTimeout(async () => {
-                    try {
-                        let url = `${searchUrl}?search=${value}`;
-
-                        const branchSelect = document.getElementById('branch');
-                        if (branchSelect && branchSelect.value) {
-                            url += `&branch_id=${branchSelect.value}`;
-                        }
-
-                        const response = await fetch(url, {
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector(
-                                    'meta[name="csrf-token"]').content
-                            }
-                        });
-
-                        const data = await response.json();
-                        currentHsnData = data.hsn_codes || [];
-
-                        let html = '';
-
-                        // Show existing HSN codes first
-                        currentHsnData.forEach((item, index) => {
-                            // Show HSN code with GST info for better identification
-                            console.log(item);
-                            const gstInfo = item.gst ?
-                                // ` (GST: ${typeof item.gst === 'string' ? JSON.parse(item.gst).gst || 'N/A' : item.gst.gst || 'N/A'}%)` :
-                                ` (GST: ${item.gst}%)` :
-                                '';
-                            html +=
-                                `<div class="dropdown-item" data-index="${index}">${item.hsn_code}${gstInfo}</div>`;
-                        });
-
-                        // ALWAYS add "Create new" option - regardless of existing entries
-                        if (value) { // Only show if user has typed something
-                            html +=
-                                `<div class="dropdown-item create-new" data-new-value="${value}">+ Create new: "${value}" with custom GST</div>`;
-                        }
-
-                        dropdown.innerHTML = html;
-                        dropdown.classList.add('show');
-                        selectedIndex = -1;
-
-                        // Add click listeners to dropdown items
-                        dropdown.querySelectorAll('.dropdown-item').forEach(item => {
-                            item.addEventListener('mousedown', function(e) {
-                                e.preventDefault();
-                                if (this.dataset.newValue) {
-                                    // Creating new HSN code
-                                    openHsnModal(this.dataset.newValue);
-                                } else if (this.dataset.index !== undefined) {
-                                    // Selecting existing HSN code
-                                    const index = parseInt(this.dataset.index);
-                                    selectHsnCode(currentHsnData[index].hsn_code,
-                                        currentHsnData[index].gst,
-                                        currentHsnData[
-                                            index].id);
-                                }
-                            });
-                        });
-
-                    } catch (error) {
-                        console.error('HSN search error:', error);
-                        dropdown.classList.remove('show');
-                        currentHsnData = [];
-                    }
-                }, 200);
-            });
-
-            // Arrow key navigation
-            input.addEventListener('keydown', function(e) {
-                const items = dropdown.querySelectorAll('.dropdown-item');
-
-                if (items.length === 0) return;
-
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
-                    updateHighlight(dropdown, items, selectedIndex);
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
-                    updateHighlight(dropdown, items, selectedIndex);
-                } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (selectedIndex >= 0 && items[selectedIndex]) {
-                        handleHsnDropdownItemClick(items[selectedIndex]);
-                    }
-                } else if (e.key === 'Escape') {
-                    dropdown.classList.remove('show');
-                    selectedIndex = -1;
-                }
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.classList.remove('show');
-                    selectedIndex = -1;
-                }
-            });
-
-            // Handle dropdown item selection
-            function handleHsnDropdownItemClick(item) {
+            } else if (e.key === 'Escape') {
                 dropdown.classList.remove('show');
-
-                if (item.dataset.newValue) {
-                    openHsnModal(item.dataset.newValue);
-                } else if (item.dataset.index !== undefined) {
-                    const index = parseInt(item.dataset.index);
-                    selectHsnCode(currentHsnData[index].hsn_code, currentHsnData[index].gst, currentHsnData[index].id);
-                }
+                selectedIndex = -1;
             }
-        }
+        });
 
-        // Function to select category and store ID
-        // Update selectCategory function to work with existing hidden field
-        function selectCategory(categoryName, categoryId = null) {
-            const input = document.getElementById('product_category');
-            const dropdown = document.getElementById('categoryDropdown');
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
 
+        // Handle dropdown item selection
+        function handleHsnDropdownItemClick(item) {
             dropdown.classList.remove('show');
-            input.value = categoryName;
 
-            // Update existing hidden field
-            const hiddenCategoryIdField = document.getElementById('hidden_category_id');
-            if (hiddenCategoryIdField) {
-                hiddenCategoryIdField.value = categoryId || '';
-            } else {
-                console.warn('Hidden category ID field not found');
-            }
-
-            console.log('Category updated:', {
-                categoryName: categoryName,
-                categoryId: categoryId,
-                hiddenFieldValue: hiddenCategoryIdField?.value
-            });
-        }
-
-        // Function to select company and store ID
-        function selectCompany(companyName, companyId = null) {
-            const input = document.getElementById('product_company');
-            const dropdown = document.getElementById('companyDropdown');
-
-            dropdown.classList.remove('show');
-            input.value = companyName;
-
-            // Update existing hidden field
-            const hiddenCompanyIdField = document.getElementById('hidden_company_id');
-            if (hiddenCompanyIdField) {
-                hiddenCompanyIdField.value = companyId || '';
-            } else {
-                console.warn('Hidden company ID field not found');
-            }
-
-            console.log('Company updated:', {
-                companyName: companyName,
-                companyId: companyId,
-                hiddenFieldValue: hiddenCompanyIdField?.value
-            });
-        }
-
-        // Functions to open modals
-        function openCategoryModal(categoryName) {
-            showModal('category-modal', 'modal-category-name', categoryName, 'modal-category-name');
-        }
-
-        function showModal(modalId, inputId, inputValue = '', focusId = '') {
-            const modal = document.getElementById(modalId);
-            const input = document.getElementById(inputId);
-
-            if (!modal) {
-                console.error(`Modal with ID '${modalId}' not found.`);
-                return;
-            }
-
-            // Set input value if provided
-            if (input) {
-                input.value = inputValue || '';
-            }
-
-            // Show the modal
-            modal.classList.add('modal-open');
-            modal.style.display = 'flex';
-
-            // Focus input after short delay
-            if (focusId) {
-                setTimeout(() => {
-                    const focusInput = document.getElementById(focusId);
-                    if (focusInput) focusInput.focus();
-                }, 100);
-            }
-
-            // Cancel button: close modal (add listener only once)
-            const cancelBtn = modal.querySelector(
-                '.btn-outline-secondary, .modal-cancel, #cancel-category-modal'
-            );
-            if (cancelBtn && !cancelBtn.hasAttribute('data-close-bound')) {
-                cancelBtn.addEventListener('click', function() {
-                    modal.classList.remove('modal-open');
-                    modal.style.display = 'none';
-                });
-                cancelBtn.setAttribute('data-close-bound', 'true');
-            }
-
-            // Click outside modal to close (add listener only once)
-            if (!modal.hasAttribute('data-overlay-close-bound')) {
-                modal.addEventListener('click', function(e) {
-                    if (e.target === modal) {
-                        modal.classList.remove('modal-open');
-                        modal.style.display = 'none';
-                    }
-                });
-                modal.setAttribute('data-overlay-close-bound', 'true');
+            if (item.dataset.newValue) {
+                openHsnModal(item.dataset.newValue);
+            } else if (item.dataset.index !== undefined) {
+                const index = parseInt(item.dataset.index);
+                selectHsnCode(currentHsnData[index].hsn_code, currentHsnData[index].gst, currentHsnData[index].id);
             }
         }
+    }
 
+    // Function to select category and store ID
+    // Update selectCategory function to work with existing hidden field
+    function selectCategory(categoryName, categoryId = null) {
+        const input = document.getElementById('product_category');
+        const dropdown = document.getElementById('categoryDropdown');
 
+        dropdown.classList.remove('show');
+        input.value = categoryName;
 
-
-        function openCompanyModal(companyName) {
-            showModal('company-modal', 'name', companyName, 'name');
+        // Update existing hidden field
+        const hiddenCategoryIdField = document.getElementById('hidden_category_id');
+        if (hiddenCategoryIdField) {
+            hiddenCategoryIdField.value = categoryId || '';
+        } else {
+            console.warn('Hidden category ID field not found');
         }
 
-        // Generic function to show modal
-        function showModal(modalId, inputId, value, focusId) {
-            const modal = document.getElementById(modalId);
-            const input = document.getElementById(inputId);
-            const focusInput = document.getElementById(focusId);
+        console.log('Category updated:', {
+            categoryName: categoryName,
+            categoryId: categoryId,
+            hiddenFieldValue: hiddenCategoryIdField?.value
+        });
+    }
 
-            // Set value and show modal
-            input.value = value;
-            modal.style.visibility = 'visible';
-            modal.style.opacity = '1';
-            modal.style.marginTop = '50px';
-            modal.style.marginLeft = '0';
-            modal.classList.add('show');
-            modal.classList.remove('hidden');
-            modal.setAttribute('aria-hidden', 'false');
+    // Function to select company and store ID
+    function selectCompany(companyName, companyId = null) {
+        const input = document.getElementById('product_company');
+        const dropdown = document.getElementById('companyDropdown');
 
-            // Focus on input
+        dropdown.classList.remove('show');
+        input.value = companyName;
+
+        // Update existing hidden field
+        const hiddenCompanyIdField = document.getElementById('hidden_company_id');
+        if (hiddenCompanyIdField) {
+            hiddenCompanyIdField.value = companyId || '';
+        } else {
+            console.warn('Hidden company ID field not found');
+        }
+
+        console.log('Company updated:', {
+            companyName: companyName,
+            companyId: companyId,
+            hiddenFieldValue: hiddenCompanyIdField?.value
+        });
+    }
+
+    // Functions to open modals
+    function openCategoryModal(categoryName) {
+        showModal('category-modal', 'modal-category-name', categoryName, 'modal-category-name');
+    }
+
+    function showModal(modalId, inputId, inputValue = '', focusId = '') {
+        const modal = document.getElementById(modalId);
+        const input = document.getElementById(inputId);
+
+        if (!modal) {
+            console.error(`Modal with ID '${modalId}' not found.`);
+            return;
+        }
+
+        // Set input value if provided
+        if (input) {
+            input.value = inputValue || '';
+        }
+
+        // Show the modal
+        modal.classList.add('modal-open');
+        modal.style.display = 'flex';
+
+        // Focus input after short delay
+        if (focusId) {
             setTimeout(() => {
-                focusInput.focus();
+                const focusInput = document.getElementById(focusId);
+                if (focusInput) focusInput.focus();
             }, 100);
         }
 
-        // Functions to close modals
-        function closeCategoryModal() {
-            closeModal('category-modal');
+        // Cancel button: close modal (add listener only once)
+        const cancelBtn = modal.querySelector(
+            '.btn-outline-secondary, .modal-cancel, #cancel-category-modal'
+        );
+        if (cancelBtn && !cancelBtn.hasAttribute('data-close-bound')) {
+            cancelBtn.addEventListener('click', function() {
+                modal.classList.remove('modal-open');
+                modal.style.display = 'none';
+            });
+            cancelBtn.setAttribute('data-close-bound', 'true');
         }
 
-        function closeCompanyModal() {
-            closeModal('company-modal');
+        // Click outside modal to close (add listener only once)
+        if (!modal.hasAttribute('data-overlay-close-bound')) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.classList.remove('modal-open');
+                    modal.style.display = 'none';
+                }
+            });
+            modal.setAttribute('data-overlay-close-bound', 'true');
         }
+    }
 
-        // Generic function to close modal
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.classList.remove('show');
-            modal.style.display = 'none';
-            modal.style.visibility = 'hidden';
-            modal.style.opacity = '0';
-        }
 
-        // Initialize Category Modal
-        function initCategoryModal() {
-            const modal = document.getElementById('category-modal');
-            const cancelBtn = document.getElementById('cancel-category-modal');
-            const form = modal.querySelector('form');
-            const modalCategoryInput = document.getElementById('modal-category-name');
-            const modalImageInput = document.getElementById('modal-category-image'); // <-- add image input
+
+
+    function openCompanyModal(companyName) {
+        showModal('company-modal', 'name', companyName, 'name');
+    }
+
+    // Generic function to show modal
+    function showModal(modalId, inputId, value, focusId) {
+        const modal = document.getElementById(modalId);
+        const input = document.getElementById(inputId);
+        const focusInput = document.getElementById(focusId);
+
+        // Set value and show modal
+        input.value = value;
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        modal.style.marginTop = '50px';
+        modal.style.marginLeft = '0';
+        modal.classList.add('show');
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+
+        // Focus on input
+        setTimeout(() => {
+            focusInput.focus();
+        }, 100);
+    }
+
+    // Functions to close modals
+    function closeCategoryModal() {
+        closeModal('category-modal');
+    }
+
+    function closeCompanyModal() {
+        closeModal('company-modal');
+    }
+
+    // Generic function to close modal
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        modal.style.visibility = 'hidden';
+        modal.style.opacity = '0';
+    }
+
+    // Initialize Category Modal
+    function initCategoryModal() {
+        const modal = document.getElementById('category-modal');
+        const cancelBtn = document.getElementById('cancel-category-modal');
+        const form = modal.querySelector('form');
+        const modalCategoryInput = document.getElementById('modal-category-name');
+        const modalImageInput = document.getElementById('modal-category-image'); // <-- add image input
+        const submitBtn = form.querySelector('button[type="submit"]');
+
+        cancelBtn.addEventListener('click', closeCategoryModal);
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const categoryName = modalCategoryInput.value.trim();
+
+            if (!categoryName) {
+                alert('Category name is required');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('name', categoryName);
+
+            if (modalImageInput?.files[0]) {
+                formData.append('image', modalImageInput.files[0]); // append image
+            }
+
+            const branchSelect = document.getElementById('branch');
+            if (branchSelect?.value) {
+                formData.append('branch_id', branchSelect.value);
+            }
+
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Saving...';
+            submitBtn.disabled = true;
+
+            fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => Promise.reject(err));
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Category creation response:', data);
+
+                    if (data.success && data.data?.name && data.data?.id) {
+                        closeCategoryModal();
+                        selectCategory(data.data.name, data.data.id);
+                        form.reset();
+                        modalImageInput.value = '';
+                    } else if (data.success) {
+                        // Success true, but data is malformed
+                        console.warn('Success response but incomplete data:', data);
+                        closeCategoryModal();
+                        form.reset();
+                        modalImageInput.value = '';
+                        // Don’t show any error popup in this case
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to create category'));
+                    }
+                })
+
+                .catch(error => {
+                    console.error('Error:', error);
+                    const errorMessage = error?.errors?.name?.[0] || error.message || 'Unknown error';
+                    alert('Error creating category: ' + errorMessage);
+                })
+                .finally(() => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                });
+        });
+
+        // Close modal when clicking outside or pressing Escape
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeCategoryModal();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('show')) {
+                closeCategoryModal();
+            }
+        });
+
+        // Handle Enter key
+        modalCategoryInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+    }
+
+
+
+    // Initialize Company Modal
+    function initCompanyModal() {
+        const modal = document.getElementById('company-modal');
+        const cancelBtn = document.getElementById('cancel-company-modal');
+        const form = modal.querySelector('form');
+        const modalCompanyInput = document.getElementById('name');
+
+        cancelBtn.addEventListener('click', closeCompanyModal);
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const companyName = modalCompanyInput.value.trim();
+
+            if (!companyName) {
+                alert('Company name is required');
+                return;
+            }
+
+            const params = new URLSearchParams();
+            params.append('name', companyName); // ✅ Corrected field name
+
+            const branchSelect = document.getElementById('branch');
+            if (branchSelect?.value) {
+                params.append('branch_id', branchSelect.value);
+            }
+
             const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Saving...';
+            submitBtn.disabled = true;
 
-            cancelBtn.addEventListener('click', closeCategoryModal);
+            fetch(form.action, {
+                    method: 'POST',
+                    body: params,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => Promise.reject(err));
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Company creation response:', data);
 
-            form.addEventListener('submit', function(e) {
+                    if (data.success && data.data?.name && data.data?.id) {
+                        closeCompanyModal();
+                        selectCompany(data.data.name, data.data.id); // Use 'name' field
+                        form.reset();
+                    } else {
+                        const errorMessage = data.message || 'Failed to create company';
+                        alert('Error: ' + errorMessage);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const errorMessage = error?.errors?.name?.[0] || error.message || 'Unknown error';
+                    alert('Error creating company: ' + errorMessage);
+                })
+                .finally(() => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                });
+        });
+
+        // Close modal when clicking outside or pressing Escape
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeCompanyModal();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('show')) {
+                closeCompanyModal();
+            }
+        });
+
+        // Handle Enter key
+        modalCompanyInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
                 e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+    }
 
-                const categoryName = modalCategoryInput.value.trim();
 
-                if (!categoryName) {
-                    alert('Category name is required');
-                    return;
-                }
+    // search dropdown
+    function initSearchDropdown(inputId, dropdownId, searchUrl, type) {
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById(dropdownId);
+        let timeout;
+        let selectedIndex = -1;
+        let currentData = [];
 
-                const formData = new FormData();
-                formData.append('name', categoryName);
+        input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const value = this.value.trim();
+            selectedIndex = -1;
 
-                if (modalImageInput?.files[0]) {
-                    formData.append('image', modalImageInput.files[0]); // append image
-                }
+            if (value.length < 1) {
+                dropdown.classList.remove('show');
+                currentData = [];
+                return;
+            }
 
-                const branchSelect = document.getElementById('branch');
-                if (branchSelect?.value) {
-                    formData.append('branch_id', branchSelect.value);
-                }
+            timeout = setTimeout(async () => {
+                try {
+                    let url = `${searchUrl}?search=${value}`;
 
-                const originalText = submitBtn.textContent;
-                submitBtn.textContent = 'Saving...';
-                submitBtn.disabled = true;
+                    const branchSelect = document.getElementById('branch');
+                    if (branchSelect && branchSelect.value) {
+                        url += `&branch_id=${branchSelect.value}`;
+                    }
 
-                fetch(form.action, {
-                        method: 'POST',
-                        body: formData,
+                    const response = await fetch(url, {
                         headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'X-CSRF-TOKEN': document.querySelector(
+                                'meta[name="csrf-token"]').content
                         }
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(err => Promise.reject(err));
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Category creation response:', data);
-
-                        if (data.success && data.data?.name && data.data?.id) {
-                            closeCategoryModal();
-                            selectCategory(data.data.name, data.data.id);
-                            form.reset();
-                            modalImageInput.value = '';
-                        } else if (data.success) {
-                            // Success true, but data is malformed
-                            console.warn('Success response but incomplete data:', data);
-                            closeCategoryModal();
-                            form.reset();
-                            modalImageInput.value = '';
-                            // Don’t show any error popup in this case
-                        } else {
-                            alert('Error: ' + (data.message || 'Failed to create category'));
-                        }
-                    })
-
-                    .catch(error => {
-                        console.error('Error:', error);
-                        const errorMessage = error?.errors?.name?.[0] || error.message || 'Unknown error';
-                        alert('Error creating category: ' + errorMessage);
-                    })
-                    .finally(() => {
-                        submitBtn.textContent = originalText;
-                        submitBtn.disabled = false;
                     });
-            });
 
-            // Close modal when clicking outside or pressing Escape
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) closeCategoryModal();
-            });
+                    const data = await response.json();
 
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && modal.classList.contains('show')) {
-                    closeCategoryModal();
-                }
-            });
+                    let items = [];
+                    if (type === 'category') {
+                        currentData = data.categories || [];
+                        items = currentData.map(item => typeof item === 'object' ? item
+                            .category_name || item.name : item);
+                    } else if (type === 'company') {
+                        currentData = data.companies || [];
+                        items = currentData.map(item => typeof item === 'object' ? item
+                            .company_name || item.name : item);
+                    } else {
+                        items = data.items || data.companies || data.categories || [];
+                    }
 
-            // Handle Enter key
-            modalCategoryInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    form.dispatchEvent(new Event('submit'));
-                }
-            });
-        }
+                    let html = '';
 
-
-
-        // Initialize Company Modal
-        function initCompanyModal() {
-            const modal = document.getElementById('company-modal');
-            const cancelBtn = document.getElementById('cancel-company-modal');
-            const form = modal.querySelector('form');
-            const modalCompanyInput = document.getElementById('name');
-
-            cancelBtn.addEventListener('click', closeCompanyModal);
-
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-
-                const companyName = modalCompanyInput.value.trim();
-
-                if (!companyName) {
-                    alert('Company name is required');
-                    return;
-                }
-
-                const params = new URLSearchParams();
-                params.append('name', companyName); // ✅ Corrected field name
-
-                const branchSelect = document.getElementById('branch');
-                if (branchSelect?.value) {
-                    params.append('branch_id', branchSelect.value);
-                }
-
-                const submitBtn = form.querySelector('button[type="submit"]');
-                const originalText = submitBtn.textContent;
-                submitBtn.textContent = 'Saving...';
-                submitBtn.disabled = true;
-
-                fetch(form.action, {
-                        method: 'POST',
-                        body: params,
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(err => Promise.reject(err));
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Company creation response:', data);
-
-                        if (data.success && data.data?.name && data.data?.id) {
-                            closeCompanyModal();
-                            selectCompany(data.data.name, data.data.id); // Use 'name' field
-                            form.reset();
-                        } else {
-                            const errorMessage = data.message || 'Failed to create company';
-                            alert('Error: ' + errorMessage);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        const errorMessage = error?.errors?.name?.[0] || error.message || 'Unknown error';
-                        alert('Error creating company: ' + errorMessage);
-                    })
-                    .finally(() => {
-                        submitBtn.textContent = originalText;
-                        submitBtn.disabled = false;
-                    });
-            });
-
-            // Close modal when clicking outside or pressing Escape
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) closeCompanyModal();
-            });
-
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && modal.classList.contains('show')) {
-                    closeCompanyModal();
-                }
-            });
-
-            // Handle Enter key
-            modalCompanyInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    form.dispatchEvent(new Event('submit'));
-                }
-            });
-        }
-
-
-        // search dropdown
-        function initSearchDropdown(inputId, dropdownId, searchUrl, type) {
-            const input = document.getElementById(inputId);
-            const dropdown = document.getElementById(dropdownId);
-            let timeout;
-            let selectedIndex = -1;
-            let currentData = [];
-
-            input.addEventListener('input', function() {
-                clearTimeout(timeout);
-                const value = this.value.trim();
-                selectedIndex = -1;
-
-                if (value.length < 1) {
-                    dropdown.classList.remove('show');
-                    currentData = [];
-                    return;
-                }
-
-                timeout = setTimeout(async () => {
-                    try {
-                        let url = `${searchUrl}?search=${value}`;
-
-                        const branchSelect = document.getElementById('branch');
-                        if (branchSelect && branchSelect.value) {
-                            url += `&branch_id=${branchSelect.value}`;
-                        }
-
-                        const response = await fetch(url, {
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector(
-                                    'meta[name="csrf-token"]').content
-                            }
+                    // Show existing items with IDs
+                    if (type === 'category' || type === 'company') {
+                        currentData.forEach((item, index) => {
+                            const itemName = typeof item === 'object' ?
+                                (item.category_name || item.company_name || item.name) :
+                                item;
+                            html +=
+                                `<div class="dropdown-item" data-index="${index}">${itemName}</div>`;
                         });
+                    } else {
+                        items.forEach(item => {
+                            html +=
+                                `<div class="dropdown-item" onclick="selectItem('${inputId}', '${dropdownId}', '${item}')">${item}</div>`;
+                        });
+                    }
 
-                        const data = await response.json();
+                    // Always add create new option
+                    let createNewText = '';
+                    if (type === 'category') {
+                        createNewText =
+                            `<div class="dropdown-item create-new" data-new-value="${value}">+ Create new category: "${value}"</div>`;
+                    } else if (type === 'company') {
+                        createNewText =
+                            `<div class="dropdown-item create-new" data-new-value="${value}">+ Create new company: "${value}"</div>`;
+                    } else {
+                        createNewText =
+                            `<div class="dropdown-item create-new" onclick="selectItem('${inputId}', '${dropdownId}', '${value}')">Create new: "${value}"</div>`;
+                    }
 
-                        let items = [];
-                        if (type === 'category') {
-                            currentData = data.categories || [];
-                            items = currentData.map(item => typeof item === 'object' ? item
-                                .category_name || item.name : item);
-                        } else if (type === 'company') {
-                            currentData = data.companies || [];
-                            items = currentData.map(item => typeof item === 'object' ? item
-                                .company_name || item.name : item);
-                        } else {
-                            items = data.items || data.companies || data.categories || [];
-                        }
+                    html += createNewText;
 
-                        let html = '';
+                    dropdown.innerHTML = html;
+                    dropdown.classList.add('show');
+                    selectedIndex = -1;
 
-                        // Show existing items with IDs
-                        if (type === 'category' || type === 'company') {
-                            currentData.forEach((item, index) => {
-                                const itemName = typeof item === 'object' ?
-                                    (item.category_name || item.company_name || item.name) :
-                                    item;
-                                html +=
-                                    `<div class="dropdown-item" data-index="${index}">${itemName}</div>`;
-                            });
-                        } else {
-                            items.forEach(item => {
-                                html +=
-                                    `<div class="dropdown-item" onclick="selectItem('${inputId}', '${dropdownId}', '${item}')">${item}</div>`;
-                            });
-                        }
-
-                        // Always add create new option
-                        let createNewText = '';
-                        if (type === 'category') {
-                            createNewText =
-                                `<div class="dropdown-item create-new" data-new-value="${value}">+ Create new category: "${value}"</div>`;
-                        } else if (type === 'company') {
-                            createNewText =
-                                `<div class="dropdown-item create-new" data-new-value="${value}">+ Create new company: "${value}"</div>`;
-                        } else {
-                            createNewText =
-                                `<div class="dropdown-item create-new" onclick="selectItem('${inputId}', '${dropdownId}', '${value}')">Create new: "${value}"</div>`;
-                        }
-
-                        html += createNewText;
-
-                        dropdown.innerHTML = html;
-                        dropdown.classList.add('show');
-                        selectedIndex = -1;
-
-                        // Add click listeners for category and company dropdowns
-                        if (type === 'category' || type === 'company') {
-                            dropdown.querySelectorAll('.dropdown-item:not(.create-new)').forEach(
-                                item => {
-                                    item.addEventListener('mousedown', function(e) {
-                                        e.preventDefault();
-                                        const index = parseInt(this.dataset.index);
-                                        const selectedItem = currentData[index];
-
-                                        console.log('Selecting from dropdown:', {
-                                            type: type,
-                                            index: index,
-                                            selectedItem: selectedItem
-                                        });
-
-                                        if (type === 'category') {
-                                            const categoryName = typeof selectedItem ===
-                                                'object' ?
-                                                (selectedItem.category_name ||
-                                                    selectedItem
-                                                    .name) : selectedItem;
-                                            const categoryId = typeof selectedItem ===
-                                                'object' ? selectedItem.id : null;
-                                            selectCategory(categoryName, categoryId);
-                                        } else if (type === 'company') {
-                                            const companyName = typeof selectedItem ===
-                                                'object' ?
-                                                (selectedItem.company_name ||
-                                                    selectedItem
-                                                    .name) : selectedItem;
-                                            const companyId = typeof selectedItem ===
-                                                'object' ? selectedItem.id : null;
-                                            selectCompany(companyName, companyId);
-                                        }
-                                    });
-                                });
-
-                            // Add click listener for "Create new" option
-                            dropdown.querySelector('.create-new')?.addEventListener('mousedown',
-                                function(e) {
+                    // Add click listeners for category and company dropdowns
+                    if (type === 'category' || type === 'company') {
+                        dropdown.querySelectorAll('.dropdown-item:not(.create-new)').forEach(
+                            item => {
+                                item.addEventListener('mousedown', function(e) {
                                     e.preventDefault();
+                                    const index = parseInt(this.dataset.index);
+                                    const selectedItem = currentData[index];
+
+                                    console.log('Selecting from dropdown:', {
+                                        type: type,
+                                        index: index,
+                                        selectedItem: selectedItem
+                                    });
+
                                     if (type === 'category') {
-                                        openCategoryModal(value);
+                                        const categoryName = typeof selectedItem ===
+                                            'object' ?
+                                            (selectedItem.category_name || selectedItem
+                                                .name) : selectedItem;
+                                        const categoryId = typeof selectedItem ===
+                                            'object' ? selectedItem.id : null;
+                                        selectCategory(categoryName, categoryId);
                                     } else if (type === 'company') {
-                                        openCompanyModal(value);
+                                        const companyName = typeof selectedItem ===
+                                            'object' ?
+                                            (selectedItem.company_name || selectedItem
+                                                .name) : selectedItem;
+                                        const companyId = typeof selectedItem ===
+                                            'object' ? selectedItem.id : null;
+                                        selectCompany(companyName, companyId);
                                     }
                                 });
-                        }
+                            });
 
-                    } catch (error) {
-                        console.error('Search error:', error);
-                        dropdown.classList.remove('show');
-                        currentData = [];
+                        // Add click listener for "Create new" option
+                        dropdown.querySelector('.create-new')?.addEventListener('mousedown',
+                            function(e) {
+                                e.preventDefault();
+                                if (type === 'category') {
+                                    openCategoryModal(value);
+                                } else if (type === 'company') {
+                                    openCompanyModal(value);
+                                }
+                            });
                     }
-                }, 200);
-            });
 
-            // Arrow key navigation
-            input.addEventListener('keydown', function(e) {
-                const items = dropdown.querySelectorAll('.dropdown-item');
-                if (items.length === 0) return;
-
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
-                    updateHighlight(dropdown, items, selectedIndex);
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
-                    updateHighlight(dropdown, items, selectedIndex);
-                } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (selectedIndex >= 0 && items[selectedIndex]) {
-                        if (type === 'category' || type === 'company') {
-                            handleDropdownItemClick(items[selectedIndex], type, value);
-                        } else {
-                            items[selectedIndex].click();
-                        }
-                    }
-                } else if (e.key === 'Escape') {
+                } catch (error) {
+                    console.error('Search error:', error);
                     dropdown.classList.remove('show');
-                    selectedIndex = -1;
+                    currentData = [];
                 }
-            });
+            }, 200);
+        });
 
-            document.addEventListener('click', function(e) {
-                if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.classList.remove('show');
-                    selectedIndex = -1;
-                }
-            });
+        // Arrow key navigation
+        input.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.dropdown-item');
+            if (items.length === 0) return;
 
-            function handleDropdownItemClick(item, dropdownType, searchValue) {
-                if (item.classList.contains('create-new')) {
-                    if (dropdownType === 'category') {
-                        openCategoryModal(searchValue);
-                    } else if (dropdownType === 'company') {
-                        openCompanyModal(searchValue);
-                    }
-                } else if (item.dataset.index !== undefined) {
-                    const index = parseInt(item.dataset.index);
-                    const selectedItem = currentData[index];
-
-                    if (dropdownType === 'category') {
-                        const categoryName = typeof selectedItem === 'object' ?
-                            (selectedItem.category_name || selectedItem.name) : selectedItem;
-                        const categoryId = typeof selectedItem === 'object' ? selectedItem.id : null;
-                        selectCategory(categoryName, categoryId);
-                    } else if (dropdownType === 'company') {
-                        const companyName = typeof selectedItem === 'object' ?
-                            (selectedItem.company_name || selectedItem.name) : selectedItem;
-                        const companyId = typeof selectedItem === 'object' ? selectedItem.id : null;
-                        selectCompany(companyName, companyId);
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
+                updateHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
+                updateHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    if (type === 'category' || type === 'company') {
+                        handleDropdownItemClick(items[selectedIndex], type, value);
+                    } else {
+                        items[selectedIndex].click();
                     }
                 }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
             }
-        }
-        // end search dropdown
+        });
 
-        function updateHighlight(dropdown, items, selectedIndex) {
-            items.forEach((item, index) => {
-                item.style.backgroundColor = index === selectedIndex ? '#e9ecef' : '';
-            });
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
 
-            // Auto-scroll within dropdown only
-            if (selectedIndex >= 0 && items[selectedIndex]) {
-                const selectedItem = items[selectedIndex];
-                const dropdownScrollTop = dropdown.scrollTop;
-                const dropdownHeight = dropdown.clientHeight;
-                const itemTop = selectedItem.offsetTop;
-                const itemHeight = selectedItem.offsetHeight;
+        function handleDropdownItemClick(item, dropdownType, searchValue) {
+            if (item.classList.contains('create-new')) {
+                if (dropdownType === 'category') {
+                    openCategoryModal(searchValue);
+                } else if (dropdownType === 'company') {
+                    openCompanyModal(searchValue);
+                }
+            } else if (item.dataset.index !== undefined) {
+                const index = parseInt(item.dataset.index);
+                const selectedItem = currentData[index];
 
-                if (itemTop < dropdownScrollTop) {
-                    dropdown.scrollTop = itemTop;
-                } else if (itemTop + itemHeight > dropdownScrollTop + dropdownHeight) {
-                    dropdown.scrollTop = itemTop + itemHeight - dropdownHeight;
+                if (dropdownType === 'category') {
+                    const categoryName = typeof selectedItem === 'object' ?
+                        (selectedItem.category_name || selectedItem.name) : selectedItem;
+                    const categoryId = typeof selectedItem === 'object' ? selectedItem.id : null;
+                    selectCategory(categoryName, categoryId);
+                } else if (dropdownType === 'company') {
+                    const companyName = typeof selectedItem === 'object' ?
+                        (selectedItem.company_name || selectedItem.name) : selectedItem;
+                    const companyId = typeof selectedItem === 'object' ? selectedItem.id : null;
+                    selectCompany(companyName, companyId);
                 }
             }
         }
+    }
+    // end search dropdown
 
+    function updateHighlight(dropdown, items, selectedIndex) {
+        items.forEach((item, index) => {
+            item.style.backgroundColor = index === selectedIndex ? '#e9ecef' : '';
+        });
 
-        function selectItem(inputId, dropdownId, value) {
-            document.getElementById(inputId).value = value;
-            document.getElementById(dropdownId).classList.remove('show');
-        }
-        // end search dropdown
+        // Auto-scroll within dropdown only
+        if (selectedIndex >= 0 && items[selectedIndex]) {
+            const selectedItem = items[selectedIndex];
+            const dropdownScrollTop = dropdown.scrollTop;
+            const dropdownHeight = dropdown.clientHeight;
+            const itemTop = selectedItem.offsetTop;
+            const itemHeight = selectedItem.offsetHeight;
 
-        function previewImage(input) {
-            const preview = document.getElementById('previewImg');
-            const previewBox = document.getElementById('imagePreview');
-            const fileNameText = document.getElementById('fileName');
-
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    previewBox.style.display = 'block';
-                    fileNameText.innerText = input.files[0].name;
-                };
-                reader.readAsDataURL(input.files[0]);
+            if (itemTop < dropdownScrollTop) {
+                dropdown.scrollTop = itemTop;
+            } else if (itemTop + itemHeight > dropdownScrollTop + dropdownHeight) {
+                dropdown.scrollTop = itemTop + itemHeight - dropdownHeight;
             }
         }
+    }
+
+
+    function selectItem(inputId, dropdownId, value) {
+        document.getElementById(inputId).value = value;
+        document.getElementById(dropdownId).classList.remove('show');
+    }
+    // end search dropdown
+
+    function previewImage(input) {
+        const preview = document.getElementById('previewImg');
+        const previewBox = document.getElementById('imagePreview');
+        const fileNameText = document.getElementById('fileName');
+
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                previewBox.style.display = 'block';
+                fileNameText.innerText = input.files[0].name;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
 </script>

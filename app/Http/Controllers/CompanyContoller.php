@@ -150,4 +150,14 @@ class CompanyContoller extends Controller
             ]
         ]);
     }
+
+    public function search(Request $request)
+    {
+        $query = $request->get('q');
+        $companies = Company::where('name', 'LIKE', "%{$query}%")
+            ->select('id', 'name')
+            ->get();
+        // dd($companies);
+        return response()->json($companies);
+    }
 }

@@ -125,6 +125,7 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     Route::resource('company', CompanyContoller::class);
     Route::post('/categories/modalstore', [CategoryController::class, 'modalStore'])->name('categories.modalstore');
     Route::post('/company/modalstore', [CompanyContoller::class, 'modalStore'])->name('company.modalstore');
+    Route::post('/company/search', [CompanyContoller::class, 'search'])->name('company.search');
     Route::post('/hsn_codes/modalstore', [HsnController::class, 'modalStore'])->name('hsn_codes.modalstore');
     Route::post('/purchase/party/modalstore', [PurchasePartyController::class, 'modalStore'])->name('purchase.party.modalstore');
 });
