@@ -156,45 +156,47 @@ class HsnController extends Controller
 
     public function modalstore(Request $request)
     {
-        // try {
-        // Check if user is logged in as branch
-        $auth = $this->authenticateAndConfigureBranch();
-        $user = $auth['user'];
-        $branch = $auth['branch'];
+        try {
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $branch = $auth['branch'];
 
-        // Validate the request - including calculated fields from frontend
-        $validate = $request->validate([
-            'hsn_code' => 'required|string|max:255',
-            'gst' => 'required|string|max:255',
-            'short_name' => 'required|string|max:255',
-        ]);
-        // dd($request->all());
-        $data = [
-            'hsn_code' => $validate['hsn_code'],
-            'gst' => $validate['gst'],
-            'short_name' => $validate['short_name']
-        ];
-        // dd($data);
-        $hsnCode = HsnCode::on($branch->connection_name)->create($data);
+            $validate = $request->validate([
+                'hsn_code' => 'required|string|max:255',
+                'gst' => 'required|string|max:255',
+                'short_name' => 'required|string|max:255',
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'HSN Code created successfully',
-            'data' => [
-                'id' => $hsnCode->id,
-                'hsn_code' => $hsnCode->hsn_code,
-                'gst' => $hsnCode->gst,
-                'short_name' => $hsnCode->short_name
-            ]
-        ]);
+            $data = [
+                'hsn_code' => $validate['hsn_code'],
+                'gst' => $validate['gst'],
+                'short_name' => $validate['short_name']
+            ];
 
-        // dd($hsn);
-        // } catch (Exception $ex) {
-        //     // dd($ex->getMessage());
-        //     // \log::error('Hsn Code store error: ' . $ex->getMessage());
-        //     return redirect()->back()
-        //         ->with('error', 'Error creating Hsn: ' . $ex->getMessage())
-        //         ->withInput();
-        // }
+            // Superadmin → main DB, others → branch DB
+            if ($user->role === 'superadmin') {
+                $hsnCode = HsnCode::create($data);
+            } else {
+                $hsnCode = HsnCode::on($branch->connection_name)->create($data);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'HSN Code created successfully',
+                'data' => [
+                    'id' => $hsnCode->id,
+                    'hsn_code' => $hsnCode->hsn_code,
+                    'gst' => $hsnCode->gst,
+                    'short_name' => $hsnCode->short_name
+                ]
+            ]);
+        } catch (\Exception $ex) {
+            dd($ex->getMessage());
+            \Log::error('HSN Code store error: ' . $ex->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error creating HSN Code: ' . $ex->getMessage()
+            ], 500);
+        }
     }
 }

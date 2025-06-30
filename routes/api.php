@@ -27,7 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/popular-product', [ProductController::class, 'getUserPopularProducts']); // Get list of popular products of auth user
 
     // Cart API
-    Route::post('/add-to-cart', [AppCartOrderController::class,'addProductToCart']);
+    Route::post('/add-to-cart', [AppCartOrderController::class, 'addProductToCart']);
     Route::post('/get-cart-items', [AppCartOrderController::class, 'getCartItems']);
     Route::post('/create-order-receipt', action: [AppCartOrderController::class, 'createCartOrderReceipt']);
     Route::get('/get-cart-list', [AppCartOrderController::class, 'getCartList']);
@@ -38,6 +38,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Order Receipts API
     Route::get('/order-bills-list', [AppCartOrderController::class, 'getOrderBills']);
     Route::get('/order-bill/{id}', [AppCartOrderController::class, 'orderBill']);
+
+    Route::post('/cart/assign', [AppCartOrderController::class, 'assignCartToUser']);
+    Route::get('/cart/open', [AppCartOrderController::class, 'getOpenCartId']);
 });
 
 // Route::post('/products/store', [ProductController::class, 'store']);
@@ -45,6 +48,3 @@ Route::middleware('auth:sanctum')->group(function () {
 // Route::get('/all-products', [ProductController::class, 'showAllProducts']);
 // Route::get('/all-branch-categories', [ProductController::class, 'showCategoriesFromAllBranches']);
 // Route::get('/product-by-barcode/{barcode}', [ProductController::class, 'findProductByBarcode']);
-
-
-

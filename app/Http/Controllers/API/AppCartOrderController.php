@@ -305,12 +305,10 @@ class AppCartOrderController extends Controller
                         'inventory_deducted' => $inventoryCheckQuantity . ' ' . ($isLooseQuantity ? strtoupper($product->unit_types) : 'PCS')
                     ]
                 ]);
-
             } catch (Exception $e) {
                 DB::connection($branch->connection_name)->rollback();
                 throw $e;
             }
-
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -380,7 +378,6 @@ class AppCartOrderController extends Controller
                 'unit' => $unit,
                 'converted_unit' => $baseUnit
             ];
-
         } catch (Exception $e) {
             return [
                 'success' => false,
@@ -790,12 +787,10 @@ class AppCartOrderController extends Controller
                     'message' => 'Order bill created successfully',
                     'data' => $responseData
                 ]);
-
             } catch (Exception $e) {
                 DB::connection($branch->connection_name)->rollback();
                 throw $e;
             }
-
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -1317,13 +1312,11 @@ class AppCartOrderController extends Controller
                         'branch' => $branch->name
                     ]
                 ]);
-
             } catch (Exception $e) {
                 // Rollback transaction
                 DB::connection($branch->connection_name)->rollback();
                 throw $e;
             }
-
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,

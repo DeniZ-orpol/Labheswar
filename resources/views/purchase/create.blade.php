@@ -1580,7 +1580,7 @@
             const hiddenSelect = row.querySelector('.hidden-product-select');
             const selectedOption = hiddenSelect.options[hiddenSelect.selectedIndex];
             const boxToPcs = parseFloat(selectedOption.getAttribute('data-box-pcs') || 1);
-            
+
             // Get quantities
             const mrp = parseFloat(row.querySelector('input[name="mrp[]"]')?.value || 0);
             const box = parseFloat(row.querySelector('input[name="box[]"]')?.value || 0);
