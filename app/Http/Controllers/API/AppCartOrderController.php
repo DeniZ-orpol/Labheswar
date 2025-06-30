@@ -1397,4 +1397,59 @@ class AppCartOrderController extends Controller
             ], 500);
         }
     }
+    public function assignCartToUser(Request $request)
+    {
+        $request->validate([
+            'cart_id' => 'required|integer',
+        ]);
+
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
+
+        DB::beginTransaction();
+        try {
+            // Step 1: Remove this cart from any other users
+            DB::connection($branch->db_connection)
+                ->table('carts')
+                ->where('id', $request->cart_id)
+                ->where('user_id', '!=', $user->id)
+                ->update(['user_id' => null]);
+
+            // Step 2: Assign to current user
+            DB::connection($branch->db_connection)
+                ->table('carts')
+                ->where('id', $request->cart_id)
+                ->update(['user_id' => $user->id]);
+
+            DB::commit();
+            return response()->json(['message' => 'Cart assigned successfully']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => 'Failed to assign cart',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function getOpenCartId()
+    {
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
+
+        $cart = DB::connection($branch->db_connection)
+            ->table('carts')
+            ->where('user_id', $user->id)
+            ->where('status', 'open') // assuming there's a status field
+            ->first();
+
+        if (!$cart) {
+            return response()->json(['message' => 'No open cart found'], 404);
+        }
+
+        return response()->json(['cart_id' => $cart->id]);
+    }
 }
