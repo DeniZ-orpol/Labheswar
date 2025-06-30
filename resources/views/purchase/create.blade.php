@@ -1,11 +1,11 @@
 @extends('app')
 <style>
     .table thead tr th {
-        padding: 5px !important;
+        padding: 2px !important;
     }
 
     .table tbody tr td {
-        padding: 5px !important;
+        padding: 2px !important;
     }
 
     .search-dropdown {
@@ -132,6 +132,7 @@
                     <thead>
                         <tr class="border-b fs-7 fw-bolder text-gray-700 uppercase text-center">
                             <th scope="col" class="required">Product</th>
+                            <th scope="col" class="required">mrp</th>
                             <th scope="col" class="required">box</th>
                             <th scope="col" class="required">pcs</th>
                             <th scope="col" class="required">free</th>
@@ -160,9 +161,14 @@
                                     <option value="">Please Select product</option>
                                     @foreach ($products as $product)
                                         <option value="{{ $product->id }}" data-mrp="{{ $product->mrp ?? 0 }}"
-                                            data-name="{{ $product->product_name }}" data-sgst="{{ $product->sgst ?? 0 }}"
-                                            data-cgst="{{ $product->cgst1 ?? 0 }}"
+                                            data-name="{{ $product->product_name }}"
+                                            data-box-pcs="{{ $product->converse_box ?? 1 }}"
+                                            data-sgst="{{ $product->gst / 2 ?? 0 }}"
+                                            data-cgst="{{ $product->gst / 2 ?? 0 }}"
                                             data-purchase-rate="{{ $product->purchase_rate ?? 0 }}"
+                                            data-sale-rate-a="{{ $product->sale_rate_a ?? 0 }}"
+                                            data-sale-rate-b="{{ $product->sale_rate_b ?? 0 }}"
+                                            data-sale-rate-c="{{ $product->sale_rate_c ?? 0 }}"
                                             data-barcode="{{ $product->barcode ?? '' }}"
                                             data-category="{{ $product->category_id ?? '' }}"
                                             data-unit-type="{{ $product->unit_types ?? '' }}">
@@ -170,6 +176,12 @@
                                         </option>
                                     @endforeach
                                 </select>
+                            </td>
+
+                            <!-- Box -->
+                            <td>
+                                <input type="number" name="mrp[]" class="form-control field-new" maxlength="255"
+                                    onchange="calculateRowAmount(this)">
                             </td>
 
                             <!-- Box -->
@@ -241,7 +253,7 @@
                 <!-- Item info column -->
                 <div class="p-5">
                     <p><strong>Item:</strong> <span id="current-item">-</span></p>
-                    <p><strong>MRP:</strong> <span id="current-mrp">0.00</span></p>
+                    {{-- <p><strong>MRP:</strong> <span id="current-mrp">0.00</span></p> --}}
                     <p><strong>SRate:</strong> <span id="current-srate">0.00</span></p>
                     <p><strong>Date:</strong> <span id="current-date">-</span></p>
                 </div>
@@ -442,264 +454,6 @@
 @endsection
 
 <script>
-    let productRowCounter = 0;
-    let allProducts = @json($products);
-    let currentProductData = [];
-    let productSelectedIndex = -1;
-
-    // ==================================
-
-    // Initialize Product Dropdown (similar to initPartyDropdown)
-    function initProductDropdown() {
-        // Store allProducts globally for the selectProduct function
-        window.allProducts = allProducts;
-
-        // Get all product search inputs (for multiple rows)
-        const productInputs = document.querySelectorAll('.product-search-input');
-
-        productInputs.forEach(input => {
-            setupProductInput(input);
-        });
-    }
-
-    // Setup individual product input (like party dropdown)
-    function setupProductInput(input) {
-        const dropdown = input.nextElementSibling;
-        const searchUrl = '{{ route('products.search') }}'; // Your search route
-        let timeout;
-        let selectedIndex = -1;
-        let currentData = [];
-
-        input.addEventListener('input', function() {
-            clearTimeout(timeout);
-            const value = this.value.trim();
-            selectedIndex = -1;
-
-            if (value.length < 1) {
-                dropdown.classList.remove('show');
-                currentData = [];
-                return;
-            }
-
-            timeout = setTimeout(async () => {
-                try {
-                    let url = `${searchUrl}?search=${encodeURIComponent(value)}`;
-
-                    // Add branch_id if needed
-                    const branchSelect = document.getElementById('branch');
-                    if (branchSelect && branchSelect.value) {
-                        url += `&branch_id=${encodeURIComponent(branchSelect.value)}`;
-                    }
-
-                    console.log('Fetching products from:', url); // Debug log
-
-                    const response = await fetch(url, {
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector(
-                                'meta[name="csrf-token"]').content,
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-
-                    const data = await response.json();
-                    console.log('Product search response:', data); // Debug log
-
-                    currentData = data.products || [];
-                    // Store in global variable for selectProduct function
-                    window.currentProductData = currentData;
-
-                    let html = '';
-
-                    // Show existing products
-                    currentData.forEach((product, index) => {
-                        const productInfo = product.barcode ? ` (${product.barcode})` : '';
-                        html +=
-                            `<div class="dropdown-item" data-index="${index}">${product.product_name}${productInfo}</div>`;
-                    });
-
-                    dropdown.innerHTML = html;
-                    dropdown.classList.add('show');
-                    selectedIndex = -1;
-
-                    // Add click listeners to dropdown items
-                    dropdown.querySelectorAll('.dropdown-item').forEach(item => {
-                        item.addEventListener('mousedown', function(e) {
-                            e.preventDefault();
-                            const index = parseInt(this.dataset.index);
-                            selectProduct(currentData[index].product_name,
-                                currentData[index].id);
-                        });
-                    });
-
-                } catch (error) {
-                    console.error('Product search error:', error);
-                    dropdown.classList.remove('show');
-                    currentData = [];
-                }
-            }, 200);
-        });
-
-        // Arrow key navigation (same as party dropdown)
-        input.addEventListener('keydown', function(e) {
-            const items = dropdown.querySelectorAll('.dropdown-item');
-
-            if (items.length === 0) return;
-
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
-                updateProductHighlight(dropdown, items, selectedIndex);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
-                updateProductHighlight(dropdown, items, selectedIndex);
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                if (selectedIndex >= 0 && items[selectedIndex]) {
-                    const index = parseInt(items[selectedIndex].dataset.index);
-                    selectProduct(currentData[index].product_name, currentData[index].id);
-                }
-            } else if (e.key === 'Escape') {
-                dropdown.classList.remove('show');
-                selectedIndex = -1;
-            }
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.classList.remove('show');
-                selectedIndex = -1;
-            }
-        });
-    }
-
-    // Update highlight function (same as party dropdown) - make it global
-    function updateProductHighlight(dropdown, items, selectedIndex) {
-        items.forEach((item, index) => {
-            item.style.backgroundColor = index === selectedIndex ? '#e9ecef' : '';
-        });
-
-        if (selectedIndex >= 0 && items[selectedIndex]) {
-            const selectedItem = items[selectedIndex];
-            const dropdownScrollTop = dropdown.scrollTop;
-            const dropdownHeight = dropdown.clientHeight;
-            const itemTop = selectedItem.offsetTop;
-            const itemHeight = selectedItem.offsetHeight;
-
-            if (itemTop < dropdownScrollTop) {
-                dropdown.scrollTop = itemTop;
-            } else if (itemTop + itemHeight > dropdownScrollTop + dropdownHeight) {
-                dropdown.scrollTop = itemTop + itemHeight - dropdownHeight;
-            }
-        }
-    }
-
-    // Select product function (like selectParty)
-    function selectProduct(productName, productId = null) {
-        // Find the currently active product input
-        const activeInput = document.activeElement;
-        let input, dropdown;
-
-        // If no active input or not a product input, find the one that was just interacted with
-        if (!activeInput || !activeInput.classList.contains('product-search-input')) {
-            // Find the dropdown that's currently shown
-            const visibleDropdown = document.querySelector('.product-dropdown.show');
-            if (visibleDropdown) {
-                input = visibleDropdown.previousElementSibling;
-                dropdown = visibleDropdown;
-            } else {
-                console.log('Could not find active product input');
-                return;
-            }
-        } else {
-            input = activeInput;
-            dropdown = input.nextElementSibling;
-        }
-
-        const hiddenSelect = input.closest('td').querySelector('.hidden-product-select');
-        const row = input.closest('tr');
-
-        // Close dropdown
-        dropdown.classList.remove('show');
-
-        // Update search input
-        input.value = productName;
-
-        // Find the product data from currentData or allProducts
-        let productData = null;
-
-        // Try to find in currentData first
-        if (window.currentProductData) {
-            productData = window.currentProductData.find(p => p.id == productId);
-        }
-
-        // If not found, try in allProducts
-        if (!productData && window.allProducts) {
-            productData = window.allProducts.find(p => p.id == productId);
-        }
-
-        // Update hidden select with all product data
-        hiddenSelect.innerHTML = '';
-        const newOption = document.createElement('option');
-        newOption.value = productId;
-        newOption.textContent = productName;
-        newOption.selected = true;
-
-        // Set all data attributes using productData if available
-        if (productData) {
-            newOption.setAttribute('data-mrp', productData.mrp || 0);
-            newOption.setAttribute('data-name', productData.product_name);
-            newOption.setAttribute('data-sgst', productData.sgst || 0);
-            newOption.setAttribute('data-cgst', productData.cgst1 || productData.cgst || 0);
-            newOption.setAttribute('data-purchase-rate', productData.purchase_rate || 0);
-            newOption.setAttribute('data-barcode', productData.barcode || '');
-            newOption.setAttribute('data-category', productData.category_id || '');
-            newOption.setAttribute('data-unit-type', productData.unit_types || '');
-            newOption.setAttribute('data-box-pcs', productData.box_pcs || productData.converse_box || 1);
-        } else {
-            // Fallback values if productData not found
-            newOption.setAttribute('data-mrp', 0);
-            newOption.setAttribute('data-name', productName);
-            newOption.setAttribute('data-sgst', 0);
-            newOption.setAttribute('data-cgst', 0);
-            newOption.setAttribute('data-purchase-rate', 0);
-            newOption.setAttribute('data-barcode', '');
-            newOption.setAttribute('data-category', '');
-            newOption.setAttribute('data-unit-type', '');
-            newOption.setAttribute('data-box-pcs', 1);
-        }
-
-        hiddenSelect.appendChild(newOption);
-
-        console.log('Product selected:', {
-            productName: productName,
-            productId: productId,
-            hiddenFieldValue: hiddenSelect.value
-        });
-
-        // Trigger existing functionality
-        loadProductDetails(hiddenSelect);
-
-        // Move to next field (box input)
-        const nextField = row.querySelector('input[name="box[]"]');
-        if (nextField) {
-            setTimeout(() => {
-                nextField.focus();
-            }, 100);
-        }
-    }
-
-    // Function to setup new product rows (for when you add new rows)
-    function setupNewProductRow(row) {
-        const productInput = row.querySelector('.product-search-input');
-        if (productInput) {
-            setupProductInput(productInput);
-        }
-    }
-
-    // ==================================
-
     // START: Set up Enter navigation
     function setupEnterNavigation() {
         let currentFieldIndex = 0;
@@ -730,6 +484,7 @@
 
         const productFields = [
             '.product-search-input', // Changed to use search input instead of select
+            'input[name="mrp[]"]',
             'input[name="box[]"]',
             'input[name="pcs[]"]',
             'input[name="free[]"]',
@@ -898,6 +653,270 @@
         });
     }
     // END: Set up Enter navigation
+
+    let productRowCounter = 0;
+    let allProducts = @json($products);
+    let currentProductData = [];
+    let productSelectedIndex = -1;
+
+    // ==================================
+
+    // Initialize Product Dropdown (similar to initPartyDropdown)
+    function initProductDropdown() {
+        // Store allProducts globally for the selectProduct function
+        window.allProducts = allProducts;
+
+        // Get all product search inputs (for multiple rows)
+        const productInputs = document.querySelectorAll('.product-search-input');
+
+        productInputs.forEach(input => {
+            setupProductInput(input);
+        });
+    }
+
+    // Setup individual product input (like party dropdown)
+    function setupProductInput(input) {
+        const dropdown = input.nextElementSibling;
+        const searchUrl = '{{ route('products.search') }}'; // Your search route
+        let timeout;
+        let selectedIndex = -1;
+        let currentData = [];
+
+        input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const value = this.value.trim();
+            selectedIndex = -1;
+
+            if (value.length < 1) {
+                dropdown.classList.remove('show');
+                currentData = [];
+                return;
+            }
+
+            timeout = setTimeout(async () => {
+                try {
+                    let url = `${searchUrl}?search=${encodeURIComponent(value)}`;
+
+                    // Add branch_id if needed
+                    const branchSelect = document.getElementById('branch');
+                    if (branchSelect && branchSelect.value) {
+                        url += `&branch_id=${encodeURIComponent(branchSelect.value)}`;
+                    }
+
+                    console.log('Fetching products from:', url); // Debug log
+
+                    const response = await fetch(url, {
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector(
+                                'meta[name="csrf-token"]').content,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const data = await response.json();
+                    console.log('Product search response:', data); // Debug log
+
+                    currentData = data.products || [];
+                    // Store in global variable for selectProduct function
+                    window.currentProductData = currentData;
+
+                    let html = '';
+
+                    // Show existing products
+                    currentData.forEach((product, index) => {
+                        const productInfo = product.barcode ? ` (${product.barcode})` : '';
+                        html +=
+                            `<div class="dropdown-item" data-index="${index}" data-product-id="${product.id}">${product.product_name}${productInfo}</div>`;
+                    });
+
+                    dropdown.innerHTML = html;
+                    dropdown.classList.add('show');
+                    selectedIndex = -1;
+
+                    // Add click listeners to dropdown items
+                    dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                        item.addEventListener('mousedown', function(e) {
+                            e.preventDefault();
+                            const index = parseInt(this.dataset.index);
+                            selectProduct(currentData[index].product_name,
+                                currentData[index].id);
+                        });
+                    });
+
+                } catch (error) {
+                    console.error('Product search error:', error);
+                    dropdown.classList.remove('show');
+                    currentData = [];
+                }
+            }, 200);
+        });
+
+        // Arrow key navigation (same as party dropdown)
+        input.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.dropdown-item');
+
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
+                updateProductHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
+                updateProductHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    const index = parseInt(items[selectedIndex].dataset.index);
+                    selectProduct(currentData[index].product_name, currentData[index].id);
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
+    }
+
+    // Update highlight function (same as party dropdown) - make it global
+    function updateProductHighlight(dropdown, items, selectedIndex) {
+        items.forEach((item, index) => {
+            item.style.backgroundColor = index === selectedIndex ? '#e9ecef' : '';
+        });
+
+        if (selectedIndex >= 0 && items[selectedIndex]) {
+            const selectedItem = items[selectedIndex];
+            const dropdownScrollTop = dropdown.scrollTop;
+            const dropdownHeight = dropdown.clientHeight;
+            const itemTop = selectedItem.offsetTop;
+            const itemHeight = selectedItem.offsetHeight;
+
+            if (itemTop < dropdownScrollTop) {
+                dropdown.scrollTop = itemTop;
+            } else if (itemTop + itemHeight > dropdownScrollTop + dropdownHeight) {
+                dropdown.scrollTop = itemTop + itemHeight - dropdownHeight;
+            }
+        }
+    }
+
+    // Select product function (like selectParty)
+    function selectProduct(productName, productId = null) {
+        // Find the currently active product input
+        const activeInput = document.activeElement;
+        let input, dropdown;
+
+        // If no active input or not a product input, find the one that was just interacted with
+        if (!activeInput || !activeInput.classList.contains('product-search-input')) {
+            // Find the dropdown that's currently shown
+            const visibleDropdown = document.querySelector('.product-dropdown.show');
+            if (visibleDropdown) {
+                input = visibleDropdown.previousElementSibling;
+                dropdown = visibleDropdown;
+            } else {
+                console.log('Could not find active product input');
+                return;
+            }
+        } else {
+            input = activeInput;
+            dropdown = input.nextElementSibling;
+        }
+
+        const hiddenSelect = input.closest('td').querySelector('.hidden-product-select');
+        const row = input.closest('tr');
+
+        // Close dropdown
+        dropdown.classList.remove('show');
+
+        // Update search input
+        input.value = productName;
+
+        // Find the product data from currentData or allProducts
+        let productData = null;
+
+        // Try to find in currentData first
+        if (window.currentProductData) {
+            productData = window.currentProductData.find(p => p.id == productId);
+        }
+
+        // If not found, try in allProducts
+        if (!productData && window.allProducts) {
+            productData = window.allProducts.find(p => p.id == productId);
+        }
+
+        // Update hidden select with all product data
+        hiddenSelect.innerHTML = '';
+        const newOption = document.createElement('option');
+        newOption.value = productId;
+        newOption.textContent = productName;
+        newOption.selected = true;
+
+        // Set all data attributes using productData if available
+        if (productData) {
+            newOption.setAttribute('data-mrp', productData.mrp || 0);
+            newOption.setAttribute('data-name', productData.product_name);
+            newOption.setAttribute('data-sgst', productData.sgst || 0);
+            newOption.setAttribute('data-cgst', productData.cgst1 || productData.cgst || 0);
+            newOption.setAttribute('data-purchase-rate', productData.purchase_rate || 0);
+            newOption.setAttribute('data-sale-rate-a', productData.sale_rate_a || 0);
+            newOption.setAttribute('data-sale-rate-b', productData.sale_rate_b || 0);
+            newOption.setAttribute('data-sale-rate-c', productData.sale_rate_c || 0);
+            newOption.setAttribute('data-barcode', productData.barcode || '');
+            newOption.setAttribute('data-category', productData.category_id || '');
+            newOption.setAttribute('data-unit-type', productData.unit_types || '');
+            newOption.setAttribute('data-box-pcs', productData.box_pcs || productData.converse_box || 1);
+        } else {
+            // Fallback values if productData not found
+            newOption.setAttribute('data-mrp', 0);
+            newOption.setAttribute('data-name', productName);
+            newOption.setAttribute('data-sgst', 0);
+            newOption.setAttribute('data-cgst', 0);
+            newOption.setAttribute('data-purchase-rate', 0);
+            newOption.setAttribute('data-sale-rate-a', 0);
+            newOption.setAttribute('data-sale-rate-b', 0);
+            newOption.setAttribute('data-sale-rate-c', 0);
+            newOption.setAttribute('data-barcode', '');
+            newOption.setAttribute('data-category', '');
+            newOption.setAttribute('data-unit-type', '');
+            newOption.setAttribute('data-box-pcs', 1);
+        }
+
+        hiddenSelect.appendChild(newOption);
+
+        console.log('Product selected:', {
+            productName: productName,
+            productId: productId,
+            hiddenFieldValue: hiddenSelect.value
+        });
+
+        // Trigger existing functionality
+        loadProductDetails(hiddenSelect);
+
+        // Move to next field (box input)
+        const nextField = row.querySelector('input[name="mrp[]"]');
+        if (nextField) {
+            setTimeout(() => {
+                nextField.focus();
+            }, 100);
+        }
+    }
+
+    // Function to setup new product rows (for when you add new rows)
+    function setupNewProductRow(row) {
+        const productInput = row.querySelector('.product-search-input');
+        if (productInput) {
+            setupProductInput(productInput);
+        }
+    }
+
+    // ==================================
 
     document.addEventListener('DOMContentLoaded', function() {
         const addProductBtn = document.querySelector('.btn.btn-primary.shadow-md.mr-2.btn-hover');
@@ -1281,7 +1300,7 @@
         }
 
         const inputs = newRow.querySelectorAll(
-            'input[name="box[]"], input[name="pcs[]"], input[name="purchase_rate[]"], input[name="discount_percent[]"], input[name="discount_lumpsum[]"]'
+            'input[name="mrp[]"], input[name="box[]"], input[name="pcs[]"], input[name="purchase_rate[]"], input[name="discount_percent[]"], input[name="discount_lumpsum[]"]'
         );
         inputs.forEach(input => {
             input.setAttribute('onchange', 'calculateRowAmount(this)');
@@ -1360,19 +1379,31 @@
         const productName = selectedOption.getAttribute('data-name') || '-';
         const productMrp = selectedOption.getAttribute('data-mrp') || '0.00';
         const productPurchaseRate = selectedOption.getAttribute('data-purchase-rate') || '0.00';
+        const productSaleRateA = selectedOption.getAttribute('data-sale-rate-a') || '0.00';
+        const productSaleRateB = selectedOption.getAttribute('data-sale-rate-b') || '0.00';
+        const productSaleRateC = selectedOption.getAttribute('data-sale-rate-c') || '0.00';
         const sgstRate = selectedOption.getAttribute('data-sgst') || '0';
         const cgstRate = selectedOption.getAttribute('data-cgst') || '0';
+        const boxToPcs = selectedOption.getAttribute('data-box-pcs') || '1';
+        const barcode = selectedOption.getAttribute('data-barcode') || '';
+        const unitType = selectedOption.getAttribute('data-unit-type') || '';
         const productId = selectedOption.value;
 
         // Update current item details
         document.getElementById('current-item').textContent = productName;
-        document.getElementById('current-mrp').textContent = parseFloat(productMrp).toFixed(2);
+        document.getElementById('current-srate').textContent = productSaleRateA;
+        // document.getElementById('current-mrp').textContent = parseFloat(productMrp).toFixed(2);
 
         // Auto-fill purchase rate if available
         const row = selectElement.closest('tr');
         const purchaseRateInput = row.querySelector('input[name="purchase_rate[]"]');
+        const mrpInput = row.querySelector('input[name="mrp[]"]');
+
         if (purchaseRateInput && productPurchaseRate > 0) {
             purchaseRateInput.value = parseFloat(productPurchaseRate).toFixed(2);
+        }
+        if (mrpInput && productMrp > 0 && !mrpInput.value) {
+            mrpInput.value = parseFloat(productMrp).toFixed(2);
         }
 
         // Load purchase history for this product
@@ -1466,6 +1497,9 @@
         const cgstRate = parseFloat(selectedOption.getAttribute('data-cgst') || 0);
 
         // Calculate total pieces: (box * conversion ratio) + individual pcs
+        // box: total no of box to purchase
+        // boxToPcs: conversion ratio of box
+        // pcs: individual pieces to purchase
         const totalPcs = (box * boxToPcs) + pcs;
 
         // Calculate base amount: total pieces * purchase rate
@@ -1545,10 +1579,10 @@
             // Get product MRP and box conversion
             const hiddenSelect = row.querySelector('.hidden-product-select');
             const selectedOption = hiddenSelect.options[hiddenSelect.selectedIndex];
-            const mrp = parseFloat(selectedOption.getAttribute('data-mrp') || 0);
             const boxToPcs = parseFloat(selectedOption.getAttribute('data-box-pcs') || 1);
-
+            
             // Get quantities
+            const mrp = parseFloat(row.querySelector('input[name="mrp[]"]')?.value || 0);
             const box = parseFloat(row.querySelector('input[name="box[]"]')?.value || 0);
             const pcs = parseFloat(row.querySelector('input[name="pcs[]"]')?.value || 0);
             const free = parseFloat(row.querySelector('input[name="free[]"]')?.value || 0);
@@ -1597,7 +1631,7 @@
 
         // Update S.Rate (average rate per piece)
         const averageRate = totalQuantity > 0 ? (totalBaseAmount / totalQuantity) : 0;
-        document.getElementById('current-srate').textContent = averageRate.toFixed(2);
+        // document.getElementById('current-srate').textContent = averageRate.toFixed(2);
 
         // Update hidden fields for purchase_receipt table
         document.getElementById('receipt-subtotal-hidden').value = totalBaseAmount.toFixed(2);

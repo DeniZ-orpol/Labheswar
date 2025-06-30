@@ -283,7 +283,7 @@
                     <p><strong>Item:</strong> <span id="current-item">-</span></p>
                     {{-- <p><strong>MRP:</strong> <span id="current-mrp">0.00</span></p> --}}
                     <p><strong>SRate:</strong> <span id="current-srate">0.00</span></p>
-                    <p><strong>Date:</strong> <span id="current-date">-</span></p>
+                    <p><strong>Date:</strong> {{$purchaseReceipt->created_at->Format('d/m/Y')}} </p>
                 </div>
 
                 <!-- MIDDLE COLUMN -->
@@ -881,7 +881,7 @@
         loadProductDetails(hiddenSelect);
 
         // Move to next field
-        const nextField = row.querySelector('input[name="box[]"]');
+        const nextField = row.querySelector('input[name="mrp[]"]');
         if (nextField) {
             setTimeout(() => {
                 nextField.focus();
@@ -909,7 +909,7 @@
         // Set current date for display
         const today = new Date();
         const todayDisplay = today.toLocaleDateString();
-        document.getElementById('current-date').textContent = todayDisplay;
+        // document.getElementById('current-date').textContent = todayDisplay;
 
         // Initialize calculations with existing data
         initializeExistingData();
