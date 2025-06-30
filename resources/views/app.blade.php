@@ -820,7 +820,7 @@ License: You must have a valid license purchased only from themeforest(the above
             <a href="{{ route('dashboard') }}" class="logo -intro-x hidden md:flex xl:w-[180px] block">
                 <img alt="Midone - HTML Admin Template" class="logo__image w-8"
                     src="{{ asset('images/logo.png') }}">
-                <span class="logo__text text-white text-lg ml-3"> Labheshwar </span>
+                <span class="logo__text text-white text-lg ml-3"> SGL </span>
             </a>
             <!-- END: Logo -->
             <!-- BEGIN: Breadcrumb -->
