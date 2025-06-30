@@ -13,7 +13,7 @@ License: You must have a valid license purchased only from themeforest(the above
 
 <head>
     <meta charset="utf-8">
-    <link href="{{ asset('images/logo.svg') }}" rel="shortcut icon">
+    <link href="{{ asset('images/logo.png') }}" rel="shortcut icon">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description"
         content="Enigma admin is super flexible, powerful, clean & modern responsive tailwind admin template with unlimited possibilities.">
@@ -21,7 +21,7 @@ License: You must have a valid license purchased only from themeforest(the above
         content="admin template, Enigma Admin Template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="LEFT4CODE">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Labheswar</title>
+    <title>Labheshwar</title>
     <!-- BEGIN: CSS Assets-->
     <link rel="stylesheet" href="{{ asset('css/app.css') }}" />
     <!-- DataTables CSS -->
@@ -60,7 +60,7 @@ License: You must have a valid license purchased only from themeforest(the above
     <div class="mobile-menu md:hidden">
         <div class="mobile-menu-bar">
             <a href="{{ route('dashboard') }}" class="flex mr-auto">
-                <img alt="Midone - HTML Admin Template" class="w-6" src="{{ asset('images/logo.svg') }}">
+                <img alt="Labheshwar" class="w-6" src="{{ asset('images/logo.png') }}">
             </a>
             <a href="javascript:;" class="mobile-menu-toggler"> <i data-lucide="bar-chart-2"
                     class="w-8 h-8 text-white transform -rotate-90"></i> </a>
@@ -818,9 +818,9 @@ License: You must have a valid license purchased only from themeforest(the above
         <div class="h-full flex items-center">
             <!-- BEGIN: Logo -->
             <a href="{{ route('dashboard') }}" class="logo -intro-x hidden md:flex xl:w-[180px] block">
-                <img alt="Midone - HTML Admin Template" class="logo__image w-6"
-                    src="{{ asset('images/logo.svg') }}">
-                <span class="logo__text text-white text-lg ml-3"> Enigma </span>
+                <img alt="Midone - HTML Admin Template" class="logo__image w-8"
+                    src="{{ asset('images/logo.png') }}">
+                <span class="logo__text text-white text-lg ml-3"> Labheshwar </span>
             </a>
             <!-- END: Logo -->
             <!-- BEGIN: Breadcrumb -->
@@ -1275,6 +1275,23 @@ License: You must have a valid license purchased only from themeforest(the above
                             </li>
                         </ul>
                     </li>
+
+                    <li>
+                        <a href="javascript:;" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="box"></i> </div>
+                            <div class="side-menu__title"> App Orders <i data-lucide="chevron-down"
+                                    class="side-menu__sub-icon "></i> </div>
+                        </a>
+                        <ul class="{{ $orderMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
+                            <li>
+                                <a href="{{ route('orders.index') }}"
+                                    class="side-menu {{ request()->routeIs('orders.*') ? 'side-menu--active' : '' }}">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> App Orders List </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                 @endif
                 @php
                     $purchaseMenuOpen = request()->routeIs('purchase.*') || request()->routeIs('purchase.party.*');
@@ -1309,22 +1326,6 @@ License: You must have a valid license purchased only from themeforest(the above
                 @php
                     $orderMenuOpen = request()->routeIs('orders.*');
                 @endphp
-                <li>
-                    <a href="javascript:;" class="side-menu">
-                        <div class="side-menu__icon"> <i data-lucide="box"></i> </div>
-                        <div class="side-menu__title"> App Orders <i data-lucide="chevron-down"
-                                class="side-menu__sub-icon "></i> </div>
-                    </a>
-                    <ul class="{{ $orderMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
-                        <li>
-                            <a href="{{ route('orders.index') }}"
-                                class="side-menu {{ request()->routeIs('orders.*') ? 'side-menu--active' : '' }}">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title"> App Orders List </div>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
 
                 {{-- <li>
                         <a href="javascript:;" class="side-menu">
