@@ -37,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Order Receipts API
     Route::get('/order-bills-list', [AppCartOrderController::class, 'getOrderBills']);
+    Route::get('/order-bill/{id}', [AppCartOrderController::class, 'orderBill']);
 });
 
 // Route::post('/products/store', [ProductController::class, 'store']);

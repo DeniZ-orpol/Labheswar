@@ -1331,4 +1331,77 @@ class AppCartOrderController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get order bill details by ID
+     * @param mixed $id
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function orderBill($id)
+    {
+        try {
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $branch = $auth['branch'];
+            $role = $auth['role'];
+
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                $order = $order = AppCartsOrderBill::where('id', $id)->first();
+
+                $orderItems = AppCartsOrders::join('products', 'products.id', '=', 'app_cart_order.product_id')
+                    ->where('app_cart_order.order_receipt_id', $id)
+                    ->select(
+                        'app_cart_order.*',
+                        'products.product_name',
+                        'products.barcode',
+                        'products.image',
+                        'products.unit_types'
+                    )
+                    ->get();
+
+                $totalItems = $orderItems->count();
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'order' => $order,
+                        'order_items' => $orderItems,
+                        'total_items' => $totalItems
+                    ]
+                ]);
+            } else {
+                $order = AppCartsOrderBill::on($branch->connection_name)
+                    ->where('id', $id)
+                    ->first();
+
+                $orderItems = AppCartsOrders::on($branch->connection_name)
+                    ->join('products', 'products.id', '=', 'app_cart_order.product_id')
+                    ->where('app_cart_order.order_receipt_id', $id)
+                    ->select(
+                        'app_cart_order.*',
+                        'products.product_name',
+                        'products.barcode',
+                        'products.image',
+                        'products.unit_types'
+                    )
+                    ->get();
+
+                $totalItems = $orderItems->count();
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'order' => $order,
+                        'order_items' => $orderItems,
+                        'total_items' => $totalItems
+                    ]
+                ]);
+            }
+        } catch (Exception $ex) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $ex->getMessage()
+            ], 500);
+        }
+    }
 }
