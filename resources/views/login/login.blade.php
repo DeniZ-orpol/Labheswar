@@ -12,7 +12,7 @@ License: You must have a valid license purchased only from themeforest(the above
 <!-- BEGIN: Head -->
 <head>
     <meta charset="utf-8">
-    <link href="{{ asset('images/logo.svg') }}" rel="shortcut icon">
+    <link href="{{ asset('images/logo.png') }}" rel="shortcut icon">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description"
         content="Enigma admin is super flexible, powerful, clean & modern responsive tailwind admin template with unlimited possibilities.">
@@ -30,20 +30,16 @@ License: You must have a valid license purchased only from themeforest(the above
         <div class="block xl:grid grid-cols-2 gap-4">
             <!-- BEGIN: Login Info -->
             <div class="hidden xl:flex flex-col min-h-screen">
-                <a href="{{ url('') }}" class="-intro-x flex items-center pt-5">
-                    <img alt="Midone - HTML Admin Template" class="w-6" src="{{ asset('images/logo.svg') }}">
-                    <span class="text-white text-lg ml-3"> Enigma </span>
-                </a>
+                {{-- <a href="{{ url('') }}" class="-intro-x flex items-center pt-5">
+                    <img alt="Labheshwar" class="w-12" src="{{ asset('images/logo.png') }}">
+                </a> --}}
                 <div class="my-auto">
-                    <img alt="Midone - HTML Admin Template" class="-intro-x w-1/2 -mt-16"
-                        src="{{ asset('images/illustration.svg') }}">
+                    <img alt="Labheshwar" class="-intro-x w-1/2 -mt-16"
+                        src="{{ asset('images/logo.png') }}">
                     <div class="-intro-x text-white font-medium text-4xl leading-tight mt-10">
-                        A few more clicks to
-                        <br>
-                        sign in to your account.
+                        Labheshwar Dairy & Sweets
                     </div>
-                    <div class="-intro-x mt-5 text-lg text-white text-opacity-70 dark:text-slate-400">Manage all your
-                        e-commerce accounts in one place</div>
+                    <div class="-intro-x mt-5 text-lg text-white text-opacity-70 dark:text-slate-400">sign in to your account.</div>
                 </div>
             </div>
             <!-- END: Login Info -->
