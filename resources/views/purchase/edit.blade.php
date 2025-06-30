@@ -1,11 +1,11 @@
 @extends('app')
 <style>
     .table thead tr th {
-        padding: 5px !important;
+        padding: 2px !important;
     }
 
     .table tbody tr td {
-        padding: 5px !important;
+        padding: 2px !important;
     }
 
     .search-dropdown {
@@ -141,6 +141,7 @@
                     <thead>
                         <tr class="border-b fs-7 fw-bolder text-gray-700 uppercase text-center">
                             <th scope="col" class="required">Product</th>
+                            <th scope="col" class="required">mrp</th>
                             <th scope="col" class="required">box</th>
                             <th scope="col" class="required">pcs</th>
                             <th scope="col" class="required">free</th>
@@ -155,7 +156,7 @@
                         @foreach ($purchaseItems as $index => $item)
                             <tr class="text-center">
                                 <!-- Product -->
-                                <td class="table__item-desc w-1/4">
+                                <td class="table__item-desc w-2/5">
                                     <div class="search-dropdown">
                                         <input type="text" name="product_search[]"
                                             class="form-control search-input product-search-input"
@@ -174,8 +175,12 @@
                                             <option value="{{ $product->id }}" data-mrp="{{ $product->mrp ?? 0 }}"
                                                 data-name="{{ $product->product_name }}"
                                                 data-box-pcs="{{ $product->converse_box ?? 1 }}"
-                                                data-sgst="{{ $product->gst ?? 0 }}" data-cgst="{{ $product->gst ?? 0 }}"
+                                                data-sgst="{{ $product->gst/2 ?? 0 }}"
+                                                data-cgst="{{ $product->gst/2 ?? 0 }}"
                                                 data-purchase-rate="{{ $product->purchase_rate ?? 0 }}"
+                                                data-sale-rate-a="{{ $product->sale_rate_a ?? 0 }}"
+                                                data-sale-rate-b="{{ $product->sale_rate_b ?? 0 }}"
+                                                data-sale-rate-c="{{ $product->sale_rate_c ?? 0 }}"
                                                 data-barcode="{{ $product->barcode ?? '' }}"
                                                 data-category="{{ $product->category_id ?? '' }}"
                                                 data-unit-type="{{ $product->unit_types ?? '' }}"
@@ -184,6 +189,12 @@
                                             </option>
                                         @endforeach
                                     </select>
+                                </td>
+
+                                <!-- MRP -->
+                                <td>
+                                    <input type="number" name="mrp[]" class="form-control field-new" maxlength="255"
+                                        onchange="calculateRowAmount(this)" value="{{ $item->mrp ?? 0 }}">
                                 </td>
 
                                 <!-- Box -->
@@ -270,7 +281,7 @@
                 <!-- Item info column -->
                 <div class="p-5">
                     <p><strong>Item:</strong> <span id="current-item">-</span></p>
-                    <p><strong>MRP:</strong> <span id="current-mrp">0.00</span></p>
+                    {{-- <p><strong>MRP:</strong> <span id="current-mrp">0.00</span></p> --}}
                     <p><strong>SRate:</strong> <span id="current-srate">0.00</span></p>
                     <p><strong>Date:</strong> <span id="current-date">-</span></p>
                 </div>
@@ -395,6 +406,206 @@
 @endsection
 
 <script>
+    // START: Set up Enter navigation
+    function setupEnterNavigation() {
+        let currentFieldIndex = 0;
+        let currentRowIndex = 0;
+
+        // Define field sequence
+        const formFields = [{
+                selector: '#party_name',
+                type: 'select'
+            },
+            {
+                selector: '#bill_date',
+                type: 'input'
+            },
+            {
+                selector: '#bill_no',
+                type: 'input'
+            },
+            {
+                selector: '#delivery_date',
+                type: 'input'
+            },
+            {
+                selector: 'select[name="gst"]',
+                type: 'select'
+            }
+        ];
+
+        const productFields = [
+            '.product-search-input', // Changed to use search input instead of select
+            'input[name="mrp[]"]',
+            'input[name="box[]"]',
+            'input[name="pcs[]"]',
+            'input[name="free[]"]',
+            'input[name="purchase_rate[]"]',
+            'input[name="discount_percent[]"]',
+            'input[name="discount_lumpsum[]"]'
+        ];
+
+        function getCurrentProductRow() {
+            const rows = document.querySelectorAll('#product-table-body tr');
+            return rows[currentRowIndex] || rows[rows.length - 1];
+        }
+
+        function focusField(selector, row = null) {
+            let element;
+            if (row) {
+                element = row.querySelector(selector);
+            } else {
+                element = document.querySelector(selector);
+            }
+
+            if (element) {
+                element.focus();
+                if (element.tagName === 'SELECT') {
+                    // For select elements, simulate click to open dropdown
+                    setTimeout(() => {
+                        if (element.size <= 1) {
+                            element.click();
+                        }
+                    }, 100);
+                }
+            }
+        }
+
+        function handleFormFieldNavigation(e, fieldIndex) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+
+                if (fieldIndex < formFields.length - 1) {
+                    // Move to next form field
+                    currentFieldIndex = fieldIndex + 1;
+                    focusField(formFields[currentFieldIndex].selector);
+                } else {
+                    // Move to first product field of first row
+                    currentFieldIndex = 0;
+                    currentRowIndex = 0;
+                    const firstRow = getCurrentProductRow();
+                    focusField(productFields[0], firstRow);
+                }
+            }
+        }
+
+        function handleProductFieldNavigation(e, fieldIndex, row) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+
+                if (fieldIndex < productFields.length - 1) {
+                    // Move to next field in same row
+                    focusField(productFields[fieldIndex + 1], row);
+                } else {
+                    // Last field in row (discount_lumpsum), always add new row and move to first field
+                    addProductRow();
+                    currentRowIndex++;
+                    const newRow = getCurrentProductRow();
+                    setTimeout(() => {
+                        focusField(productFields[0], newRow);
+                    }, 100);
+                }
+            } else if (e.key === 'Escape' && fieldIndex === productFields.length - 1) {
+                // ESC on last field (discount_lumpsum) moves to total invoice value
+                e.preventDefault();
+                const totalInvoiceField = document.getElementById('total-invoice-value');
+                if (totalInvoiceField) {
+                    totalInvoiceField.focus();
+                }
+            }
+        }
+
+        function handleSpecialNavigation(e) {
+            if (e.key === 'Enter') {
+                const target = e.target;
+
+                // Check if it's a select element that needs special handling
+                if (target.tagName === 'SELECT' && target.name === 'gst') {
+                    // GST dropdown selected, move to product
+                    e.preventDefault();
+                    currentRowIndex = 0;
+                    const firstRow = getCurrentProductRow();
+                    setTimeout(() => {
+                        focusField(productFields[0], firstRow);
+                    }, 100);
+                }
+
+                // Handle total invoice value to submit button navigation
+                if (target.id === 'total-invoice-value') {
+                    e.preventDefault();
+                    // Move focus to submit button
+                    const submitButton = document.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.focus();
+                    }
+                }
+
+                // Handle submit button enter key
+                if (target.tagName === 'BUTTON' && target.type === 'submit') {
+                    e.preventDefault();
+                    // Submit the form
+                    const form = target.closest('form');
+                    if (form) {
+                        form.submit();
+                    }
+                }
+            }
+        }
+
+        // Setup form field navigation
+        formFields.forEach((field, index) => {
+            const element = document.querySelector(field.selector);
+            if (element) {
+                element.addEventListener('keydown', (e) => handleFormFieldNavigation(e, index));
+            }
+        });
+
+        // Setup product field navigation using event delegation
+        document.addEventListener('keydown', function(e) {
+            const target = e.target;
+
+            // Handle product fields
+            if (target.closest('#product-table-body')) {
+                const row = target.closest('tr');
+                const rows = Array.from(document.querySelectorAll('#product-table-body tr'));
+                const rowIndex = rows.indexOf(row);
+
+                productFields.forEach((fieldSelector, fieldIndex) => {
+                    if (target.matches(fieldSelector)) {
+                        currentRowIndex = rowIndex;
+                        handleProductFieldNavigation(e, fieldIndex, row);
+                    }
+                });
+            }
+
+            // Handle special navigation cases
+            handleSpecialNavigation(e);
+        });
+
+        // Focus on first field when page loads
+        setTimeout(() => {
+            focusField(formFields[1].selector);
+        }, 500);
+
+        // Handle select dropdown closing with enter
+        document.addEventListener('change', function(e) {
+            if (e.target.tagName === 'SELECT') {
+                // When select changes, trigger enter behavior
+                const enterEvent = new KeyboardEvent('keydown', {
+                    key: 'Enter',
+                    code: 'Enter',
+                    keyCode: 13,
+                    which: 13,
+                    bubbles: true
+                });
+                setTimeout(() => {
+                    e.target.dispatchEvent(enterEvent);
+                }, 100);
+            }
+        });
+    }
+    // END: Set up Enter navigation
+
     let productRowCounter = 0;
     let allProducts = @json($products);
     let currentProductData = [];
@@ -613,10 +824,13 @@
                 existingOption.setAttribute('data-sgst', productData.gst || 0);
                 existingOption.setAttribute('data-cgst', productData.gst || 0);
                 existingOption.setAttribute('data-purchase-rate', productData.purchase_rate || 0);
+                existingOption.setAttribute('data-sale-rate-a', productData.sale_rate_a || 0);
+                existingOption.setAttribute('data-sale-rate-b', productData.sale_rate_b || 0);
+                existingOption.setAttribute('data-sale-rate-c', productData.sale_rate_c || 0);
                 existingOption.setAttribute('data-barcode', productData.barcode || '');
                 existingOption.setAttribute('data-category', productData.category_id || '');
                 existingOption.setAttribute('data-unit-type', productData.unit_types || '');
-                existingOption.setAttribute('data-box-pcs', productData.box_pcs || productData.converse_box || 1);
+                existingOption.setAttribute('data-box-pcs', productData.converse_box || 1);
             }
         } else {
             // Add new option
@@ -631,16 +845,22 @@
                 newOption.setAttribute('data-sgst', productData.gst || 0);
                 newOption.setAttribute('data-cgst', productData.gst || 0);
                 newOption.setAttribute('data-purchase-rate', productData.purchase_rate || 0);
+                newOption.setAttribute('data-sale-rate-a', productData.sale_rate_a || 0);
+                newOption.setAttribute('data-sale-rate-b', productData.sale_rate_b || 0);
+                newOption.setAttribute('data-sale-rate-c', productData.sale_rate_c || 0);
                 newOption.setAttribute('data-barcode', productData.barcode || '');
                 newOption.setAttribute('data-category', productData.category_id || '');
                 newOption.setAttribute('data-unit-type', productData.unit_types || '');
-                newOption.setAttribute('data-box-pcs', productData.box_pcs || productData.converse_box || 1);
+                newOption.setAttribute('data-box-pcs', productData.converse_box || 1);
             } else {
                 newOption.setAttribute('data-mrp', 0);
                 newOption.setAttribute('data-name', productName);
                 newOption.setAttribute('data-sgst', 0);
                 newOption.setAttribute('data-cgst', 0);
                 newOption.setAttribute('data-purchase-rate', 0);
+                newOption.setAttribute('data-sale-rate-a', 0);
+                newOption.setAttribute('data-sale-rate-b', 0);
+                newOption.setAttribute('data-sale-rate-c', 0);
                 newOption.setAttribute('data-barcode', '');
                 newOption.setAttribute('data-category', '');
                 newOption.setAttribute('data-unit-type', '');
@@ -676,205 +896,6 @@
             setupProductInput(productInput);
         }
     }
-
-    // START: Set up Enter navigation
-    function setupEnterNavigation() {
-        let currentFieldIndex = 0;
-        let currentRowIndex = 0;
-
-        // Define field sequence
-        const formFields = [{
-                selector: '#party_name',
-                type: 'select'
-            },
-            {
-                selector: '#bill_date',
-                type: 'input'
-            },
-            {
-                selector: '#bill_no',
-                type: 'input'
-            },
-            {
-                selector: '#delivery_date',
-                type: 'input'
-            },
-            {
-                selector: 'select[name="gst"]',
-                type: 'select'
-            }
-        ];
-
-        const productFields = [
-            '.product-search-input', // Changed to use search input instead of select
-            'input[name="box[]"]',
-            'input[name="pcs[]"]',
-            'input[name="free[]"]',
-            'input[name="purchase_rate[]"]',
-            'input[name="discount_percent[]"]',
-            'input[name="discount_lumpsum[]"]'
-        ];
-
-        function getCurrentProductRow() {
-            const rows = document.querySelectorAll('#product-table-body tr');
-            return rows[currentRowIndex] || rows[rows.length - 1];
-        }
-
-        function focusField(selector, row = null) {
-            let element;
-            if (row) {
-                element = row.querySelector(selector);
-            } else {
-                element = document.querySelector(selector);
-            }
-
-            if (element) {
-                element.focus();
-                if (element.tagName === 'SELECT') {
-                    // For select elements, simulate click to open dropdown
-                    setTimeout(() => {
-                        if (element.size <= 1) {
-                            element.click();
-                        }
-                    }, 100);
-                }
-            }
-        }
-
-        function handleFormFieldNavigation(e, fieldIndex) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-
-                if (fieldIndex < formFields.length - 1) {
-                    // Move to next form field
-                    currentFieldIndex = fieldIndex + 1;
-                    focusField(formFields[currentFieldIndex].selector);
-                } else {
-                    // Move to first product field of first row
-                    currentFieldIndex = 0;
-                    currentRowIndex = 0;
-                    const firstRow = getCurrentProductRow();
-                    focusField(productFields[0], firstRow);
-                }
-            }
-        }
-
-        function handleProductFieldNavigation(e, fieldIndex, row) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-
-                if (fieldIndex < productFields.length - 1) {
-                    // Move to next field in same row
-                    focusField(productFields[fieldIndex + 1], row);
-                } else {
-                    // Last field in row (discount_lumpsum), always add new row and move to first field
-                    addProductRow();
-                    currentRowIndex++;
-                    const newRow = getCurrentProductRow();
-                    setTimeout(() => {
-                        focusField(productFields[0], newRow);
-                    }, 100);
-                }
-            } else if (e.key === 'Escape' && fieldIndex === productFields.length - 1) {
-                // ESC on last field (discount_lumpsum) moves to total invoice value
-                e.preventDefault();
-                const totalInvoiceField = document.getElementById('total-invoice-value');
-                if (totalInvoiceField) {
-                    totalInvoiceField.focus();
-                }
-            }
-        }
-
-        function handleSpecialNavigation(e) {
-            if (e.key === 'Enter') {
-                const target = e.target;
-
-                // Check if it's a select element that needs special handling
-                if (target.tagName === 'SELECT' && target.name === 'gst') {
-                    // GST dropdown selected, move to product
-                    e.preventDefault();
-                    currentRowIndex = 0;
-                    const firstRow = getCurrentProductRow();
-                    setTimeout(() => {
-                        focusField(productFields[0], firstRow);
-                    }, 100);
-                }
-
-                // Handle total invoice value to submit button navigation
-                if (target.id === 'total-invoice-value') {
-                    e.preventDefault();
-                    // Move focus to submit button
-                    const submitButton = document.querySelector('button[type="submit"]');
-                    if (submitButton) {
-                        submitButton.focus();
-                    }
-                }
-
-                // Handle submit button enter key
-                if (target.tagName === 'BUTTON' && target.type === 'submit') {
-                    e.preventDefault();
-                    // Submit the form
-                    const form = target.closest('form');
-                    if (form) {
-                        form.submit();
-                    }
-                }
-            }
-        }
-
-        // Setup form field navigation
-        formFields.forEach((field, index) => {
-            const element = document.querySelector(field.selector);
-            if (element) {
-                element.addEventListener('keydown', (e) => handleFormFieldNavigation(e, index));
-            }
-        });
-
-        // Setup product field navigation using event delegation
-        document.addEventListener('keydown', function(e) {
-            const target = e.target;
-
-            // Handle product fields
-            if (target.closest('#product-table-body')) {
-                const row = target.closest('tr');
-                const rows = Array.from(document.querySelectorAll('#product-table-body tr'));
-                const rowIndex = rows.indexOf(row);
-
-                productFields.forEach((fieldSelector, fieldIndex) => {
-                    if (target.matches(fieldSelector)) {
-                        currentRowIndex = rowIndex;
-                        handleProductFieldNavigation(e, fieldIndex, row);
-                    }
-                });
-            }
-
-            // Handle special navigation cases
-            handleSpecialNavigation(e);
-        });
-
-        // Focus on first field when page loads
-        setTimeout(() => {
-            focusField(formFields[1].selector);
-        }, 500);
-
-        // Handle select dropdown closing with enter
-        document.addEventListener('change', function(e) {
-            if (e.target.tagName === 'SELECT') {
-                // When select changes, trigger enter behavior
-                const enterEvent = new KeyboardEvent('keydown', {
-                    key: 'Enter',
-                    code: 'Enter',
-                    keyCode: 13,
-                    which: 13,
-                    bubbles: true
-                });
-                setTimeout(() => {
-                    e.target.dispatchEvent(enterEvent);
-                }, 100);
-            }
-        });
-    }
-    // END: Set up Enter navigation
 
     document.addEventListener('DOMContentLoaded', function() {
         const addProductBtn = document.querySelector('.btn.btn-primary.shadow-md.mr-2.btn-hover');
@@ -956,7 +977,7 @@
         productSelect.setAttribute('onchange', 'loadProductDetails(this)');
 
         const inputs = newRow.querySelectorAll(
-            'input[name="box[]"], input[name="pcs[]"], input[name="purchase_rate[]"], input[name="discount_percent[]"], input[name="discount_lumpsum[]"]'
+            'input[name="mrp[]"], input[name="box[]"], input[name="pcs[]"], input[name="purchase_rate[]"], input[name="discount_percent[]"], input[name="discount_lumpsum[]"]'
         );
         inputs.forEach(input => {
             input.setAttribute('onchange', 'calculateRowAmount(this)');
@@ -1016,6 +1037,9 @@
         const productName = selectedOption.getAttribute('data-name') || '-';
         const productMrp = selectedOption.getAttribute('data-mrp') || '0.00';
         const productPurchaseRate = selectedOption.getAttribute('data-purchase-rate') || '0.00';
+        const productSaleRateA = selectedOption.getAttribute('data-sale-rate-a') || '0.00';
+        const productSaleRateB = selectedOption.getAttribute('data-sale-rate-b') || '0.00';
+        const productSaleRateC = selectedOption.getAttribute('data-sale-rate-c') || '0.00';
         const sgstRate = selectedOption.getAttribute('data-sgst') || '0';
         const cgstRate = selectedOption.getAttribute('data-cgst') || '0';
         const boxToPcs = selectedOption.getAttribute('data-box-pcs') || '1';
@@ -1024,14 +1048,22 @@
 
         // Update current item details
         document.getElementById('current-item').textContent = productName;
-        document.getElementById('current-mrp').textContent = parseFloat(productMrp).toFixed(2);
+        document.getElementById('current-srate').textContent = productSaleRateA;
+        // document.getElementById('current-srate').textContent = " Rate1 : " + productSaleRateA + " Rate2 : " + productSaleRateB + " Rate3 : " + productSaleRateC;
+        // document.getElementById('current-mrp').textContent = parseFloat(productMrp).toFixed(2);
 
-        // Auto-fill purchase rate if available and field is empty
+        // Auto-fill purchase rate and MRP if available and field is empty
         const row = selectElement.closest('tr');
         const purchaseRateInput = row.querySelector('input[name="purchase_rate[]"]');
+        const mrpInput = row.querySelector('input[name="mrp[]"]');
+
         if (purchaseRateInput && productPurchaseRate > 0 && !purchaseRateInput.value) {
             purchaseRateInput.value = parseFloat(productPurchaseRate).toFixed(2);
             calculateRowAmount(purchaseRateInput);
+        }
+        if (mrpInput && productMrp > 0 && !mrpInput.value) {
+            mrpInput.value = parseFloat(productMrp).toFixed(2);
+            calculateRowAmount(mrpInput);
         }
 
         // Log product details for debugging
@@ -1065,6 +1097,9 @@
         const cgstRate = parseFloat(selectedOption.getAttribute('data-cgst') || 0);
 
         // Calculate total pieces: (box * conversion ratio) + individual pcs
+        // box: total no of box to purchase
+        // boxToPcs: conversion ratio of box
+        // pcs: individual pieces to purchase
         const totalPcs = (box * boxToPcs) + pcs;
 
         // Calculate base amount: total pieces * purchase rate
@@ -1144,10 +1179,10 @@
             // Get product MRP and box conversion
             const productSelect = row.querySelector('select[name="product[]"]');
             const selectedOption = productSelect.options[productSelect.selectedIndex];
-            const mrp = parseFloat(selectedOption.getAttribute('data-mrp') || 0);
             const boxToPcs = parseFloat(selectedOption.getAttribute('data-box-pcs') || 1);
 
             // Get quantities
+            const mrp = parseFloat(row.querySelector('input[name="mrp[]"]')?.value || 0);
             const box = parseFloat(row.querySelector('input[name="box[]"]')?.value || 0);
             const pcs = parseFloat(row.querySelector('input[name="pcs[]"]')?.value || 0);
             const free = parseFloat(row.querySelector('input[name="free[]"]')?.value || 0);
@@ -1192,11 +1227,11 @@
         document.getElementById('total-gst').textContent = totalGstAmount.toFixed(2);
         document.getElementById('final-amount').textContent = totalFinalAmount.toFixed(2);
 
-        document.getElementById('total-invoice-value').textContent = totalFinalAmount.toFixed(2);
+        document.getElementById('total-invoice-value').value = totalFinalAmount.toFixed(2);
 
         // Update S.Rate (average rate per piece)
         const averageRate = totalQuantity > 0 ? (totalBaseAmount / totalQuantity) : 0;
-        document.getElementById('current-srate').textContent = averageRate.toFixed(2);
+        // document.getElementById('current-srate').textContent = averageRate.toFixed(2);
 
         // Update hidden fields for purchase_receipt table
         document.getElementById('receipt-subtotal-hidden').value = totalBaseAmount.toFixed(2);
