@@ -1275,6 +1275,9 @@ License: You must have a valid license purchased only from themeforest(the above
                             </li>
                         </ul>
                     </li>
+                    @php
+                        $orderMenuOpen = request()->routeIs('orders.*');
+                    @endphp
 
                     <li>
                         <a href="javascript:;" class="side-menu">
@@ -1323,9 +1326,6 @@ License: You must have a valid license purchased only from themeforest(the above
                         </li>
                     </ul>
                 </li>
-                @php
-                    $orderMenuOpen = request()->routeIs('orders.*');
-                @endphp
 
                 {{-- <li>
                         <a href="javascript:;" class="side-menu">
