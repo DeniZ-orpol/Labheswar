@@ -253,17 +253,22 @@ class PurchaseController extends Controller
 
         $parties = PurchaseParty::on($branch->connection_name)->get();
         $products = Product::on($branch->connection_name)->get();
-
         $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
             ->withDynamic(['purchaseParty', 'createUser', 'updateUser'])
             ->where('id', $id)
             ->first();
 
         $purchaseItems = Purchase::on($branch->connection_name)
-            ->where('purchase_receipt_id', $id)->get();
+            ->with('product')
+            ->where('purchase_receipt_id', $id)
+            ->get()
+            ->map(function ($item) {
+                $item->productInfo = $item->getRelation('product'); // alias it manually
+                return $item;
+            });
 
         // dd($purchaseItems);
-        return view('purchase.edit', compact(['parties', 'products', 'purchaseReceipt', 'purchaseItems']));
+        return view('purchase.edit', compact(['products', 'purchaseReceipt', 'purchaseItems']));
     }
 
     /**
@@ -352,7 +357,7 @@ class PurchaseController extends Controller
                     ->where('id', $id)
                     ->update([
                         'bill_date' => $validate['bill_date'],
-                        'purchase_party_id' => $validate['party_name'],
+                        // 'purchase_party_id' => $validate['party_name'],
                         'bill_no' => $validate['bill_no'],
                         'delivery_date' => $validate['delivery_date'],
                         'gst_status' => $validate['gst'],
@@ -389,7 +394,7 @@ class PurchaseController extends Controller
 
                     $purchaseData = [
                         'bill_date' => $validate['bill_date'],
-                        'purchase_party_id' => $validate['party_name'],
+                        // 'purchase_party_id' => $validate['party_name'],
                         'bill_no' => $validate['bill_no'],
                         'delivery_date' => $validate['delivery_date'],
                         'gst' => $validate['gst'],
