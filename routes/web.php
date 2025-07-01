@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\HsnController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PurchasePartyController;
@@ -120,14 +121,22 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     Route::get('/hsn-code/search', [ProductController::class, 'searchHsnCode'])->name('hsn.search');
     Route::get('/products-search', [ProductController::class, 'searchProduct'])->name('products.search');
     Route::get('/purchase/party/search', [PurchasePartyController::class, 'partySearch'])->name('purchase.party.search');
+    Route::post('/company/search', [CompanyContoller::class, 'search'])->name('company.search');
 
     Route::resource('hsn_codes', HsnController::class);
     Route::resource('company', CompanyContoller::class);
+
+    // Modal data store routes
     Route::post('/categories/modalstore', [CategoryController::class, 'modalStore'])->name('categories.modalstore');
     Route::post('/company/modalstore', [CompanyContoller::class, 'modalStore'])->name('company.modalstore');
-    Route::post('/company/search', [CompanyContoller::class, 'search'])->name('company.search');
     Route::post('/hsn_codes/modalstore', [HsnController::class, 'modalStore'])->name('hsn_codes.modalstore');
     Route::post('/purchase/party/modalstore', [PurchasePartyController::class, 'modalStore'])->name('purchase.party.modalstore');
+
+    // Ledger routes
+    Route::get('/ledgers', [LedgerController::class, 'getLedgersByType'])->name('ledgers');
+    Route::resource('ledger', LedgerController::class);
+    // Route::get('/ledger', [LedgerController::class, 'index'])->name('ledger.index');
+    // Route::get('/ledger/create', [LedgerController::class, 'create'])->name('ledger.create');
 });
 
 
