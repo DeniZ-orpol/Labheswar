@@ -12,6 +12,7 @@ use App\Http\Controllers\HsnController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProfitAndLooseController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PurchasePartyController;
 use App\Http\Controllers\RoleController;
@@ -136,8 +137,8 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     // Ledger routes
     Route::get('/ledgers', [LedgerController::class, 'getLedgersByType'])->name('ledgers');
     Route::resource('ledger', LedgerController::class);
-
     Route::resource('bank', BankDetailsController::class);
+    Route::resource('profit-loose', ProfitAndLooseController::class);
 });
 
 

@@ -16,7 +16,7 @@
 @section('content')
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
-            Create Category
+            Edit Bank Details
         </h2>
         <form action="{{ route('bank.update', $bank->id) }}" method="POST" enctype="multipart/form-data"
             class="form-updated validate-form">

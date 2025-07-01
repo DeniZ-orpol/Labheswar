@@ -101,8 +101,8 @@
 
                         <!-- Profit And Loss -->
                         <div class="w-full bg-primary border border-white text-white text-center py-4 px-6 rounded-lg transition-colors cursor-pointer">
-                            {{-- <a href="{{ route('profit-loss.list') }}" class="block text-white font-medium"> --}}
-                            <a href="#" class="block text-white font-medium">
+                            <a href="{{ route('profit-loose.index') }}" class="block text-white font-medium">
+                            {{-- <a href="#" class="block text-white font-medium"> --}}
                                 Profit And Loss
                             </a>
                         </div>
