@@ -1409,7 +1409,7 @@ class AppCartOrderController extends Controller
         $branch = $auth['branch'];
         $role = $auth['role'];
 
-        $connection = $branch->connection_name; // ✅ Your preferred usage
+        $connection = $branch->connection_name;
 
         DB::connection($connection)->beginTransaction();
 
@@ -1426,10 +1426,18 @@ class AppCartOrderController extends Controller
                 ], 404);
             }
 
-            // ✅ Ensure model saves in correct DB
             $cart->setConnection($connection);
 
-            // 🔁 Unassign if assigned to someone else
+            // 🔄 Unassign all other carts assigned to this user
+            Cart::on($connection)
+                ->where('user_id', $user->id)
+                ->where('id', '!=', $cart->id)
+                ->update([
+                    'user_id' => null,
+                    'status' => 'available'
+                ]);
+
+            // 🔁 Unassign if already assigned to someone else
             if ($cart->user_id !== null && $cart->user_id !== $user->id) {
                 $cart->user_id = null;
                 $cart->status = 'available';
@@ -1461,6 +1469,7 @@ class AppCartOrderController extends Controller
             ], 500);
         }
     }
+
 
 
 
