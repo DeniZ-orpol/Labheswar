@@ -1403,53 +1403,94 @@ class AppCartOrderController extends Controller
             'cart_id' => 'required|integer',
         ]);
 
+        // ✅ Authenticated user, branch and connection
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
-        DB::beginTransaction();
+        $connection = $branch->connection_name; // ✅ Your preferred usage
+
+        DB::connection($connection)->beginTransaction();
+
         try {
-            // Step 1: Remove this cart from any other users
-            DB::connection($branch->db_connection)
-                ->table('carts')
+            // 🔍 Get cart from correct branch DB
+            $cart = Cart::on($connection)
                 ->where('id', $request->cart_id)
-                ->where('user_id', '!=', $user->id)
-                ->update(['user_id' => null]);
+                ->first();
 
-            // Step 2: Assign to current user
-            DB::connection($branch->db_connection)
-                ->table('carts')
-                ->where('id', $request->cart_id)
-                ->update(['user_id' => $user->id]);
+            if (!$cart) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Cart ID {$request->cart_id} not found in branch DB: {$connection}"
+                ], 404);
+            }
 
-            DB::commit();
-            return response()->json(['message' => 'Cart assigned successfully']);
-        } catch (\Exception $e) {
-            DB::rollBack();
+            // ✅ Ensure model saves in correct DB
+            $cart->setConnection($connection);
+
+            // 🔁 Unassign if assigned to someone else
+            if ($cart->user_id !== null && $cart->user_id !== $user->id) {
+                $cart->user_id = null;
+                $cart->status = 'available';
+                $cart->save();
+            }
+
+            // ✅ Assign to current user and mark as unavailable
+            $cart->user_id = $user->id;
+            $cart->status = 'unavailable';
+            $cart->save();
+
+            DB::connection($connection)->commit();
+
             return response()->json([
-                'error' => 'Failed to assign cart',
-                'details' => $e->getMessage()
+                'success' => true,
+                'message' => 'Cart assigned successfully',
+                'cart_id' => $cart->id,
+                'user_id' => $cart->user_id,
+                'status' => $cart->status,
+                'branch_connection' => $connection
+            ]);
+        } catch (\Exception $e) {
+            DB::connection($connection)->rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error while assigning cart',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
 
 
-    public function getOpenCartId()
+
+    public function getAssignedCartId()
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $connection = $branch->connection_name; // or $branch->db_connection
 
-        $cart = DB::connection($branch->db_connection)
+        // 🔍 Fetch cart assigned to this user in this branch DB
+        $cart = DB::connection($connection)
             ->table('carts')
             ->where('user_id', $user->id)
-            ->where('status', 'open') // assuming there's a status field
+            ->where('status', 'unavailable') // ✅ status you use when assigned
             ->first();
 
         if (!$cart) {
-            return response()->json(['message' => 'No open cart found'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'No cart assigned to this user in this branch'
+            ], 404);
         }
 
-        return response()->json(['cart_id' => $cart->id]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Assigned cart found',
+            'cart_id' => $cart->id,
+            'status' => $cart->status,
+            'branch_connection' => $connection
+        ]);
     }
 }
