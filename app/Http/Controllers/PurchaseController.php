@@ -24,22 +24,18 @@ class PurchaseController extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
-        $parties = PurchaseParty::on($branch->connection_name)->get();
-        $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
-            ->with(['purchaseParty', 'createUser', 'updateUser'])
-            ->orderByDesc('id')->paginate(10);
-
-        // if ($purchaseReceipt->isNotEmpty()) {
-        //     $purchaseReceiptModel = new PurchaseParty();
-        //     $purchaseReceiptModel->setDynamicTable($branchConnection);
-        //     $purchaseReceiptModel->loadRelationsForPaginator($purchaseReceipt, ['purchaseParty', 'createUser', 'updateUser']);
-        // }
-        // ->withDynamic(['purchaseParty', 'createUser', 'updateUser'])
-        // ->orderByDesc('id')
-        // ->get();
-        // dd($purchaseReceipt);
-        // $purchase = Purchase::on($branchConnection)->with('purchaseReceipt')->paginate();
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $parties = PurchaseParty::get();
+            $purchaseReceipt = PurchaseReceipt::with(['purchaseParty', 'createUser', 'updateUser'])
+                ->orderByDesc('id')->paginate(10);
+        } else {
+            $parties = PurchaseParty::on($branch->connection_name)->get();
+            $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
+                ->with(['purchaseParty', 'createUser', 'updateUser'])
+                ->orderByDesc('id')->paginate(10);
+        }
 
         return view('purchase.index', compact(['parties', 'purchaseReceipt']));
     }

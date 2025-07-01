@@ -16,6 +16,7 @@ use App\Http\Controllers\ProfitAndLooseController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PurchasePartyController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\StockInHandController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -139,6 +140,7 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     Route::resource('ledger', LedgerController::class);
     Route::resource('bank', BankDetailsController::class);
     Route::resource('profit-loose', ProfitAndLooseController::class);
+    Route::resource('stock-in-hand', StockInHandController::class);
 });
 
 

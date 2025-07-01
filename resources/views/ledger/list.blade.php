@@ -93,8 +93,8 @@
 
                         <!-- Stock in Hand -->
                         <div class="w-full bg-primary border border-white text-white text-center py-4 px-6 rounded-lg transition-colors cursor-pointer">
-                            {{-- <a href="{{ route('stock-in-hand.list') }}" class="block text-white font-medium"> --}}
-                            <a href="#" class="block text-white font-medium">
+                            <a href="{{ route('stock-in-hand.index') }}" class="block text-white font-medium">
+                            {{-- <a href="#" class="block text-white font-medium"> --}}
                                 Stock in Hand
                             </a>
                         </div>
