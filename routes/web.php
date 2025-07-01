@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AppOrderController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\BankDetailsController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CompanyContoller;
@@ -135,8 +136,8 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     // Ledger routes
     Route::get('/ledgers', [LedgerController::class, 'getLedgersByType'])->name('ledgers');
     Route::resource('ledger', LedgerController::class);
-    // Route::get('/ledger', [LedgerController::class, 'index'])->name('ledger.index');
-    // Route::get('/ledger/create', [LedgerController::class, 'create'])->name('ledger.create');
+
+    Route::resource('bank', BankDetailsController::class);
 });
 
 

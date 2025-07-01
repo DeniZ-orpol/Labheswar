@@ -85,8 +85,8 @@
 
                         <!-- BANK -->
                         <div class="w-full bg-primary border border-white text-white text-center py-4 px-6 rounded-lg transition-colors cursor-pointer">
-                            {{-- <a href="{{ route('bank.list') }}" class="block text-white font-medium"> --}}
-                            <a href="#" class="block text-white font-medium">
+                            <a href="{{ route('bank.index') }}" class="block text-white font-medium">
+                            {{-- <a href="#" class="block text-white font-medium"> --}}
                                 BANK
                             </a>
                         </div>
