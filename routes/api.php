@@ -40,7 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/order-bill/{id}', [AppCartOrderController::class, 'orderBill']);
 
     Route::post('/cart/assign', [AppCartOrderController::class, 'assignCartToUser']);
-    Route::get('/cart/open', [AppCartOrderController::class, 'getOpenCartId']);
+    Route::get('/cart/open', [AppCartOrderController::class, 'getAssignedCartId']);
 });
 
 // Route::post('/products/store', [ProductController::class, 'store']);
