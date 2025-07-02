@@ -1345,24 +1345,10 @@ License: You must have a valid license purchased only from themeforest(the above
                     $ledgerMenuOpen = request()->routeIs('ledger.*') || request()->routeIs('ledgers.*');
                 @endphp
                 <li>
-                    <a href="javascript:;" class="side-menu">
-                        <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
-                        <div class="side-menu__title">
-                            Ledgers
-                            <i data-lucide="chevron-down" class="side-menu__sub-icon"></i>
-                        </div>
+                    <a href="{{ route('ledgers') }}" class="side-menu {{ $ledgerMenuOpen ? 'side-menu--active' : '' }}">
+                        <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
+                        <div class="side-menu__title"> Ledgers </div>
                     </a>
-
-                    <ul class="{{ $ledgerMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
-
-                        <li>
-                            <a href="{{ route('ledgers') }}"
-                                class="side-menu {{ $ledgerMenuOpen ? 'side-menu--active' : '' }}">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title"> Ledgers </div>
-                            </a>
-                        </li>
-                    </ul>
                 </li>
 
                 {{-- <li>
