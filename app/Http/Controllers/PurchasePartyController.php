@@ -17,8 +17,13 @@ class PurchasePartyController extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
-        $parties = PurchaseParty::on($branch->connection_name)->orderBy('id', 'desc')->paginate(10);
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $parties = PurchaseParty::orderBy('id', 'desc')->paginate(10);
+        } else {
+            $parties = PurchaseParty::on($branch->connection_name)->orderBy('id', 'desc')->paginate(10);
+        }
 
         return view('purchase.party.index', compact('parties'));
     }
@@ -39,6 +44,7 @@ class PurchasePartyController extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
         $validate = $request->validate([
             'party_name' => 'required|string',
@@ -67,7 +73,11 @@ class PurchasePartyController extends Controller
             'address' => $validate['party_name'],
         ];
 
-        PurchaseParty::on($branch->connection_name)->create($data);
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            PurchaseParty::create($data);
+        } else {
+            PurchaseParty::on($branch->connection_name)->create($data);
+        }
 
         return redirect()->route('purchase.party.index')->with('success', 'Purchase Party Created Successfully!');
     }
@@ -80,9 +90,14 @@ class PurchasePartyController extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
         // Find the purchase party using branch connection
-        $party = PurchaseParty::on($branch->connection_name)->findOrFail($id);
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $party = PurchaseParty::findOrFail($id);
+        } else {
+            $party = PurchaseParty::on($branch->connection_name)->findOrFail($id);
+        }
 
         return view('purchase.party.show', compact('party'));
     }
@@ -95,8 +110,13 @@ class PurchasePartyController extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
-        $party = PurchaseParty::on($branch->connection_name)->where('id', $id)->first();
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $party = PurchaseParty::where('id', $id)->first();
+        } else {
+            $party = PurchaseParty::on($branch->connection_name)->where('id', $id)->first();
+        }
 
         return view('purchase.party.edit', compact('party'));
     }
@@ -109,6 +129,7 @@ class PurchasePartyController extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
         $validate = $request->validate([
             'party_name' => 'required|string',
@@ -123,7 +144,11 @@ class PurchasePartyController extends Controller
             'address' => 'string',
         ]);
 
-        $party = PurchaseParty::on($branch->connection_name)->findOrFail($id);
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $party = PurchaseParty::findOrFail($id);
+        } else {
+            $party = PurchaseParty::on($branch->connection_name)->findOrFail($id);
+        }
 
         $party->update($validate);
 
@@ -135,14 +160,17 @@ class PurchasePartyController extends Controller
      */
     public function destroy(string $id)
     {
-        //
-
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
         // Find the product using branch connection
-        $party = PurchaseParty::on($branch->connection_name)->findOrFail($id);
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $party = PurchaseParty::findOrFail($id);
+        } else {
+            $party = PurchaseParty::on($branch->connection_name)->findOrFail($id);
+        }
 
         // Delete the purchase party
         $party->delete();
@@ -172,10 +200,16 @@ class PurchasePartyController extends Controller
 
             $search = $request->get('search', '');
 
-            $parties = PurchaseParty::on($branchConnection)
-                ->where('party_name', 'LIKE', "%{$search}%")
-                ->limit(10)
-                ->get();
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                $parties = PurchaseParty::where('party_name', 'LIKE', "%{$search}%")
+                    ->limit(10)
+                    ->get();
+            } else {
+                $parties = PurchaseParty::on($branchConnection)
+                    ->where('party_name', 'LIKE', "%{$search}%")
+                    ->limit(10)
+                    ->get();
+            }
 
             return response()->json([
                 'success' => true,
@@ -196,6 +230,7 @@ class PurchasePartyController extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
         $validate = $request->validate([
             'party_name' => 'required|string',
@@ -224,7 +259,11 @@ class PurchasePartyController extends Controller
             'address' => $validate['party_name'],
         ];
 
-        PurchaseParty::on($branch->connection_name)->create($data);
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            PurchaseParty::create($data);
+        } else {
+            PurchaseParty::on($branch->connection_name)->create($data);
+        }
 
         return redirect()->route('purchase.party.index')->with('success', 'Purchase Party Created Successfully!');
     }

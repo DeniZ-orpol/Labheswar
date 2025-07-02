@@ -1,5 +1,8 @@
 @extends('app')
 @section('content')
+    @php
+        $isPaginated = method_exists($purchaseReceipt, 'links');
+    @endphp
     <!-- BEGIN: Content -->
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
@@ -60,7 +63,7 @@
                         @endif
                     </tbody>
                 </table>
-                @if ($purchaseReceipt instanceof \Illuminate\Pagination\LengthAwarePaginator && $purchaseReceipt->hasPages())
+                @if ($isPaginated)
                     <div class="pagination-wrapper">
                         <div class="pagination-info">
                             Showing {{ $purchaseReceipt->firstItem() }} to {{ $purchaseReceipt->lastItem() }} of
@@ -129,7 +132,6 @@
         }
 
         .pagination-info {
-            display: none;
             font-size: 14px;
             color: #6b7280;
             font-weight: 500;
