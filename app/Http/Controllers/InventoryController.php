@@ -65,17 +65,29 @@ class InventoryController extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
-        $inventories = Inventory::on($branch->connection_name)->get();
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $inventories = Inventory::get();
+        } else {
+            $inventories = Inventory::on($branch->connection_name)->get();
+        }
 
         if ($inventories->isNotEmpty()) {
             $productIds = $inventories->pluck('product_id')->unique()->filter();
 
             if ($productIds->isNotEmpty()) {
-                $products = Product::on($branch->connection_name)
-                    ->whereIn('id', $productIds)
-                    ->get()
-                    ->keyBy('id');
+                if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                    $products = Product::whereIn('id', $productIds)
+                        ->get()
+                        ->keyBy('id');
+                } else {
+                    $products = Product::on($branch->connection_name)
+                        ->whereIn('id', $productIds)
+                        ->get()
+                        ->keyBy('id');
+                }
+
 
                 // Group by product and calculate total quantity
                 $groupedInventories = collect();
@@ -119,6 +131,7 @@ class InventoryController extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
         try {
             // $existing = Inventory::on($branch->connection_name)
@@ -143,15 +156,20 @@ class InventoryController extends Controller
             //         ]);
             // } else {
             // Insert new inventory row
-            Inventory::on($branch->connection_name)->insert([
+            $data = [
                 'product_id' => $request->product_id,
                 'quantity' => strtoupper($request->type) == 'IN' ? $request->quantity : -$request->quantity,
                 'type' => $request->type,
                 'reason' => $request->reason,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
-            // }
+            ];
+
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                Inventory::insert($data);
+            } else {
+                Inventory::on($branch->connection_name)->insert($data);
+            }
 
             return redirect()->route('inventory.index')->with('success', 'Inventory saved successfully.');
         } catch (\Exception $e) {
@@ -165,9 +183,14 @@ class InventoryController extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
         // Fetch branch-wise products
-        $products = Product::on($branch->connection_name)->get();
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $products = Product::get();
+        } else {
+            $products = Product::on($branch->connection_name)->get();
+        }
 
         return view('inventory.create', compact('products'));
     }

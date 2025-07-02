@@ -17,8 +17,14 @@ class CompanyContoller extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
-        $companies = Company::on($branch->connection_name)->orderBy('id', 'desc')->paginate(10);
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $companies = Company::orderBy('id', 'desc')->paginate(10);
+        } else {
+            $companies = Company::on($branch->connection_name)->orderBy('id', 'desc')->paginate(10);
+        }
+
         return view('company.index', compact('companies'));
     }
 
@@ -38,6 +44,7 @@ class CompanyContoller extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
         // Validate the request - including calculated fields from frontend
         $validate = $request->validate([
@@ -47,9 +54,12 @@ class CompanyContoller extends Controller
         $data = [
             'name' => $validate['name'],
         ];
-        // dd($data);
-        Company::on($branch->connection_name)->create($data);
-        // dd(123);
+        
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            Company::create($data);
+        } else {
+            Company::on($branch->connection_name)->create($data);
+        }
 
         return redirect()->route('company.index')->with('success', 'company Created Successfully!');
     }
@@ -70,8 +80,13 @@ class CompanyContoller extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
-        $companies = Company::on($branch->connection_name)->where('id', $id)->first();
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $companies = Company::where('id', $id)->first();
+        } else {
+            $companies = Company::on($branch->connection_name)->where('id', $id)->first();
+        }
 
         if (!$companies) {
             return redirect()->route('company.index')->with('error', 'Company not found.');
@@ -88,20 +103,23 @@ class CompanyContoller extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
         $validate = $request->validate([
             'name' => 'required|string|max:255',
         ]);
-        // dd($request->all());
+
         $data = [
             'name' => $validate['name'],
         ];
-        // dd($data);
-        Company::on($branch->connection_name)->where('id', $id)->first();
+        
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $company = Company::where('id', $id)->first();
+        } else {
+            $company = Company::on($branch->connection_name)->where('id', $id)->first();
+        }
 
-        Company::on($branch->connection_name)->where('id', $id)->update([
-            'name' => $request->name,
-        ]);
+        $company->update($data);
 
         return redirect()->route('company.index')->with('success', 'Company Updated Successfully!');
     }
@@ -114,10 +132,13 @@ class CompanyContoller extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
-        Company::on($branch->connection_name)->where('id', $id)->delete();
-
-        // $hsn->delete();
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            Company::where('id', $id)->delete();
+        } else {
+            Company::on($branch->connection_name)->where('id', $id)->delete();
+        }
 
         return redirect()->route('company.index')->with('success', 'Company Deleted Successfully!');
     }
@@ -129,6 +150,7 @@ class CompanyContoller extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
         // Validate the request - including calculated fields from frontend
         $validate = $request->validate([
@@ -138,8 +160,12 @@ class CompanyContoller extends Controller
         $data = [
             'name' => $validate['name'],
         ];
-        // dd($data);
-        $company = Company::on($branch->connection_name)->create($data);
+
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $company = Company::create($data);
+        } else {
+            $company = Company::on($branch->connection_name)->create($data);
+        }
 
         return response()->json([
             'success' => true,
