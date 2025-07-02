@@ -2,7 +2,6 @@
 
 @section('content')
     @php
-        $isSuperAdmin = strtolower($role->role_name) === 'super admin';
         $isPaginated = method_exists($categories, 'links');
     @endphp
     <div class="content">
@@ -11,147 +10,106 @@
         </h2>
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
-                @if ($isSuperAdmin)
-                    <a href="{{ route('categories.create', request()->query()) }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add Category</a>
-                @else
-                    <a href="{{ Route('categories.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add Category</a>
-                @endif
-                
-                @if ($isSuperAdmin)
-                    <div class="flex items-center gap-2 ml-auto">
-                        <label for="branch_select" class="text-sm font-medium">Select Branch:</label>
-                        <select id="branch_select" class="form-select border-gray-300 rounded-md" onchange="changeBranch()">
-                            <option value="">-- Select Branch --</option>
-                            @foreach ($availableBranches as $availableBranch)
-                                <option value="{{ $availableBranch->id }}"
-                                    {{ isset($selectedBranch) && $selectedBranch->id == $availableBranch->id ? 'selected' : '' }}>
-                                    {{ $availableBranch->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                @endif
+                <a href="{{ Route('categories.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add Category</a>
             </div>
 
             <div class="intro-y col-span-12 overflow-auto">
-                @if ($isSuperAdmin && isset($showNoBranchMessage) && $showNoBranchMessage)
-                    <div class="text-center py-8">
-                        <div class="text-gray-500 text-lg">
-                            <p>Please select a branch to view Categories</p>
+                <table id="DataTable" class="display table table-bordered w-full">
+                    <thead>
+                        <tr class="bg-primary text-white">
+                            <th class="px-4 py-2">#</th>
+                            <th class="px-4 py-2">Name</th>
+                            <th class="px-4 py-2">Image</th>
+                            <th class="px-4 py-2">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($categories as $index => $category)
+                            <tr class="border-b">
+                                <td class="px-4 py-2">{{ $loop->iteration }}</td>
+                                <td class="px-4 py-2">{{ $category->name }}</td>
+                                <td class="px-4 py-2">
+                                    @if ($category->image)
+                                        <img src="{{ asset($category->image) }}" alt="Category Image"
+                                            class="h-12 w-12 object-cover rounded">
+                                    @else
+                                        <span class="text-gray-500 italic">No Image</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="flex gap-2">
+                                        <a href="{{ route('categories.show', $category->id) }}"
+                                            class="btn btn-primary">View</a>
+                                        <a href="{{ route('categories.edit', $category->id) }}"
+                                            class="btn btn-primary">Edit</a>
+                                        <form action="{{ route('categories.destroy', $category->id) }}" method="POST"
+                                            onsubmit="return confirm('Are you sure?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td class="text-center text-gray-500 py-4">No categories found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+
+                <!-- Show pagination when data is paginated -->
+                @if ($isPaginated && $categories->count() > 0)
+                    <div class="pagination-wrapper">
+                        <div class="pagination-info">
+                            Showing {{ $categories->firstItem() }} to {{ $categories->lastItem() }} of
+                            {{ $categories->total() }} entries
+                        </div>
+                        <div class="pagination-nav">
+                            <nav role="navigation" aria-label="Pagination Navigation">
+                                <ul class="pagination">
+                                    {{-- Previous Page Link --}}
+                                    @if ($categories->onFirstPage())
+                                        <li class="page-item disabled" aria-disabled="true">
+                                            <span class="page-link">‹</span>
+                                        </li>
+                                    @else
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $categories->previousPageUrl() }}"
+                                                rel="prev">‹</a>
+                                        </li>
+                                    @endif
+
+                                    {{-- Page Numbers --}}
+                                    @for ($i = 1; $i <= $categories->lastPage(); $i++)
+                                        @if ($i == $categories->currentPage())
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ $i }}</span>
+                                            </li>
+                                        @else
+                                            <li class="page-item">
+                                                <a class="page-link"
+                                                    href="{{ $categories->url($i) }}">{{ $i }}</a>
+                                            </li>
+                                        @endif
+                                    @endfor
+
+                                    {{-- Next Page Link --}}
+                                    @if ($categories->hasMorePages())
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $categories->nextPageUrl() }}"
+                                                rel="next">›</a>
+                                        </li>
+                                    @else
+                                        <li class="page-item disabled" aria-disabled="true">
+                                            <span class="page-link">›</span>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </nav>
                         </div>
                     </div>
-                @else
-                    <table id="DataTable" class="display table table-bordered w-full">
-                        <thead>
-                            <tr class="bg-primary text-white">
-                                <th class="px-4 py-2">#</th>
-                                <th class="px-4 py-2">Name</th>
-                                <th class="px-4 py-2">Image</th>
-                                @if ($isSuperAdmin && isset($selectedBranch))
-                                    <th class="px-4 py-2">Branch</th>
-                                @endif
-                                <th class="px-4 py-2">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($categories as $index => $category)
-                                <tr class="border-b">
-                                    <td class="px-4 py-2">
-                                        @if ($isPaginated)
-                                            {{ ($categories->currentPage() - 1) * $categories->perPage() + $loop->iteration }}
-                                        @else
-                                            {{ $loop->iteration }}
-                                        @endif
-                                    </td>
-                                    <td class="px-4 py-2">{{ $category->name }}</td>
-                                    <td class="px-4 py-2">
-                                        @if ($category->image)
-                                            <img src="{{ asset($category->image) }}" alt="Category Image"
-                                                class="h-12 w-12 object-cover rounded">
-                                        @else
-                                            <span class="text-gray-500 italic">No Image</span>
-                                        @endif
-                                    </td>
-                                    @if ($isSuperAdmin && isset($selectedBranch))
-                                        <td class="px-4 py-2">{{ $selectedBranch->name }}</td>
-                                    @endif
-                                    <td>
-                                        <div class="flex gap-2">
-                                            <a href="{{ $isSuperAdmin && isset($selectedBranch)
-                                                ? route('categories.show', ['id' => $category->id, 'branch' => $selectedBranch->id])
-                                                : route('categories.show', $category->id) }}"
-                                                class="btn btn-primary">View</a>
-                                            <a href="{{ $isSuperAdmin && isset($selectedBranch)
-                                                ? route('categories.edit', ['id' => $category->id, 'branch' => $selectedBranch->id])
-                                                : route('categories.edit', $category->id) }}"
-                                                class="btn btn-primary">Edit</a>
-                                            <form action="{{ $isSuperAdmin && isset($selectedBranch)
-                                                ? route('categories.destroy', ['id' => $category->id, 'branch' => $selectedBranch->id])
-                                                : route('categories.destroy', $category->id) }}" 
-                                                method="POST" onsubmit="return confirm('Are you sure?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-danger">Delete</button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td class="text-center text-gray-500 py-4">No categories found.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-
-                    <!-- Show pagination when data is paginated -->
-                    @if ($isPaginated && $categories->count() > 0)
-                        <div class="pagination-wrapper">
-                            <div class="pagination-info">
-                                Showing {{ $categories->firstItem() }} to {{ $categories->lastItem() }} of {{ $categories->total() }} entries
-                            </div>
-                            <div class="pagination-nav">
-                                <nav role="navigation" aria-label="Pagination Navigation">
-                                    <ul class="pagination">
-                                        {{-- Previous Page Link --}}
-                                        @if ($categories->onFirstPage())
-                                            <li class="page-item disabled" aria-disabled="true">
-                                                <span class="page-link">‹</span>
-                                            </li>
-                                        @else
-                                            <li class="page-item">
-                                                <a class="page-link" href="{{ $categories->previousPageUrl() }}" rel="prev">‹</a>
-                                            </li>
-                                        @endif
-
-                                        {{-- Page Numbers --}}
-                                        @for ($i = 1; $i <= $categories->lastPage(); $i++)
-                                            @if ($i == $categories->currentPage())
-                                                <li class="page-item active">
-                                                    <span class="page-link">{{ $i }}</span>
-                                                </li>
-                                            @else
-                                                <li class="page-item">
-                                                    <a class="page-link" href="{{ $categories->url($i) }}">{{ $i }}</a>
-                                                </li>
-                                            @endif
-                                        @endfor
-
-                                        {{-- Next Page Link --}}
-                                        @if ($categories->hasMorePages())
-                                            <li class="page-item">
-                                                <a class="page-link" href="{{ $categories->nextPageUrl() }}" rel="next">›</a>
-                                            </li>
-                                        @else
-                                            <li class="page-item disabled" aria-disabled="true">
-                                                <span class="page-link">›</span>
-                                            </li>
-                                        @endif
-                                    </ul>
-                                </nav>
-                            </div>
-                        </div>
-                    @endif
                 @endif
             </div>
         </div>
@@ -293,29 +251,29 @@
     </style>
 @endpush
 
-@push('scripts')
+{{-- @push('scripts')
     <script>
         function changeBranch() {
             const branchSelect = document.getElementById('branch_select');
             const selectedBranchId = branchSelect.value;
-            
+
             // Build URL with branch_id parameter
             const currentUrl = new URL(window.location.href);
-            
+
             if (selectedBranchId) {
                 currentUrl.searchParams.set('branch_id', selectedBranchId);
             } else {
                 currentUrl.searchParams.delete('branch_id');
             }
-            
+
             // Remove page parameter when switching branches
             currentUrl.searchParams.delete('page');
-            
+
             // Redirect to new URL
             window.location.href = currentUrl.toString();
         }
     </script>
-@endpush
+@endpush --}}
 
 {{-- @push('styles')
     <!-- TailwindCSS-Compatible DataTables CSS -->
