@@ -181,13 +181,13 @@ class HsnController extends Controller
             $validate = $request->validate([
                 'hsn_code' => 'required|string|max:255',
                 'gst' => 'required|string|max:255',
-                'short_name' => 'required|string|max:255',
+                'short_name' => 'nullable|string|max:255',
             ]);
 
             $data = [
                 'hsn_code' => $validate['hsn_code'],
                 'gst' => $validate['gst'],
-                'short_name' => $validate['short_name']
+                'short_name' => $validate['short_name'] ?? ''
             ];
 
             // Superadmin → main DB, others → branch DB
@@ -207,7 +207,7 @@ class HsnController extends Controller
                     'short_name' => $hsnCode->short_name
                 ]
             ]);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             dd($ex->getMessage());
             \Log::error('HSN Code store error: ' . $ex->getMessage());
             return response()->json([
