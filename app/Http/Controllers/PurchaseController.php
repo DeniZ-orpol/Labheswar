@@ -48,11 +48,18 @@ class PurchaseController extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
-        $parties = PurchaseParty::on($branch->connection_name)->get();
-        $products = Product::on($branch->connection_name)->get();
-        // dd($products);
-        $purchaseItems = Purchase::on($branch->connection_name)->get();
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $parties = PurchaseParty::get();
+            $products = Product::get();
+            $purchaseItems = Purchase::get();
+        } else {
+            $parties = PurchaseParty::on($branch->connection_name)->get();
+            $products = Product::on($branch->connection_name)->get();
+            $purchaseItems = Purchase::on($branch->connection_name)->get();
+        }
+
         return view('purchase.create', compact(['parties', 'products', 'purchaseItems']));
     }
 
@@ -66,6 +73,7 @@ class PurchaseController extends Controller
             $auth = $this->authenticateAndConfigureBranch();
             $user = $auth['user'];
             $branch = $auth['branch'];
+            $role = $auth['role'];
 
             // Validate the request - including calculated fields from frontend
             $validate = $request->validate([
@@ -122,7 +130,7 @@ class PurchaseController extends Controller
 
             try {
                 // Create purchase receipt with calculated totals from frontend
-                $purchaseReceiptId = PurchaseReceipt::on($branch->connection_name)->insertGetId([
+                $purchaseReceiptData = [
                     'bill_date' => $validate['bill_date'],
                     'purchase_party_id' => $validate['party_name'],
                     'bill_no' => $validate['bill_no'],
@@ -139,12 +147,23 @@ class PurchaseController extends Controller
                     'created_by' => $user->id,
                     'created_at' => now(),
                     'updated_at' => now(),
-                ]);
+                ];
+
+                if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                    $purchaseReceiptId = PurchaseReceipt::insertGetId($purchaseReceiptData);
+                } else {
+                    $purchaseReceiptId = PurchaseReceipt::on($branch->connection_name)->insertGetId($purchaseReceiptData);
+                }
 
                 // Loop through each product and create purchase records with calculated values
                 foreach ($validate['product'] as $index => $productId) {
                     // Get product details for reference
-                    $product = Product::on($branch->connection_name)->find($productId);
+
+                    if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                        $product = Product::find($productId);
+                    } else {
+                        $product = Product::on($branch->connection_name)->find($productId);
+                    }
 
                     if (!$product) {
                         continue; // Skip if product not found
@@ -158,7 +177,7 @@ class PurchaseController extends Controller
                     $totalWithFree = $totalPcs + $freeQuantity;
 
                     // Create purchase record with calculated values from frontend
-                    Purchase::on($branch->connection_name)->insert([
+                    $purchaseData = [
                         'bill_date' => $validate['bill_date'],
                         'purchase_receipt_id' => $purchaseReceiptId,
                         // 'purchase_party_id' => $validate['party_name'],
@@ -182,10 +201,16 @@ class PurchaseController extends Controller
 
                         'created_at' => now(),
                         'updated_at' => now(),
-                    ]);
+                    ];
+
+                    if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                        Purchase::insert($purchaseData);
+                    } else {
+                        Purchase::on($branch->connection_name)->insert($purchaseData);
+                    }
 
                     if ($totalWithFree > 0) {
-                        Inventory::on($branch->connection_name)->create([
+                        $inventoryData = [
                             'product_id' => $productId,
                             'type' => 'in', // or 'in' - adjust based on your inventory types
                             'quantity' => $totalWithFree,
@@ -193,7 +218,13 @@ class PurchaseController extends Controller
                             'reason' => 'Purchase Bill #' . $validate['bill_no'] . ' - Receipt #' . $purchaseReceiptId,
                             'created_at' => now(),
                             'updated_at' => now(),
-                        ]);
+                        ];
+
+                        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                            Inventory::create($inventoryData);
+                        } else {
+                            Inventory::on($branch->connection_name)->create($inventoryData);
+                        }
                     }
 
                     // Optional: Update product stock if needed
@@ -246,24 +277,40 @@ class PurchaseController extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
-        $parties = PurchaseParty::on($branch->connection_name)->get();
-        $products = Product::on($branch->connection_name)->get();
-        $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
-            ->withDynamic(['purchaseParty', 'createUser', 'updateUser'])
-            ->where('id', $id)
-            ->first();
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $parties = PurchaseParty::get();
+            $products = Product::get();
+            $purchaseReceipt = PurchaseReceipt::withDynamic(['purchaseParty', 'createUser', 'updateUser'])
+                ->where('id', $id)
+                ->first();
 
-        $purchaseItems = Purchase::on($branch->connection_name)
-            ->with('product')
-            ->where('purchase_receipt_id', $id)
-            ->get()
-            ->map(function ($item) {
-                $item->productInfo = $item->getRelation('product'); // alias it manually
-                return $item;
-            });
+            $purchaseItems = Purchase::with('product')
+                ->where('purchase_receipt_id', $id)
+                ->get()
+                ->map(function ($item) {
+                    $item->productInfo = $item->getRelation('product'); // alias it manually
+                    return $item;
+                });
+        } else {
+            $parties = PurchaseParty::on($branch->connection_name)->get();
+            $products = Product::on($branch->connection_name)->get();
+            $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
+                ->withDynamic(['purchaseParty', 'createUser', 'updateUser'])
+                ->where('id', $id)
+                ->first();
 
-        // dd($purchaseItems);
+            $purchaseItems = Purchase::on($branch->connection_name)
+                ->with('product')
+                ->where('purchase_receipt_id', $id)
+                ->get()
+                ->map(function ($item) {
+                    $item->productInfo = $item->getRelation('product'); // alias it manually
+                    return $item;
+                });
+        }
+
         return view('purchase.edit', compact(['products', 'purchaseReceipt', 'purchaseItems']));
     }
 
@@ -277,6 +324,7 @@ class PurchaseController extends Controller
             $auth = $this->authenticateAndConfigureBranch();
             $user = $auth['user'];
             $branch = $auth['branch'];
+            $role = $auth['role'];
 
             // Validate the request - including calculated fields from frontend
             $validate = $request->validate([
@@ -334,11 +382,13 @@ class PurchaseController extends Controller
             ]);
 
             // Check if purchase receipt exists
-            // $purchaseReceipt = \DB::connection($branchConnection)
-            $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
-                ->where('id', $id)
-                ->first();
-            // ->table('purchase_receipt')
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                $purchaseReceipt = PurchaseReceipt::where('id', $id)->first();
+            } else {
+                $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
+                    ->where('id', $id)
+                    ->first();
+            }
 
             if (!$purchaseReceipt) {
                 return redirect()->route('purchase.index')
@@ -348,38 +398,54 @@ class PurchaseController extends Controller
             \DB::beginTransaction();
 
             try {
+                $purchaseReceiptData = [
+                    'bill_date' => $validate['bill_date'],
+                    // 'purchase_party_id' => $validate['party_name'],
+                    'bill_no' => $validate['bill_no'],
+                    'delivery_date' => $validate['delivery_date'],
+                    'gst_status' => $validate['gst'],
+
+                    // Use calculated totals from frontend
+                    'subtotal' => $validate['receipt_subtotal'],
+                    'total_discount' => $validate['receipt_total_discount'],
+                    'total_gst_amount' => $validate['receipt_total_gst_amount'],
+                    'total_amount' => $validate['receipt_total_amount'],
+
+                    'updated_by' => session('branch_user_id'),
+                    'updated_at' => now(),
+                ];
                 // Update purchase receipt with calculated totals from frontend
-                PurchaseReceipt::on($branch->connection_name)
-                    ->where('id', $id)
-                    ->update([
-                        'bill_date' => $validate['bill_date'],
-                        // 'purchase_party_id' => $validate['party_name'],
-                        'bill_no' => $validate['bill_no'],
-                        'delivery_date' => $validate['delivery_date'],
-                        'gst_status' => $validate['gst'],
 
-                        // Use calculated totals from frontend
-                        'subtotal' => $validate['receipt_subtotal'],
-                        'total_discount' => $validate['receipt_total_discount'],
-                        'total_gst_amount' => $validate['receipt_total_gst_amount'],
-                        'total_amount' => $validate['receipt_total_amount'],
+                if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                    PurchaseReceipt::where('id', $id)
+                        ->update($purchaseReceiptData);
 
-                        'updated_by' => session('branch_user_id'),
-                        'updated_at' => now(),
-                    ]);
+                    // Get existing purchase items
+                    $existingItems = Purchase::where('purchase_receipt_id', $id)
+                        ->get()
+                        ->keyBy('id');
+                } else {
+                    PurchaseReceipt::on($branch->connection_name)
+                        ->where('id', $id)
+                        ->update($purchaseReceiptData);
 
-                // Get existing purchase items
-                $existingItems = Purchase::on($branch->connection_name)
-                    ->where('purchase_receipt_id', $id)
-                    ->get()
-                    ->keyBy('id');
+                    // Get existing purchase items
+                    $existingItems = Purchase::on($branch->connection_name)
+                        ->where('purchase_receipt_id', $id)
+                        ->get()
+                        ->keyBy('id');
+                }
 
                 $processedItemIds = [];
 
                 // Process each product from the form
                 foreach ($validate['product'] as $index => $productId) {
                     // Get product details for reference
-                    $product = Product::on($branch->connection_name)->find($productId);
+                    if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                        $product = Product::find($productId);
+                    } else {
+                        $product = Product::on($branch->connection_name)->find($productId);
+                    }
 
                     if (!$product) {
                         continue; // Skip if product not found
@@ -420,19 +486,33 @@ class PurchaseController extends Controller
                     ];
 
                     if ($itemId && isset($existingItems[$itemId])) {
-                        // Update existing item
-                        Purchase::on($branch->connection_name)
-                            ->where('id', $itemId)
-                            ->where('purchase_receipt_id', $id)
-                            ->update($purchaseData);
+                        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                            // Update existing item
+                            Purchase::where('id', $itemId)
+                                ->where('purchase_receipt_id', $id)
+                                ->update($purchaseData);
 
-                        $processedItemIds[] = $itemId;
+                            $processedItemIds[] = $itemId;
+                        } else {
+                            // Update existing item
+                            Purchase::on($branch->connection_name)
+                                ->where('id', $itemId)
+                                ->where('purchase_receipt_id', $id)
+                                ->update($purchaseData);
+
+                            $processedItemIds[] = $itemId;
+                        }
+
                     } else {
                         // Create new item
                         $purchaseData['purchase_receipt_id'] = $id;
                         $purchaseData['created_at'] = now();
 
-                        $newItemId = Purchase::on($branch->connection_name)->insertGetId($purchaseData);
+                        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                            $newItemId = Purchase::insertGetId($purchaseData);
+                        } else {
+                            $newItemId = Purchase::on($branch->connection_name)->insertGetId($purchaseData);
+                        }
                         $processedItemIds[] = $newItemId;
                     }
                 }
@@ -440,10 +520,17 @@ class PurchaseController extends Controller
                 // Delete items that were removed (not in the current form submission)
                 $itemsToDelete = $existingItems->keys()->diff($processedItemIds);
                 if ($itemsToDelete->isNotEmpty()) {
-                    Purchase::on($branch->connection_name)
-                        ->whereIn('id', $itemsToDelete->toArray())
-                        ->where('purchase_receipt_id', $id)
-                        ->delete();
+
+                    if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                        Purchase::whereIn('id', $itemsToDelete->toArray())
+                            ->where('purchase_receipt_id', $id)
+                            ->delete();
+                    } else {
+                        Purchase::on($branch->connection_name)
+                            ->whereIn('id', $itemsToDelete->toArray())
+                            ->where('purchase_receipt_id', $id)
+                            ->delete();
+                    }
                 }
 
                 \DB::commit();
@@ -483,11 +570,17 @@ class PurchaseController extends Controller
             $auth = $this->authenticateAndConfigureBranch();
             $user = $auth['user'];
             $branch = $auth['branch'];
+            $role = $auth['role'];
 
-            // Check if purchase receipt exists
-            $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
-                ->where('id', $id)
-                ->first();
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                // Check if purchase receipt exists
+                $purchaseReceipt = PurchaseReceipt::where('id', $id)->first();
+            } else {
+                // Check if purchase receipt exists
+                $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
+                    ->where('id', $id)
+                    ->first();
+            }
 
             if (!$purchaseReceipt) {
                 return redirect()->route('purchase.index')
@@ -497,15 +590,23 @@ class PurchaseController extends Controller
             \DB::beginTransaction();
 
             try {
-                // Delete purchase items first
-                Purchase::on($branch->connection_name)
-                    ->where('purchase_receipt_id', $id)
-                    ->delete();
+                if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                    // Delete purchase items first
+                    Purchase::where('purchase_receipt_id', $id)->delete();
 
-                // Delete purchase receipt
-                PurchaseReceipt::on($branch->connection_name)
-                    ->where('id', $id)
-                    ->delete();
+                    // Delete purchase receipt
+                    PurchaseReceipt::where('id', $id)->delete();
+                } else {
+                    // Delete purchase items first
+                    Purchase::on($branch->connection_name)
+                        ->where('purchase_receipt_id', $id)
+                        ->delete();
+
+                    // Delete purchase receipt
+                    PurchaseReceipt::on($branch->connection_name)
+                        ->where('id', $id)
+                        ->delete();
+                }
 
                 \DB::commit();
 
