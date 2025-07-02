@@ -11,40 +11,16 @@
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
                 <a href="{{ Route('products.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add Product</a>
-                {{-- @if (!$isSuperAdmin) --}}
                 <form action="{{ route('products.import') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <label for="excel_file">Import Products (Excel):</label>
                     <input type="file" name="excel_file" required accept=".csv, .xlsx, .xls">
                     <button type="submit">Import</button>
                 </form>
-                {{-- @endif --}}
-
-                {{-- @if ($isSuperAdmin)
-                    <div class="flex items-center gap-2 ml-auto">
-                        <label for="branch_select" class="text-sm font-medium">Select Branch:</label>
-                        <select id="branch_select" class="form-select border-gray-300 rounded-md" onchange="changeBranch()">
-                            <option value="">-- Select Branch --</option>
-                            @foreach ($availableBranches as $availableBranch)
-                                <option value="{{ $availableBranch->id }}"
-                                    {{ isset($selectedBranch) && $selectedBranch->id == $availableBranch->id ? 'selected' : '' }}>
-                                    {{ $availableBranch->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                @endif --}}
 
             </div>
 
             <div class="intro-y col-span-12 overflow-auto">
-                {{-- @if ($isSuperAdmin && isset($showNoBranchMessage) && $showNoBranchMessage)
-                    <div class="text-center py-8">
-                        <div class="text-gray-500 text-lg">
-                            <p>Please select a branch to view products</p>
-                        </div>
-                    </div>
-                @else --}}
                 <table id="DataTable" class="display table table-bordered w-full">
                     <thead>
                         <tr class="bg-primary text-white">
@@ -97,7 +73,7 @@
                             </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ $isSuperAdmin && isset($selectedBranch) ? '8' : '7' }}"
+                                    <td colspan="7"
                                         class="text-center">No Products Found</td>
                                 </tr>
                             @endforelse
@@ -294,116 +270,3 @@
         }
     </style>
 @endpush
-
-@push('scripts')
-    <script>
-        function changeBranch() {
-            const branchSelect = document.getElementById('branch_select');
-            const selectedBranchId = branchSelect.value;
-
-            // Build URL with branch_id parameter
-            const currentUrl = new URL(window.location.href);
-
-            if (selectedBranchId) {
-                currentUrl.searchParams.set('branch_id', selectedBranchId);
-            } else {
-                currentUrl.searchParams.delete('branch_id');
-            }
-
-            // Remove page parameter when switching branches
-            currentUrl.searchParams.delete('page');
-
-            // Redirect to new URL
-            window.location.href = currentUrl.toString();
-        }
-    </script>
-@endpush
-
-{{-- @push('styles')
-    <!-- TailwindCSS-Compatible DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.tailwindcss.min.css" />
-@endpush --}}
-
-
-{{-- @push('styles')
-    <style>
-        .dataTables_wrapper .dataTables_paginate {
-            display: flex;
-            justify-content: center;
-            margin-top: 1rem;
-        }
-
-        .dataTables_length label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #374151;
-            /* gray-700 */
-        }
-
-        .dataTables_length select {
-            padding: 4px 8px;
-            border-radius: 6px;
-            border: 1px solid #d1d5db;
-            /* gray-300 */
-            font-size: 0.875rem;
-            background-color: white;
-            appearance: none;
-        }
-
-        .dataTables_wrapper .dataTables_filter,
-        .dataTables_wrapper .dataTables_length,
-        .dataTables_wrapper .dataTables_paginate {
-            margin: 0.75rem 0;
-        }
-
-        .dataTables_length select {
-            -webkit-appearance: none;
-            /* Chrome, Safari */
-            -moz-appearance: none;
-            /* Firefox */
-            appearance: none;
-            /* Standard */
-            background: none;
-            padding-right: 1rem;
-            /* ensure padding if icon is not used */
-            background-color: white;
-            /* fallback background */
-        }
-    </style>
-@endpush --}}
-
-
-
-
-{{-- @push('scripts')
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- DataTables + Tailwind -->
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.tailwindcss.min.js"></script>
-
-    <script>
-        $(document).ready(function() {
-            $('#DataTable').DataTable({
-                paging: true,
-                pageLength: 10,
-                lengthMenu: [5, 10, 25, 50],
-                ordering: true,
-                searching: true,
-                responsive: true,
-                language: {
-                    paginate: {
-                        previous: "←",
-                        next: "→"
-                    },
-                    search: "Search:",
-                    lengthMenu: "Show _MENU_ entries"
-                }
-            });
-        });
-    </script>
-@endpush --}}

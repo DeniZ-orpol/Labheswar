@@ -23,65 +23,14 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $auth = $this->authenticateAndConfigureBranch();
-
-        if ($auth instanceof \Illuminate\Http\JsonResponse) {
-            return $auth;
-        }
-
         $user = $auth['user'];
         $role = $auth['role'];
         $branch = $auth['branch'];
 
-        $products = collect();
-
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            // Get the selected branch ID from request
-            // // $selectedBranchId = $request->get('branch_id');
-            // // $availableBranches = $branch; // All active branches for dropdown
-
-            // if (!$selectedBranchId) {
-            //     // No branch selected - return empty collection with message
-            //     $products = collect();
-            //     $selectedBranch = null;
-            //     $showNoBranchMessage = true;
-
-            //     return view('products.index', compact(
-            //         'products',
-            //         'role',
-            //         'availableBranches',
-            //         'selectedBranch',
-            //         'showNoBranchMessage'
-            //     ));
-            // }
-
-            // Find the selected branch
-            // $selectedBranch = $branch->where('id', $selectedBranchId)->first();
-
-            // if (!$selectedBranch) {
-            //     // Invalid branch ID - redirect with error
-            //     return redirect()->route('products.index')
-            //         ->with('error', 'Invalid branch selected');
-            // }
-
-            // Configure connection for selected branch
-            // configureBranchConnection($selectedBranch);
-
-            // Get products for the selected branch with pagination
             $products = Product::with(['category', 'hsnCode', 'pCompany'])
                 ->orderByDesc('id')
                 ->paginate(10);
-
-            // Append branch_id to pagination links
-            $products->appends($request->query());
-
-            $showNoBranchMessage = false;
-
-            return view('products.index', compact(
-                'products',
-                'role',
-                'showNoBranchMessage'
-            ));
-
         } else {
             $products = Product::on($branch->connection_name)
                 ->with(['category', 'hsnCode', 'pCompany'])
@@ -89,7 +38,7 @@ class ProductController extends Controller
                 ->paginate(10);
         }
 
-        return view('products.index', compact('products', 'role'));
+        return view('products.index', compact('products'));
     }
 
     /**
@@ -97,18 +46,7 @@ class ProductController extends Controller
      */
     public function create()
     {
-        $auth = $this->authenticateAndConfigureBranch();
-        $user = $auth['user'];
-        $role = $auth['role'];
-
-        if (strtolower($role->role_name) === 'super admin') {
-            $branch = Branch::all();
-        } else {
-            // Normal user — get branch from auth
-            $branch = $auth['branch'];
-        }
-
-        return view('products.create', compact('branch', 'role'));
+        return view('products.create');
     }
 
     /**
@@ -121,19 +59,7 @@ class ProductController extends Controller
             $auth = $this->authenticateAndConfigureBranch();
             $user = $auth['user'];
             $role = $auth['role'];
-
-            if (strtolower($role->role_name) === 'super admin') {
-                $branchId = $request->branch;
-
-                if (!$branchId) {
-                    return redirect()->back()->with('error', 'Branch ID is required for Super Admin.');
-                }
-
-                $branch = Branch::findOrFail($branchId);
-                configureBranchConnection($branch);
-            } else {
-                $branch = $auth['branch'];
-            }
+            $branch = $auth['branch'];
 
             $validate = $request->validate([
                 'product_barcode' => 'required|string|max:255',
@@ -171,16 +97,8 @@ class ProductController extends Controller
                 // 'gst_active' => 'nullable'
             ]);
 
-            // upload product image
-            // dd($validate);
-
             // Upload product image (optional)
             $path = null;
-            // if ($request->hasFile('product_image')) {
-            //     $file = $request->file('product_image');
-            //     $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
-            //     $path = $file->storeAs('products', $filename, 'public');
-            // }
             if ($request->hasFile('product_image')) {
                 $file = $request->file('product_image');
                 $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
@@ -202,20 +120,34 @@ class ProductController extends Controller
             // Get or create related company
             $companyId = null;
             if (!empty($validate['product_company'])) {
-                $company = Company::on($branch->connection_name)->firstOrCreate(
-                    ['name' => $validate['product_company']],
-                    ['name' => $validate['product_company'], 'status' => 1]
-                );
+                if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                    $company = Company::firstOrCreate(
+                        ['name' => $validate['product_company']],
+                        ['name' => $validate['product_company'], 'status' => 1]
+                    );
+                } else {
+                    $company = Company::on($branch->connection_name)->firstOrCreate(
+                        ['name' => $validate['product_company']],
+                        ['name' => $validate['product_company'], 'status' => 1]
+                    );
+                }
                 $companyId = $company->id;
             }
 
             // Handle Category - use branch connection
             $categoryId = null;
             if (!empty($validate['product_category'])) {
-                $category = Category::on($branch->connection_name)->firstOrCreate(
-                    ['name' => $validate['product_category']],
-                    ['name' => $validate['product_category'], 'status' => 1]
-                );
+                if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                    $category = Category::firstOrCreate(
+                        ['name' => $validate['product_category']],
+                        ['name' => $validate['product_category'], 'status' => 1]
+                    );
+                } else {
+                    $category = Category::on($branch->connection_name)->firstOrCreate(
+                        ['name' => $validate['product_category']],
+                        ['name' => $validate['product_category'], 'status' => 1]
+                    );
+                }
                 $categoryId = $category->id;
             }
 
@@ -281,12 +213,15 @@ class ProductController extends Controller
             ];
 
             // Create the product using branch connection
-            $product = Product::on($branch->connection_name)->create($data);
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                Product::create($data);
+            } else {
+                Product::on($branch->connection_name)->create($data);
+            }
 
             // Redirect to product index with success message and product data
             return redirect()->route('products.index')
                 ->with('success', 'Product created successfully!');
-            // ->with('product', $product);
         } catch (Exception $ex) {
             dd($ex->getMessage());
         }
@@ -304,20 +239,17 @@ class ProductController extends Controller
         $branch = $auth['branch'];
 
         // If Super Admin, use `branch` from route or query
-        if (strtolower($role->role_name) === 'super admin') {
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
             $product = Product::with(['category', 'hsnCode', 'pCompany'])
                 ->where('id', $id)
                 ->firstOrFail();
-
-            return view('products.show', compact('product'));
         } else {
             $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
                 ->where('id', $id)
                 ->firstOrFail();
-
-            return view('products.show', compact('product'));
         }
 
+        return view('products.show', compact('product'));
     }
 
     /**
@@ -331,19 +263,17 @@ class ProductController extends Controller
         $branch = $auth['branch'];
 
         // If Super Admin, use `branch` from route or query
-        if (strtolower($role->role_name) === 'super admin') {
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
             $product = Product::with(['category', 'hsnCode', 'pCompany'])
                 ->where('id', $id)
                 ->firstOrFail();
-
-            return view('products.edit', compact('product'));
         } else {
             $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
                 ->where('id', $id)
                 ->firstOrFail();
-
-            return view('products.edit', compact('product'));
         }
+
+        return view('products.edit', compact('product'));
     }
 
     /**
@@ -365,7 +295,9 @@ class ProductController extends Controller
                 'search_option' => 'nullable|string',
                 'unit_type' => 'nullable|string',
                 'product_company' => 'nullable|string',
+                'company_id' => 'nullable',
                 'product_category' => 'nullable|string',
+                'category_id' => 'nullable',
                 'hsn_code' => 'nullable|string',
                 'hsn_code_id' => 'nullable',
                 'sgst' => 'nullable|numeric|min:0',
@@ -393,8 +325,9 @@ class ProductController extends Controller
                 'sale_online' => 'nullable',
                 // 'gst_active' => 'nullable'
             ]);
+
             // dd($request->all());
-            if (strtolower($role->role_name) === 'super admin') {
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
                 $product = Product::with(['category', 'hsnCode', 'pCompany'])
                     ->where('id', $id)
                     ->first();
@@ -530,10 +463,17 @@ class ProductController extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
-        $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
-            ->where('id', $id)
-            ->first();
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $product = Product::with(['category', 'hsnCode', 'pCompany'])
+                ->where('id', $id)
+                ->first();
+        } else {
+            $product = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany'])
+                ->where('id', $id)
+                ->first();
+        }
 
         // Delete product image if exists
         if ($product->image && \Storage::disk('public')->exists($product->image)) {
@@ -551,6 +491,7 @@ class ProductController extends Controller
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
+        $role = $auth['role'];
 
         $request->validate([
             'excel_file' => 'required|file'
@@ -572,36 +513,64 @@ class ProductController extends Controller
 
                         $companyId = null;
                         if (!empty($row[5])) {
-                            $company = Company::on($branch->connection_name)
-                                ->where('name', $row[5])
-                                ->first();
+                            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                                $company = Company::where('name', $row[5])->first();
 
-                            if (!$company) {
-                                $companyId = Company::on($branch->connection_name)->insertGetId([
-                                    'name' => $row[5],
-                                    'created_at' => now(),
-                                    'updated_at' => now(),
-                                ]);
+                                if (!$company) {
+                                    $companyId = Company::insertGetId([
+                                        'name' => $row[5],
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                } else {
+                                    $companyId = $company->id;
+                                }
                             } else {
-                                $companyId = $company->id;
+                                $company = Company::on($branch->connection_name)
+                                    ->where('name', $row[5])
+                                    ->first();
+
+                                if (!$company) {
+                                    $companyId = Company::on($branch->connection_name)->insertGetId([
+                                        'name' => $row[5],
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                } else {
+                                    $companyId = $company->id;
+                                }
                             }
                         }
 
                         // Handle Category - create or get existing
                         $categoryId = null;
                         if (!empty($row[6])) {
-                            $category = Category::on($branch->connection_name)
-                                ->where('name', $row[6])
-                                ->first();
+                            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                                $category = Category::where('name', $row[6])->first();
 
-                            if (!$category) {
-                                $categoryId = Category::on($branch->connection_name)->insertGetId([
-                                    'name' => $row[6],
-                                    'created_at' => now(),
-                                    'updated_at' => now(),
-                                ]);
+                                if (!$category) {
+                                    $categoryId = Category::insertGetId([
+                                        'name' => $row[6],
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                } else {
+                                    $categoryId = $category->id;
+                                }
                             } else {
-                                $categoryId = $category->id;
+                                $category = Category::on($branch->connection_name)
+                                    ->where('name', $row[6])
+                                    ->first();
+
+                                if (!$category) {
+                                    $categoryId = Category::on($branch->connection_name)->insertGetId([
+                                        'name' => $row[6],
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                } else {
+                                    $categoryId = $category->id;
+                                }
                             }
                         }
 
@@ -610,21 +579,39 @@ class ProductController extends Controller
                         if (!empty($row[7])) {
                             $gst = $row[8] ?? '';
                             $shortName = $row[9] ?? '';
-                            $hsnCode = HsnCode::on($branch->connection_name)
-                                ->where('hsn_code', $row[7])
-                                ->where('gst', $gst)
-                                ->first();
+                            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                                $hsnCode = HsnCode::where('hsn_code', $row[7])
+                                    ->where('gst', $gst)
+                                    ->first();
 
-                            if (!$hsnCode) {
-                                $hsnCodeId = HsnCode::on($branch->connection_name)->insertGetId([
-                                    'hsn_code' => $row[7],
-                                    'gst' => $gst,
-                                    'short_name' => $shortName,
-                                    'created_at' => now(),
-                                    'updated_at' => now(),
-                                ]);
+                                if (!$hsnCode) {
+                                    $hsnCodeId = HsnCode::insertGetId([
+                                        'hsn_code' => $row[7],
+                                        'gst' => $gst,
+                                        'short_name' => $shortName,
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                } else {
+                                    $hsnCodeId = $hsnCode->id;
+                                }
                             } else {
-                                $hsnCodeId = $hsnCode->id;
+                                $hsnCode = HsnCode::on($branch->connection_name)
+                                    ->where('hsn_code', $row[7])
+                                    ->where('gst', $gst)
+                                    ->first();
+
+                                if (!$hsnCode) {
+                                    $hsnCodeId = HsnCode::on($branch->connection_name)->insertGetId([
+                                        'hsn_code' => $row[7],
+                                        'gst' => $gst,
+                                        'short_name' => $shortName,
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                } else {
+                                    $hsnCodeId = $hsnCode->id;
+                                }
                             }
                         }
                         $data = [
@@ -658,8 +645,12 @@ class ProductController extends Controller
                             'discount_scheme' => $row[26] ?? '',
                             'bonus_use' => strtoupper($row[27]) === 'YES' ? 1 : 0,
                         ];
-                        // dd($data);
-                        Product::on($branch->connection_name)->insert($data);
+
+                        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                            Product::insert($data);
+                        } else {
+                            Product::on($branch->connection_name)->insert($data);
+                        }
                     }
                 }
             }
@@ -686,7 +677,7 @@ class ProductController extends Controller
             $branch = $auth['branch'];
 
             // If Super Admin, use `branch` from route or query
-            if (strtolower($role->role_name) === 'super admin') {
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
                 $companies = Company::where('name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
                     ->limit(10)
                     ->get()
@@ -734,7 +725,7 @@ class ProductController extends Controller
             $branch = $auth['branch'];
 
             // If Super Admin, use `branch` from route or query
-            if (strtolower($role->role_name) === 'super admin') {
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
                 $categories = Category::where('name', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
                     ->limit(10)
                     ->get()
@@ -778,39 +769,42 @@ class ProductController extends Controller
         try {
             $auth = $this->authenticateAndConfigureBranch();
             $user = $auth['user'];
+            $branch = $auth['branch'];
             $role = $auth['role'];
 
-            // If Super Admin, use `branch` from route or query
-            if (strtolower($role->role_name) === 'super admin') {
-                $branchId = $request->branch;
-                if (empty($branchId)) {
-                    return response()->json(['hsn_codes' => []]);
-                }
-
-                $branch = Branch::findOrFail($branchId);
-                configureBranchConnection($branch);
-            } else {
-                // Normal user — get branch from auth
-                $branch = $auth['branch'];
-            }
-
+            
             $search = $request->get('search', '');
             if (empty($search)) {
                 return response()->json(['hsn_codes' => []]);
             }
-
-            $hsn_codes = HsnCode::on($branch->connection_name)
-                ->where('hsn_code', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
-                ->limit(10)
-                ->get()
-                ->map(function ($item) {
-                    return [
-                        'id' => $item->id,
-                        'hsn_code' => $item->hsn_code,
-                        'gst' => $item->gst // This will be JSON string or array depending on your cast
-                    ];
-                })
-                ->toArray();
+            
+            // If Super Admin, use `branch` from route or query
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                $hsn_codes = HsnCode::where('hsn_code', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
+                    ->limit(10)
+                    ->get()
+                    ->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'hsn_code' => $item->hsn_code,
+                            'gst' => $item->gst // This will be JSON string or array depending on your cast
+                        ];
+                    })
+                    ->toArray();
+            } else {
+                $hsn_codes = HsnCode::on($branch->connection_name)
+                    ->where('hsn_code', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
+                    ->limit(10)
+                    ->get()
+                    ->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'hsn_code' => $item->hsn_code,
+                            'gst' => $item->gst // This will be JSON string or array depending on your cast
+                        ];
+                    })
+                    ->toArray();
+            }
 
             return response()->json(['hsn_codes' => $hsn_codes]);
         } catch (\Throwable $th) {
