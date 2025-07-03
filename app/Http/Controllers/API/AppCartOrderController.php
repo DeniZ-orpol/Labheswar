@@ -861,26 +861,10 @@ class AppCartOrderController extends Controller
     public function getCartList(Request $request)
     {
         try {
-            $user = auth()->user();
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized'
-                ], 401);
-            }
-
-            $branch = Branch::where('id', $user->branch_id)
-                ->where('status', 'active')
-                ->first();
-
-            if (!$branch) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No accessible branch found'
-                ], 404);
-            }
-
-            configureBranchConnection($branch);
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $role = $auth['role'];
+            $branch = $auth['branch'];
 
             // Get all unavailable carts with user details and cart items count
             $unavailableCarts = Cart::on($branch->connection_name)
@@ -1087,8 +1071,11 @@ class AppCartOrderController extends Controller
 
             $cartItem = AppCartsOrders::on($connection)
                 ->where('id', $request->cart_item_id)
-                ->where('user_id', $user->id)
                 ->first();
+            // $cartItem = AppCartsOrders::on($connection)
+            //     ->where('id', $request->cart_item_id)
+            //     ->where('user_id', $user->id)
+            //     ->first();
 
             if (!$cartItem) {
                 return response()->json([
@@ -1097,7 +1084,7 @@ class AppCartOrderController extends Controller
                 ], 404);
             }
 
-            $product = Product::on($connection)->find($cartItem->product_id);
+            $product = Product::on($connection)->with('hsnCode')->find($cartItem->product_id);
             if (!$product) {
                 return response()->json([
                     'success' => false,
@@ -1105,26 +1092,110 @@ class AppCartOrderController extends Controller
                 ], 404);
             }
 
+            // STEP 1: Add cart Quantity to inventory and empty cart quantity
+            $currentCartQuantity = $cartItem->product_quantity;
+
+            if ($currentCartQuantity > 0) {
+                $latestInventory = Inventory::on($connection)
+                    ->where('product_id', $cartItem->product_id)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+
+                if ($latestInventory) {
+                    $latestInventory->quantity += $currentCartQuantity;
+                    $latestInventory->save();
+
+                    $cartItem->update([
+                        'product_quantity' => 0,
+                        'taxes' => 0,
+                        'sub_total' => 0,
+                        'total_amount' => 0,
+                        'gst' => 0,
+                    ]);
+                }
+            }
+
+            // STEP 2: Update cart item with new quantity and deduct from inventory
+
             $newQty = $request->quantity;
-            $price = $product->price ?? 0;
+            // $newWeight = $request->product_weight ?? null;
+            $price = $cartItem->product_price ?? 0;
+
+            // CALCULATE INVENTORY DEDUCTION QUANTITY
+            $inventoryDeductionQuantity = $newQty;
+
+            // CHECK INVENTORY AVAILABILITY
+            $totalAvailableStock = Inventory::on($connection)
+                ->where('product_id', $cartItem->product_id)
+                ->sum('quantity');
+
+            if ($totalAvailableStock < $inventoryDeductionQuantity) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Insufficient stock. Available quantity: ' . $totalAvailableStock
+                ], 400);
+            }
+
+            // DEDUCT NEW QUANTITY FROM INVENTORY USING FIFO
+            if ($inventoryDeductionQuantity > 0) {
+                $inventoryEntries = Inventory::on($connection)
+                    ->where('product_id', $cartItem->product_id)
+                    ->where('quantity', '>', 0)
+                    ->orderBy('created_at', 'asc') // FIFO
+                    ->get();
+
+                $remainingToDeduct = $inventoryDeductionQuantity;
+
+                foreach ($inventoryEntries as $inventoryEntry) {
+                    if ($remainingToDeduct <= 0) {
+                        break;
+                    }
+
+                    $availableInThisEntry = $inventoryEntry->quantity;
+                    $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
+
+                    $inventoryEntry->decrement('quantity', $deductFromThisEntry);
+                    $remainingToDeduct -= $deductFromThisEntry;
+                }
+            }
+
+            // CALCULATE NEW CART ITEM VALUES
             $subTotal = $newQty * $price;
-            $gstPercent = $product->gst_percentage ?? 0;
+            $gstPercent = $product->hsnCode->gst ?? 0;
             $gstAmount = ($subTotal * $gstPercent) / 100;
             $totalAmount = $subTotal + $gstAmount;
 
-            $cartItem->product_quantity = $newQty;
-            $cartItem->product_price = $price;
-            $cartItem->sub_total = $subTotal;
-            $cartItem->gst_p = $gstPercent;
-            $cartItem->gst = $gstAmount;
-            $cartItem->taxes = $gstAmount;
-            $cartItem->total_amount = $totalAmount;
-            $cartItem->save();
+            // UPDATE CART ITEM WITH NEW VALUES
+            $cartItem->update([
+                'product_quantity' => $newQty,
+                'sub_total' => $subTotal,
+                'gst_p' => $gstPercent,
+                'gst' => $gstAmount,
+                'taxes' => $gstAmount,
+                'total_amount' => $totalAmount
+            ]);
+
+            // $subTotal = $newQty * $price;
+            // $gstPercent = $product->gst_percentage ?? 0;
+            // $gstAmount = ($subTotal * $gstPercent) / 100;
+            // $totalAmount = $subTotal + $gstAmount;
+
+            // $cartItem->product_quantity = $newQty;
+            // $cartItem->product_price = $price;
+            // $cartItem->sub_total = $subTotal;
+            // $cartItem->gst_p = $gstPercent;
+            // $cartItem->gst = $gstAmount;
+            // $cartItem->taxes = $gstAmount;
+            // $cartItem->total_amount = $totalAmount;
+            // $cartItem->save();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Cart item updated successfully',
-                'cart_item' => $cartItem
+                'cart_item' => $cartItem,
+                'remaining_inventory' => Inventory::on($connection)
+                    ->where('product_id', $cartItem->product_id)
+                    ->sum('quantity'),
             ]);
         } catch (\Throwable $e) {
             return response()->json([
