@@ -772,12 +772,12 @@ class ProductController extends Controller
             $branch = $auth['branch'];
             $role = $auth['role'];
 
-            
+
             $search = $request->get('search', '');
             if (empty($search)) {
                 return response()->json(['hsn_codes' => []]);
             }
-            
+
             // If Super Admin, use `branch` from route or query
             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
                 $hsn_codes = HsnCode::where('hsn_code', 'LIKE', "%{$search}%") // Assuming company name field is 'name'
@@ -831,6 +831,17 @@ class ProductController extends Controller
                 // For Super Admin, search in the default connection or specify a branch
                 $search = $request->get('search', '');
 
+                $product = Product::where('barcode', trim($search))->first();
+
+                if ($product) {
+                    return response()->json([
+                        'success' => true,
+                        'products' => [$product],
+                        'exact_match' => true,
+                        'auto_select' => true
+                    ]);
+                }
+
                 $products = Product::where('product_name', 'LIKE', "%{$search}%")
                     ->orWhere('barcode', 'LIKE', "%{$search}%")
                     ->limit(10)
@@ -840,6 +851,16 @@ class ProductController extends Controller
                 $branchConnection = $branch->connection_name;
 
                 $search = $request->get('search', '');
+                $product = Product::on($branchConnection)->where('barcode', trim($search))->first();
+
+                if ($product) {
+                    return response()->json([
+                        'success' => true,
+                        'products' => [$product],
+                        'exact_match' => true,
+                        'auto_select' => true
+                    ]);
+                }
 
                 $products = Product::on($branchConnection)
                     ->where('product_name', 'LIKE', "%{$search}%")
@@ -850,7 +871,9 @@ class ProductController extends Controller
 
             return response()->json([
                 'success' => true,
-                'products' => $products
+                'products' => $products,
+                'exact_match' => false,
+                'auto_select' => false
             ]);
 
         } catch (Exception $e) {

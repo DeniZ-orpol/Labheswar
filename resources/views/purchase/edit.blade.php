@@ -683,6 +683,14 @@
                     currentData = data.products || [];
                     window.currentProductData = currentData;
 
+                    // Check if it's an exact barcode match for auto-selection
+                    if (data.auto_select && data.exact_match && currentData.length === 1) {
+                        // Auto-select the product for barcode scan
+                        const product = currentData[0];
+                        selectProduct(product.product_name, product.id);
+                        return; // Exit early, don't show dropdown
+                    }
+
                     let html = '';
 
                     // Show existing products
@@ -722,6 +730,18 @@
                     currentData = [];
                 }
             }, 200);
+        });
+
+        // Add paste event listener for barcode scanner input
+        input.addEventListener('paste', function(e) {
+            // Small delay to allow paste to complete
+            setTimeout(() => {
+                const value = this.value.trim();
+                if (value && isLikelyBarcode(value)) {
+                    // Trigger the search immediately for pasted barcode
+                    this.dispatchEvent(new Event('input'));
+                }
+            }, 10);
         });
 
         // Arrow key navigation
@@ -768,6 +788,20 @@
         //         selectProduct(currentData[index].product_name, currentData[index].id, inputElement);
         //     }
         // }
+    }
+
+    // Helper function to detect if input looks like a barcode
+    function isLikelyBarcode(value) {
+        // Remove any whitespace
+        value = value.trim();
+
+        // Check if it's a numeric string with appropriate length
+        if (/^\d{8,13}$/.test(value)) {
+            return true;
+        }
+
+        // Add other barcode patterns if needed
+        return false;
     }
 
     // Update highlight function
@@ -893,18 +927,43 @@
         console.log('Product selected:', {
             productName: productName,
             productId: productId,
-            hiddenFieldValue: hiddenSelect.value
+            hiddenFieldValue: hiddenSelect.value,
+            isBarcodeScan: productData && productData.barcode && input.value.trim() === productData.barcode
         });
 
         // Trigger existing functionality
         loadProductDetails(hiddenSelect);
 
-        // Move to next field
-        const nextField = row.querySelector('input[name="mrp[]"]');
-        if (nextField) {
+        // For barcode scans, auto-focus quantity field and add visual feedback
+        const isBarcodeScan = productData && productData.barcode && input.value.trim() === productData.barcode;
+
+        if (isBarcodeScan) {
+            // Add visual feedback for successful barcode scan
+            input.style.backgroundColor = '#d4edda'; // Light green background
+            input.style.borderColor = '#28a745'; // Green border
+
+            // Reset visual feedback after 2 seconds
             setTimeout(() => {
-                nextField.focus();
-            }, 100);
+                input.style.backgroundColor = '';
+                input.style.borderColor = '';
+            }, 2000);
+
+            // Auto-focus MRP field for quick entry
+            const mrpField = row.querySelector('input[name="mrp[]"]');
+            if (mrpField) {
+                setTimeout(() => {
+                    mrpField.focus();
+                    mrpField.select(); // Select the value for quick editing
+                }, 100);
+            }
+        } else {
+            // Move to next field
+            const nextField = row.querySelector('input[name="mrp[]"]');
+            if (nextField) {
+                setTimeout(() => {
+                    nextField.focus();
+                }, 100);
+            }
         }
     }
 
