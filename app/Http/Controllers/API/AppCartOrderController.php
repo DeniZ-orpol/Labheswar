@@ -107,6 +107,11 @@ class AppCartOrderController extends Controller
                     ], 400);
                 }
 
+                // Check if user already has a cart assigned
+                $existingUserCart = Cart::on($branch->connection_name)
+                    ->where('user_id', $user->id)
+                    ->first();
+
                 // Handle cart selection (keeping your existing logic)
                 if ($requestedCartId) {
                     $targetCart = Cart::on($branch->connection_name)
@@ -120,34 +125,52 @@ class AppCartOrderController extends Controller
                         ], 404);
                     }
 
-                    if ($targetCart->status === 'available') {
-                        $targetCart->update([
-                            'user_id' => $user->id,
-                            'status' => 'unavailable'
+                    // Check if user already has a different cart
+                    if ($existingUserCart && $existingUserCart->id !== $requestedCartId) {
+                        // User has different cart - free the existing cart first
+                        $existingUserCart->update([
+                            'user_id' => null
                         ]);
-                        $cart = $targetCart;
-                    } elseif ($targetCart->user_id === $user->id) {
-                        $cart = $targetCart;
-                    } else {
-                        $availableCart = Cart::on($branch->connection_name)
-                            ->where('status', 'available')
-                            ->first();
-
-                        if (!$availableCart) {
-                            return response()->json([
-                                'success' => false,
-                                'message' => 'Requested cart not available and no other carts available'
-                            ], 400);
-                        }
-
-                        $availableCart->update([
-                            'user_id' => $user->id,
-                            'status' => 'unavailable'  // Cart now has products, so unavailable
-                        ]);
-
-                        $cart = $availableCart;
                     }
+
+                    // if ($targetCart->status === 'available') {
+                    //     $targetCart->update([
+                    //         'user_id' => $user->id,
+                    //         'status' => 'unavailable'
+                    //     ]);
+                    //     $cart = $targetCart;
+                    // } elseif ($targetCart->user_id === $user->id) {
+                    //     $cart = $targetCart;
+                    // } else {
+
+                    $targetCart->update([
+                        'user_id' => $user->id
+                    ]);
+                    $cart = $targetCart;
+                    // $availableCart = Cart::on($branch->connection_name)
+                    //     ->where('status', 'available')
+                    //     ->first();
+
+                    // if (!$availableCart) {
+                    //     return response()->json([
+                    //         'success' => false,
+                    //         'message' => 'Requested cart not available and no other carts available'
+                    //     ], 400);
+                    // }
+
+                    // $availableCart->update([
+                    //     'user_id' => $user->id,
+                    //     'status' => 'unavailable'  // Cart now has products, so unavailable
+                    // ]);
+
+                    // $cart = $availableCart;
+                    // }
                 } elseif ($newCart) {
+                    if ($existingUserCart) {
+                        $existingUserCart->update([
+                            'user_id' => null
+                        ]);
+                    }
                     $availableCart = Cart::on($branch->connection_name)
                         ->where('status', 'available')
                         ->first();
@@ -166,13 +189,13 @@ class AppCartOrderController extends Controller
 
                     $cart = $availableCart;
                 } else {
-                    $userCart = Cart::on($branch->connection_name)
-                        ->where('user_id', $user->id)
-                        ->where('status', 'unavailable')
-                        ->first();
+                    // $userCart = Cart::on($branch->connection_name)
+                    //     ->where('user_id', $user->id)
+                    //     ->where('status', 'unavailable')
+                    //     ->first();
 
-                    if ($userCart) {
-                        $cart = $userCart;
+                    if ($existingUserCart) {
+                        $cart = $existingUserCart;
                     } else {
                         $availableCart = Cart::on($branch->connection_name)
                             ->where('status', 'available')
@@ -198,7 +221,7 @@ class AppCartOrderController extends Controller
                 $existingCartItem = AppCartsOrders::on($branch->connection_name)
                     ->where('cart_id', $cart->id)
                     ->where('product_id', $productId)
-                    ->where('user_id', $user->id)
+                    ->where('order_receipt_id', null) // Ensure it's not already part of an order receipt
                     ->first();
 
                 if ($existingCartItem) {
