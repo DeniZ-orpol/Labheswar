@@ -71,12 +71,11 @@
                                     </div>
                                 </td>
                             </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7"
-                                        class="text-center">No Products Found</td>
-                                </tr>
-                            @endforelse
+                        @empty
+                            <tr>
+                                <td colspan="7" class="text-center">No Products Found</td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
 
@@ -102,19 +101,113 @@
                                         </li>
                                     @endif
 
-                                    {{-- Page Numbers --}}
-                                    @for ($i = 1; $i <= $products->lastPage(); $i++)
-                                        @if ($i == $products->currentPage())
-                                            <li class="page-item active">
-                                                <span class="page-link">{{ $i }}</span>
+                                    {{-- Page Numbers with Compact Logic --}}
+                                    @php
+                                        $currentPage = $products->currentPage();
+                                        $lastPage = $products->lastPage();
+                                        $showEllipsis = $lastPage > 7; // Show ellipsis if more than 7 pages
+                                    @endphp
+
+                                    @if (!$showEllipsis)
+                                        {{-- Show all pages if 7 or fewer --}}
+                                        @for ($i = 1; $i <= $lastPage; $i++)
+                                            @if ($i == $currentPage)
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ $i }}</span>
+                                                </li>
+                                            @else
+                                                <li class="page-item">
+                                                    <a class="page-link"
+                                                        href="{{ $products->url($i) }}">{{ $i }}</a>
+                                                </li>
+                                            @endif
+                                        @endfor
+                                    @else
+                                        {{-- Compact pagination with ellipsis --}}
+
+                                        {{-- Always show first page --}}
+                                        @if ($currentPage != 1)
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ $products->url(1) }}">1</a>
                                             </li>
                                         @else
-                                            <li class="page-item">
-                                                <a class="page-link"
-                                                    href="{{ $products->url($i) }}">{{ $i }}</a>
+                                            <li class="page-item active">
+                                                <span class="page-link">1</span>
                                             </li>
                                         @endif
-                                    @endfor
+
+                                        {{-- Show second page if current page is not near the beginning --}}
+                                        @if ($currentPage > 4)
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ $products->url(2) }}">2</a>
+                                            </li>
+                                        @endif
+
+                                        {{-- Left ellipsis --}}
+                                        @if ($currentPage > 4)
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        @endif
+
+                                        {{-- Pages around current page --}}
+                                        @php
+                                            $start = max(2, $currentPage - 1);
+                                            $end = min($lastPage - 1, $currentPage + 1);
+
+                                            // Adjust range if we're near the beginning
+                                            if ($currentPage <= 3) {
+                                                $start = 2;
+                                                $end = min($lastPage - 1, 4);
+                                            }
+
+                                            // Adjust range if we're near the end
+                                            if ($currentPage >= $lastPage - 2) {
+                                                $start = max(2, $lastPage - 3);
+                                                $end = $lastPage - 1;
+                                            }
+                                        @endphp
+
+                                        @for ($i = $start; $i <= $end; $i++)
+                                            @if ($i == $currentPage)
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ $i }}</span>
+                                                </li>
+                                            @else
+                                                <li class="page-item">
+                                                    <a class="page-link"
+                                                        href="{{ $products->url($i) }}">{{ $i }}</a>
+                                                </li>
+                                            @endif
+                                        @endfor
+
+                                        {{-- Right ellipsis --}}
+                                        @if ($currentPage < $lastPage - 3)
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        @endif
+
+                                        {{-- Show second-to-last page if current page is not near the end --}}
+                                        @if ($currentPage < $lastPage - 3)
+                                            <li class="page-item">
+                                                <a class="page-link"
+                                                    href="{{ $products->url($lastPage - 1) }}">{{ $lastPage - 1 }}</a>
+                                            </li>
+                                        @endif
+
+                                        {{-- Always show last page --}}
+                                        @if ($currentPage != $lastPage)
+                                            <li class="page-item">
+                                                <a class="page-link"
+                                                    href="{{ $products->url($lastPage) }}">{{ $lastPage }}</a>
+                                            </li>
+                                        @else
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ $lastPage }}</span>
+                                            </li>
+                                        @endif
+                                    @endif
 
                                     {{-- Next Page Link --}}
                                     @if ($products->hasMorePages())
