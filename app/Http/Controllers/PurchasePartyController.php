@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PurchaseParty;
 use App\Traits\BranchAuthTrait;
+use Exception;
 use Illuminate\Http\Request;
 
 class PurchasePartyController extends Controller
@@ -46,40 +47,43 @@ class PurchasePartyController extends Controller
         $branch = $auth['branch'];
         $role = $auth['role'];
 
-        $validate = $request->validate([
-            'party_name' => 'required|string',
-            'company_name' => 'required|string',
-            'gst_number' => 'required|string',
-            'acc_no' => 'required|string',
-            'ifsc_code' => 'required|string',
-            'station' => 'required|string',
-            'pincode' => 'string',
-            'mobile_no' => 'string',
-            'email' => 'string',
-            'address' => 'string',
-        ]);
-        // dd($request->all());
-
-        $data = [
-            'party_name' => $validate['party_name'],
-            'company_name' => $validate['party_name'],
-            'gst_number' => $validate['party_name'],
-            'acc_no' => $validate['party_name'],
-            'ifsc_code' => $validate['party_name'],
-            'station' => $validate['party_name'],
-            'pincode' => $validate['party_name'],
-            'mobile_no' => $validate['party_name'],
-            'email' => $validate['party_name'],
-            'address' => $validate['party_name'],
-        ];
-
-        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            PurchaseParty::create($data);
-        } else {
-            PurchaseParty::on($branch->connection_name)->create($data);
+        try {
+            $validate = $request->validate([
+                'party_name' => 'required|string',
+                'company_name' => 'nullable|string',
+                'gst_number' => 'nullable|string',
+                'acc_no' => 'nullable|string',
+                'ifsc_code' => 'nullable|string',
+                'station' => 'nullable|string',
+                'pincode' => 'nullable|string',
+                'mobile_no' => 'nullable|string',
+                'email' => 'nullable|string',
+                'address' => 'nullable|string',
+            ]);
+    
+            $data = [
+                'party_name' => $validate['party_name'],
+                'company_name' => $validate['company_name'] ?? null,
+                'gst_number' => $validate['gst_number'] ?? null,
+                'acc_no' => $validate['acc_no'] ?? null,
+                'ifsc_code' => $validate['ifsc_code'] ?? null,
+                'station' => $validate['station'] ?? null,
+                'pincode' => $validate['pincode'] ?? null,
+                'mobile_no' => $validate['mobile_no'] ?? null,
+                'email' => $validate['email'] ?? null,
+                'address' => $validate['address'] ?? null,
+            ];
+    
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                PurchaseParty::create($data);
+            } else {
+                PurchaseParty::on($branch->connection_name)->create($data);
+            }
+    
+            return redirect()->route('purchase.party.index')->with('success', 'Purchase Party Created Successfully!');
+        } catch (Exception $ex) {
+            dd($ex->getMessage());
         }
-
-        return redirect()->route('purchase.party.index')->with('success', 'Purchase Party Created Successfully!');
     }
 
     /**
@@ -131,28 +135,32 @@ class PurchasePartyController extends Controller
         $branch = $auth['branch'];
         $role = $auth['role'];
 
-        $validate = $request->validate([
-            'party_name' => 'required|string',
-            'company_name' => 'required|string',
-            'gst_number' => 'required|string',
-            'acc_no' => 'required|string',
-            'ifsc_code' => 'required|string',
-            'station' => 'required|string',
-            'pincode' => 'string',
-            'mobile_no' => 'string',
-            'email' => 'string',
-            'address' => 'string',
-        ]);
-
-        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            $party = PurchaseParty::findOrFail($id);
-        } else {
-            $party = PurchaseParty::on($branch->connection_name)->findOrFail($id);
+        try {
+            $validate = $request->validate([
+                'party_name' => 'required|string',
+                // 'company_name' => 'string',
+                'gst_number' => 'nullable|string',
+                'acc_no' => 'nullable|string',
+                'ifsc_code' => 'nullable|string',
+                'station' => 'nullable|string',
+                'pincode' => 'nullable|string',
+                'mobile_no' => 'nullable|string',
+                'email' => 'nullable|string',
+                'address' => 'nullable|string',
+            ]);
+    
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                $party = PurchaseParty::findOrFail($id);
+            } else {
+                $party = PurchaseParty::on($branch->connection_name)->findOrFail($id);
+            }
+    
+            $party->update($validate);
+    
+            return redirect()->route('purchase.party.index')->with('success', 'Purchase Party Updated Successfully!');
+        } catch (Exception $ex) {
+            dd($ex->getMessage());
         }
-
-        $party->update($validate);
-
-        return redirect()->route('purchase.party.index')->with('success', 'Purchase Party Updated Successfully!');
     }
 
     /**

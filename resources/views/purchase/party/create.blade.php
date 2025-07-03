@@ -12,30 +12,26 @@
                             *</span></label>
                     <input type="text" name="party_name" class="form-control field-new" required>
                 </div>
-                <div class="col-span-6 mt-3">
-                    <label class="form-label">Company Name<span style="color: red;margin-left: 3px;">
-                            *</span></label>
-                    <input type="text" name="company_name" class="form-control field-new" required>
-                </div>
+                {{-- <div class="col-span-6 mt-3">
+                    <label class="form-label">Company Name</label>
+                    <input type="text" name="company_name" class="form-control field-new">
+                </div> --}}
                 <div class="col-span-6 mt-3">
                     <label class="form-label">Gst NO.<span style="color: red;margin-left: 3px;">
                             *</span></label>
                     <input type="text" name="gst_number" class="form-control field-new" required>
                 </div>
                 <div class="col-span-6 mt-3">
-                    <label class="form-label">Bank Account Number<span style="color: red;margin-left: 3px;">
-                            *</span></label>
-                    <input type="text" name="acc_no" class="form-control field-new" required>
+                    <label class="form-label">Bank Account Number</label>
+                    <input type="text" name="acc_no" class="form-control field-new">
                 </div>
                 <div class="col-span-6 mt-3">
-                    <label class="form-label">IFSC Code<span style="color: red;margin-left: 3px;">
-                            *</span></label>
-                    <input type="text" name="ifsc_code" class="form-control field-new" required>
+                    <label class="form-label">IFSC Code</label>
+                    <input type="text" name="ifsc_code" class="form-control field-new">
                 </div>
                 <div class="col-span-6 mt-3">
-                    <label class="form-label">Station<span style="color: red;margin-left: 3px;">
-                            *</span></label>
-                    <input type="text" name="station" class="form-control field-new" required>
+                    <label class="form-label">Station</label>
+                    <input type="text" name="station" class="form-control field-new">
                 </div>
                 <div class="col-span-6 mt-3">
                     <label class="form-label">Pin Code</label>

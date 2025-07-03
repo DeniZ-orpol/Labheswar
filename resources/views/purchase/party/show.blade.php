@@ -13,16 +13,16 @@
                         <!-- LEFT COLUMN -->
                         <div class="p-5 rounded-md bg-slate-100">
                             <div class="font-medium text-lg mb-3">Hsn Code Information</div>
-                            <p><strong>Code:</strong> {{ $party->party_code }}</p>
-                            <p><strong>CGST:</strong> {{ $party->company_name }}</p>
-                            <p><strong>CGST:</strong> {{ $party->gst_number }}</p>
-                            <p><strong>SGST:</strong> {{ $party->acc_no }}</p>
-                            <p><strong>SGST:</strong> {{ $party->ifsc_code }}</p>
-                            <p><strong>IGST:</strong> {{ $party->station }}</p>
-                            <p><strong>IGST:</strong> {{ $party->pincode }}</p>
-                            <p><strong>IGST:</strong> {{ $party->mobile_no }}</p>
-                            <p><strong>IGST:</strong> {{ $party->email }}</p>
-                            <p><strong>IGST:</strong> {{ $party->address }}</p>
+                            <p><strong>Party Name:</strong> {{ $party->party_name }}</p>
+                            <p><strong>GST No:</strong> {{ $party->gst_number ?? '-' }}</p>
+                            <p><strong>Mobile No:</strong> {{ $party->mobile_no ?? '-' }}</p>
+                            <p><strong>Email:</strong> {{ $party->email ?? '-' }}</p>
+                            <p><strong>Address:</strong> {{ $party->address ?? '-' }}</p>
+                            <p><strong>Station:</strong> {{ $party->station ?? '-' }}</p>
+                            <p><strong>Account No:</strong> {{ $party->acc_no ?? '-' }}</p>
+                            <p><strong>IFSC Code:</strong> {{ $party->ifsc_code ?? '-' }}</p>
+                            <p><strong>Pin code:</strong> {{ $party->pincode ?? '-' }}</p>
+                            {{-- <p><strong>IGST:</strong> {{ $party->address }}</p> --}}
                         </div>
 
                     </div>

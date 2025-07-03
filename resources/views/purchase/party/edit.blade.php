@@ -18,12 +18,11 @@
                         value="{{ old('party_name', $party->party_name) }}" placeholder="Enter Purchase Party name" required
                         maxlength="255">
                 </div>
-                <div class="col-span-6 mt-3">
-                    <label class="form-label">Company Name<span style="color: red;margin-left: 3px;">
-                            *</span></label>
-                    <input type="text" name="company_name" class="form-control field-new" required value="{{ old('company_name', $party->company_name) }}"
+                {{-- <div class="col-span-6 mt-3">
+                    <label class="form-label">Company Name</label>
+                    <input type="text" name="company_name" class="form-control field-new" value="{{ old('company_name', $party->company_name) }}"
                         placeholder="Enter Company Name">
-                </div>
+                </div> --}}
                 <div class="col-span-6 mt-3">
                     <label class="form-label">Gst NO.<span style="color: red;margin-left: 3px;">
                             *</span></label>
@@ -31,21 +30,18 @@
                         placeholder="Enter GST Number">
                 </div>
                 <div class="col-span-6 mt-3">
-                    <label class="form-label">Bank Account Number<span style="color: red;margin-left: 3px;">
-                            *</span></label>
-                    <input type="text" name="acc_no" class="form-control field-new" required value="{{ old('acc_no', $party->acc_no) }}"
+                    <label class="form-label">Bank Account Number</label>
+                    <input type="text" name="acc_no" class="form-control field-new" value="{{ old('acc_no', $party->acc_no) }}"
                         placeholder="Enter Bank Account Number">
                 </div>
                 <div class="col-span-6 mt-3">
-                    <label class="form-label">IFSC Code<span style="color: red;margin-left: 3px;">
-                            *</span></label>
-                    <input type="text" name="ifsc_code" class="form-control field-new" required value="{{ old('ifsc_code', $party->ifsc_code) }}"
+                    <label class="form-label">IFSC Code</label>
+                    <input type="text" name="ifsc_code" class="form-control field-new" value="{{ old('ifsc_code', $party->ifsc_code) }}"
                         placeholder="Enter IFSC Code">
                 </div>
                 <div class="col-span-6 mt-3">
-                    <label class="form-label">Station<span style="color: red;margin-left: 3px;">
-                            *</span></label>
-                    <input type="text" name="station" class="form-control field-new" required value="{{ old('station', $party->station) }}"
+                    <label class="form-label">Station</label>
+                    <input type="text" name="station" class="form-control field-new" value="{{ old('station', $party->station) }}"
                         placeholder="Enter Station">
                 </div>
                 <div class="col-span-6 mt-3">
