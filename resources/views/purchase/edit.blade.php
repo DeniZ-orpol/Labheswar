@@ -8,6 +8,25 @@
         padding: 2px !important;
     }
 
+    .product-table [type='text'],
+    [type='email'],
+    [type='url'],
+    [type='password'],
+    [type='number'],
+    [type='date'],
+    [type='datetime-local'],
+    [type='month'],
+    [type='search'],
+    [type='tel'],
+    [type='time'],
+    [type='week'],
+    [multiple],
+    textarea,
+    select {
+        padding-right: 5px !important;
+        padding-left: 5px !important;
+    }
+
     .search-dropdown {
         position: relative;
         width: 100%;
@@ -175,8 +194,8 @@
                                             <option value="{{ $product->id }}" data-mrp="{{ $product->mrp ?? 0 }}"
                                                 data-name="{{ $product->product_name }}"
                                                 data-box-pcs="{{ $product->converse_box ?? 1 }}"
-                                                data-sgst="{{ $product->gst/2 ?? 0 }}"
-                                                data-cgst="{{ $product->gst/2 ?? 0 }}"
+                                                data-sgst="{{ $product->gst / 2 ?? 0 }}"
+                                                data-cgst="{{ $product->gst / 2 ?? 0 }}"
                                                 data-purchase-rate="{{ $product->purchase_rate ?? 0 }}"
                                                 data-sale-rate-a="{{ $product->sale_rate_a ?? 0 }}"
                                                 data-sale-rate-b="{{ $product->sale_rate_b ?? 0 }}"
@@ -283,7 +302,7 @@
                     <p><strong>Item:</strong> <span id="current-item">-</span></p>
                     {{-- <p><strong>MRP:</strong> <span id="current-mrp">0.00</span></p> --}}
                     <p><strong>SRate:</strong> <span id="current-srate">0.00</span></p>
-                    <p><strong>Date:</strong> {{$purchaseReceipt->created_at->Format('d/m/Y')}} </p>
+                    <p><strong>Date:</strong> {{ $purchaseReceipt->created_at->Format('d/m/Y') }} </p>
                 </div>
 
                 <!-- MIDDLE COLUMN -->

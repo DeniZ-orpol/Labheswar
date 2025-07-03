@@ -19,7 +19,7 @@ License: You must have a valid license purchased only from themeforest(the above
     <meta name="keywords"
         content="admin template, Enigma Admin Template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="LEFT4CODE">
-    <title>Login - Midone - Tailwind HTML Admin Template</title>
+    <title>Login - Labheshwar</title>
     <!-- BEGIN: CSS Assets-->
     <link rel="stylesheet" href="{{ asset('css/app.css') }}" />
     <!-- END: CSS Assets-->

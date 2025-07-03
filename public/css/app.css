@@ -12274,7 +12274,7 @@ html body{
     padding-bottom: 4rem;
     padding-top: 8rem;
 }
-@media (max-width: calc(1280px - 1px)) {
+@media (max-width: calc(1401px - 1px)) {
     .side-nav {
         width: 105px;
     }
@@ -12341,7 +12341,7 @@ html body{
     height: 1rem;
     width: 1rem;
 }
-@media (max-width: calc(1280px - 1px)) {
+@media (max-width: calc(1401px - 1px)) {
     .side-nav .side-menu .side-menu__title .side-menu__sub-icon{
         display: none;
     }

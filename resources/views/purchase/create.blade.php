@@ -8,6 +8,25 @@
         padding: 2px !important;
     }
 
+    .product-table [type='text'],
+    [type='email'],
+    [type='url'],
+    [type='password'],
+    [type='number'],
+    [type='date'],
+    [type='datetime-local'],
+    [type='month'],
+    [type='search'],
+    [type='tel'],
+    [type='time'],
+    [type='week'],
+    [multiple],
+    textarea,
+    select {
+        padding-right: 5px !important;
+        padding-left: 5px !important;
+    }
+
     .search-dropdown {
         position: relative;
         width: 100%;
@@ -60,7 +79,8 @@
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             New Purchase
         </h2>
-        <form action="{{ route('purchase.store') }}" method="POST" class="form-updated validate-form box rounded-md mt-5 p-5">
+        <form action="{{ route('purchase.store') }}" method="POST"
+            class="form-updated validate-form box rounded-md mt-5 p-5">
             @csrf <!-- CSRF token for security -->
             <div class="grid grid-cols-12 gap-2 grid-updated">
                 <!-- Name -->
