@@ -50,6 +50,7 @@ class AppCartOrderController extends Controller
             try {
                 // Get product from branch database
                 $product = Product::on($branch->connection_name)
+                    ->with('hsnCode')
                     ->where('id', $productId)
                     ->first();
 
@@ -244,7 +245,8 @@ class AppCartOrderController extends Controller
                     $finalWeight = null; // No loose quantity for fixed products
                 }
 
-                $gstAmount = ($subTotal * ($product->gst_percentage ?? 0)) / 100;
+                $gstPercent = $product->hsnCode->gst ?? 0;
+                $gstAmount = ($subTotal * $gstPercent) / 100;
                 $totalAmount = $subTotal + $gstAmount;
 
                 // Create new cart item using calculated values
@@ -260,7 +262,7 @@ class AppCartOrderController extends Controller
                     'sub_total' => $subTotal,
                     'total_amount' => $totalAmount,
                     'gst' => $gstAmount,
-                    'gst_p' => $product->gst_percentage ?? 0,
+                    'gst_p' => $gstPercent,
                     'return_product' => 0
                 ]);
 
@@ -926,7 +928,10 @@ class AppCartOrderController extends Controller
             try {
                 //code...
                 // Step 3: Fetch product from DB
-                $product = Product::on($connection)->where('barcode', $barcode)->first();
+                $product = Product::on($connection)
+                    ->with('hsnCode')
+                    ->where('barcode', $barcode)
+                    ->first();
                 if (!$product) {
                     return response()->json(['success' => false, 'message' => 'Product not found'], 404);
                 }
@@ -1086,7 +1091,8 @@ class AppCartOrderController extends Controller
                     $finalWeight = null; // No loose quantity for fixed products
                 }
 
-                $gstAmount = ($subTotal * ($product->gst_percentage ?? 0)) / 100;
+                $gstPercent = $product->hsnCode->gst ?? 0;
+                $gstAmount = ($subTotal * $gstPercent) / 100;
                 $totalAmount = $subTotal + $gstAmount;
 
                 // Create new cart item using calculated values
@@ -1102,7 +1108,7 @@ class AppCartOrderController extends Controller
                     'sub_total' => $subTotal,
                     'total_amount' => $totalAmount,
                     'gst' => $gstAmount,
-                    'gst_p' => $product->gst_percentage ?? 0,
+                    'gst_p' => $gstPercent,
                     'return_product' => 0
                 ]);
 
