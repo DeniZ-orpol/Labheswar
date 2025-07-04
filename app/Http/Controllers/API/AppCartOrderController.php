@@ -1234,7 +1234,7 @@ class AppCartOrderController extends Controller
     }
 
     /**
-     * Remove product from cart and add it intro inventory
+     * Remove product from cart and add it into inventory
      * @param \Illuminate\Http\Request $request
      * @return mixed|\Illuminate\Http\JsonResponse
      */
@@ -1263,7 +1263,7 @@ class AppCartOrderController extends Controller
                 // Get cart item with product details
                 $cartItem = AppCartsOrders::on($branch->connection_name)
                     ->where('id', $cartItemId)
-                    ->where('user_id', $user->id) // Ensure user owns this cart item
+                    ->where('order_receipt_id', null)
                     ->first();
 
                 if (!$cartItem) {
