@@ -507,13 +507,10 @@ class AppCartOrderController extends Controller
     public function getCartItems(Request $request)
     {
         try {
-            $user = auth()->user();
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized'
-                ], 401);
-            }
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $role = $auth['role'];
+            $branch = $auth['branch'];
 
             // Validate request
             $request->validate([
@@ -521,19 +518,6 @@ class AppCartOrderController extends Controller
             ]);
 
             $cartId = $request->input('cart_id');
-
-            $branch = Branch::where('id', $user->branch_id)
-                ->where('status', 'active')
-                ->first();
-
-            if (!$branch) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No accessible branch found'
-                ], 404);
-            }
-
-            configureBranchConnection($branch);
 
             // Get selected cart
             $cart = Cart::on($branch->connection_name)
@@ -909,7 +893,7 @@ class AppCartOrderController extends Controller
     }
 
     /**
-     * Add
+     * Add product to cart by scanning barcode
      * @param \Illuminate\Http\Request $request
      * @return mixed|\Illuminate\Http\JsonResponse
      */
@@ -932,124 +916,264 @@ class AppCartOrderController extends Controller
             ]);
 
             $barcode = $request->barcode;
-            $quantity = $request->quantity ?? 1;
+            $requestedQuantity = $request->quantity ?? 1;
             $requestedCartId = $request->input('cart_id');
             $newCart = $request->input('new_cart', false);
 
-            // Step 3: Fetch product from DB
-            $product = Product::on($connection)->where('barcode', $barcode)->first();
-            if (!$product) {
-                return response()->json(['success' => false, 'message' => 'Product not found'], 404);
-            }
+            // Start database transaction
+            DB::connection($branch->connection_name)->beginTransaction();
 
-            $price = $product->price ?? 0;
-            $weight = $product->product_weight ?? null;
-            $firmId = $product->firm_id ?? null;
-            $gstPercent = $product->gst_percentage ?? 0;
-
-            $subTotal = $price * $quantity;
-            $gstAmount = ($subTotal * $gstPercent) / 100;
-            $totalAmount = $subTotal + $gstAmount;
-
-            // Step 4: Cart logic
-            if ($requestedCartId) {
-                $targetCart = Cart::on($connection)->find($requestedCartId);
-                if (!$targetCart) {
-                    return response()->json(['success' => false, 'message' => 'Requested cart not found'], 404);
+            try {
+                //code...
+                // Step 3: Fetch product from DB
+                $product = Product::on($connection)->where('barcode', $barcode)->first();
+                if (!$product) {
+                    return response()->json(['success' => false, 'message' => 'Product not found'], 404);
                 }
 
-                if ($targetCart->status === 'available') {
-                    $targetCart->update(['user_id' => $user->id, 'status' => 'unavailable']);
-                    $cart = $targetCart;
-                } elseif ($targetCart->user_id === $user->id) {
-                    $cart = $targetCart;
-                } else {
-                    $availableCart = Cart::on($connection)->where('status', 'available')->first();
-                    if (!$availableCart) {
-                        return response()->json(['success' => false, 'message' => 'No available cart for reassignment'], 400);
+                $productId = $product->id;
+                $productPrice = $product->mrp;
+
+                // Check inventory availability - GET ALL INVENTORY ENTRIES
+                $inventoryEntries = Inventory::on($branch->connection_name)
+                    ->where('product_id', $productId)
+                    ->where('quantity', '>', 0) // Only get entries with positive quantity
+                    ->orderBy('created_at', 'asc') // FIFO - First In, First Out
+                    ->get();
+
+                if ($inventoryEntries->isEmpty()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Product not available in inventory'
+                    ], 400);
+                }
+
+                // Calculate total available stock
+                $totalAvailableStock = $inventoryEntries->sum('quantity');
+
+                // NEW: Parse and convert product_weight for inventory management only
+                $inventoryCheckQuantity = $requestedQuantity; // Default for fixed quantity
+                $isLooseQuantity = false;
+                $inventoryDeductionQuantity = 0;
+
+                // Check if this is a loose quantity product and has weight input
+                if ($product->decimal_btn == 1 && !empty($productWeightInput)) {
+                    $weightConversion = $this->parseAndConvertWeight($productWeightInput, $product->unit_types);
+
+                    if ($weightConversion['success']) {
+                        $inventoryDeductionQuantity = $weightConversion['base_quantity']; // For inventory deduction
+                        $inventoryCheckQuantity = $inventoryDeductionQuantity; // For stock checking
+                        $isLooseQuantity = true;
+                    } else {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $weightConversion['error']
+                        ], 400);
                     }
-                    $availableCart->update(['user_id' => $user->id, 'status' => 'unavailable']);
-                    $cart = $availableCart;
                 }
-            } elseif ($newCart) {
-                $availableCart = Cart::on($connection)->where('status', 'available')->first();
-                if (!$availableCart) {
-                    return response()->json(['success' => false, 'message' => 'No carts available for new cart request'], 400);
+
+                // Check stock availability using the correct quantity
+                if ($totalAvailableStock < $inventoryCheckQuantity) {
+                    $unit = $isLooseQuantity ? strtoupper($product->unit_types) : 'PCS';
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Insufficient stock. Available quantity: ' . $totalAvailableStock . ' ' . $unit
+                    ], 400);
                 }
-                $availableCart->update(['user_id' => $user->id, 'status' => 'unavailable']);
-                $cart = $availableCart;
-            } else {
-                $cart = Cart::on($connection)
+
+                // Check if user already has a cart assigned
+                $existingUserCart = Cart::on($branch->connection_name)
                     ->where('user_id', $user->id)
-                    ->where('status', 'unavailable')
                     ->first();
 
-                if (!$cart) {
-                    $availableCart = Cart::on($connection)->where('status', 'available')->first();
-                    if (!$availableCart) {
-                        return response()->json(['success' => false, 'message' => 'No carts available'], 400);
+                // Handle cart selection (keeping your existing logic)
+                if ($requestedCartId) {
+                    $targetCart = Cart::on($branch->connection_name)
+                        ->where('id', $requestedCartId)
+                        ->first();
+
+                    if (!$targetCart) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Requested cart not found'
+                        ], 404);
                     }
-                    $availableCart->update(['user_id' => $user->id, 'status' => 'unavailable']);
+
+                    // Check if user already has a different cart
+                    if ($existingUserCart && $existingUserCart->id !== $requestedCartId) {
+                        // User has different cart - free the existing cart first
+                        $existingUserCart->update([
+                            'user_id' => null
+                        ]);
+                    }
+
+                    $targetCart->update([
+                        'user_id' => $user->id
+                    ]);
+                    $cart = $targetCart;
+
+                } elseif ($newCart) {
+                    if ($existingUserCart) {
+                        $existingUserCart->update([
+                            'user_id' => null
+                        ]);
+                    }
+                    $availableCart = Cart::on($branch->connection_name)
+                        ->where('status', 'available')
+                        ->first();
+
+                    if (!$availableCart) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'No carts available for new cart request'
+                        ], 400);
+                    }
+
+                    $availableCart->update([
+                        'user_id' => $user->id,
+                        'status' => 'unavailable'
+                    ]);
+
                     $cart = $availableCart;
+                } else {
+                    if ($existingUserCart) {
+                        $cart = $existingUserCart;
+                    } else {
+                        $availableCart = Cart::on($branch->connection_name)
+                            ->where('status', 'available')
+                            ->first();
+
+                        if (!$availableCart) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'No carts available'
+                            ], 400);
+                        }
+
+                        $availableCart->update([
+                            'user_id' => $user->id,
+                            'status' => 'unavailable'
+                        ]);
+
+                        $cart = $availableCart;
+                    }
                 }
-            }
 
-            // Step 5: Add or update cart item
-            $cartItem = AppCartsOrders::on($connection)
-                ->where('cart_id', $cart->id)
-                ->where('user_id', $user->id)
-                ->where('product_id', $product->id)
-                ->first();
+                // Check if product is already in cart
+                $existingCartItem = AppCartsOrders::on($branch->connection_name)
+                    ->where('cart_id', $cart->id)
+                    ->where('product_id', $productId)
+                    ->where('order_receipt_id', null) // Ensure it's not already part of an order receipt
+                    ->first();
 
-            // Step 6: Update popular products
-            $selection = PopularProducts::on($connection)
-                ->where('user_id', $user->id)
-                ->where('product_id', $product->id)
-                ->first();
+                if ($existingCartItem) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Product already exists in cart. Please remove the existing item first or update its quantity.'
+                    ], 400);
+                }
 
-            if ($selection) {
-                $selection->increment('count');
-            } else {
-                PopularProducts::on($connection)->create([
+                // Calculate cart item values based on product type
+                if ($isLooseQuantity) {
+                    // For loose quantity: use frontend calculated price directly
+                    $subTotal = $productPrice;
+                    $finalQuantity = 1; // Always 1 line item for loose products
+                    $finalWeight = $productWeightInput; // Store converted base unit value
+                } else {
+                    // For fixed quantity: calculate normally
+                    $subTotal = $requestedQuantity * $productPrice;
+                    $finalQuantity = $requestedQuantity;
+                    $finalWeight = null; // No loose quantity for fixed products
+                }
+
+                $gstAmount = ($subTotal * ($product->gst_percentage ?? 0)) / 100;
+                $totalAmount = $subTotal + $gstAmount;
+
+                // Create new cart item using calculated values
+                $cartItem = AppCartsOrders::on($branch->connection_name)->create([
                     'user_id' => $user->id,
-                    'product_id' => $product->id,
-                    'count' => 1
+                    'cart_id' => $cart->id,
+                    'product_id' => $productId,
+                    'firm_id' => $product->firm_id ?? null,
+                    'product_weight' => $finalWeight, // Store base unit value (e.g., 0.5 for 500g)
+                    'product_price' => $productPrice, // base price without gst
+                    'product_quantity' => $finalQuantity,
+                    'taxes' => $gstAmount,
+                    'sub_total' => $subTotal,
+                    'total_amount' => $totalAmount,
+                    'gst' => $gstAmount,
+                    'gst_p' => $product->gst_percentage ?? 0,
+                    'return_product' => 0
                 ]);
-            }
 
-            // Step 7: Save or update cart item
-            if ($cartItem) {
-                $cartItem->product_quantity += $quantity;
-                $cartItem->sub_total += $subTotal;
-                $cartItem->gst += $gstAmount;
-                $cartItem->taxes += $gstAmount;
-                $cartItem->total_amount += $totalAmount;
-                $cartItem->save();
-            } else {
-                $cartItem = new AppCartsOrders();
-                $cartItem->setConnection($connection);
-                $cartItem->user_id = $user->id;
-                $cartItem->cart_id = $cart->id;
-                $cartItem->product_id = $product->id;
-                $cartItem->firm_id = $firmId;
-                $cartItem->product_weight = $weight;
-                $cartItem->product_price = $price;
-                $cartItem->product_quantity = $quantity;
-                $cartItem->sub_total = $subTotal;
-                $cartItem->gst = $gstAmount;
-                $cartItem->gst_p = $gstPercent;
-                $cartItem->taxes = $gstAmount;
-                $cartItem->total_amount = $totalAmount;
-                $cartItem->return_product = 0;
-                $cartItem->save();
-            }
+                // Update popular products
+                $selection = PopularProducts::on($branch->connection_name)
+                    ->where('user_id', $user->id)
+                    ->where('product_id', $productId)
+                    ->first();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Product added to cart',
-                'cart_id' => $cart->id,
-                'cart_item' => $cartItem
-            ]);
+                if ($selection) {
+                    $selection->increment('count');
+                } else {
+                    PopularProducts::on($branch->connection_name)->create([
+                        'user_id' => $user->id,
+                        'product_id' => $productId,
+                        'count' => 1
+                    ]);
+                }
+
+                // UPDATED: Deduct inventory using FIFO method
+                $remainingToDeduct = $inventoryCheckQuantity;
+
+                foreach ($inventoryEntries as $inventoryEntry) {
+                    if ($remainingToDeduct <= 0) {
+                        break; // All quantity has been deducted
+                    }
+
+                    $availableInThisEntry = $inventoryEntry->quantity;
+                    $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
+
+                    // Update this inventory entry
+                    $inventoryEntry->decrement('quantity', $deductFromThisEntry);
+
+                    $remainingToDeduct -= $deductFromThisEntry;
+                }
+
+                // Calculate remaining total inventory for response
+                $remainingTotalStock = Inventory::on($branch->connection_name)
+                    ->where('product_id', $productId)
+                    ->sum('quantity');
+
+                // Commit transaction
+                DB::connection($branch->connection_name)->commit();
+
+                // Enhanced response with converted weight info
+                $displayQuantity = '';
+                if ($isLooseQuantity) {
+                    $displayQuantity = $productWeightInput; // Original format like "500g", "0.5kg"
+                } else {
+                    $displayQuantity = $requestedQuantity . ' PCS';
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Product added to cart successfully',
+                    'data' => [
+                        'cart_id' => $cart->id,
+                        'cart_status' => $cart->status,
+                        'cart_item' => $cartItem,
+                        'remaining_inventory' => $remainingTotalStock,
+                        'branch' => $branch->name,
+                        'is_loose_quantity' => $isLooseQuantity,
+                        'display_quantity' => $displayQuantity,
+                        'stored_weight' => $finalWeight, // What was stored in product_weight column
+                        'inventory_deducted' => $inventoryCheckQuantity . ' ' . ($isLooseQuantity ? strtoupper($product->unit_types) : 'PCS')
+                    ]
+                ]);
+            } catch (Exception $e) {
+                DB::connection($branch->connection_name)->rollback();
+                throw $e;
+            }
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
@@ -1296,6 +1420,7 @@ class AppCartOrderController extends Controller
                 // Get inventory record
                 $inventory = Inventory::on($branch->connection_name)
                     ->where('product_id', $cartItem->product_id)
+                    ->orderBy('created_at', 'desc')
                     ->first();
 
                 if (!$inventory) {
@@ -1527,8 +1652,7 @@ class AppCartOrderController extends Controller
                 ->where('user_id', $user->id)
                 ->where('id', '!=', $cart->id)
                 ->update([
-                    'user_id' => null,
-                    'status' => 'available'
+                    'user_id' => null
                 ]);
 
             // 🔁 Unassign if already assigned to someone else
