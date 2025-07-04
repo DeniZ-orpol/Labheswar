@@ -616,7 +616,7 @@ class AppCartOrderController extends Controller
                 // Get cart and verify it exists and belongs to user
                 $cart = Cart::on($branch->connection_name)
                     ->where('id', $cartId)
-                    ->where('user_id', $user->id) // Ensure user owns the cart
+                    ->where('status', 'unavailable')
                     ->first();
 
                 if (!$cart) {
@@ -634,7 +634,7 @@ class AppCartOrderController extends Controller
                         }
                     ])
                     ->where('cart_id', $cartId)
-                    ->where('user_id', $user->id) // Ensure user owns the items
+                    ->where('order_receipt_id', null) // Ensure items are not already part of an order receipt
                     ->get();
 
                 if ($cartItems->isEmpty()) {
@@ -758,18 +758,18 @@ class AppCartOrderController extends Controller
                         'discount_percentage' => $orderBill->discount_percentage,
                         'total' => $orderBill->total
                     ],
-                    'payment_info' => [
-                        'payment_status' => $orderBill->payment_status,
-                        'payment_method' => $orderBill->razorpay_payment_id ? 'online' : 'cash',
-                        'razorpay_payment_id' => $orderBill->razorpay_payment_id,
-                        'bill_due_date' => $orderBill->bill_due_date
-                    ],
-                    'delivery_info' => [
-                        'is_delivery' => $orderBill->is_delivery,
-                        'address_id' => $orderBill->address_id,
-                        'ship_to_name' => $orderBill->ship_to_name,
-                        'expected_delivery_date' => $orderBill->expected_delivery_date
-                    ],
+                    // 'payment_info' => [
+                    //     'payment_status' => $orderBill->payment_status,
+                    //     'payment_method' => $orderBill->razorpay_payment_id ? 'online' : 'cash',
+                    //     'razorpay_payment_id' => $orderBill->razorpay_payment_id,
+                    //     'bill_due_date' => $orderBill->bill_due_date
+                    // ],
+                    // 'delivery_info' => [
+                    //     'is_delivery' => $orderBill->is_delivery,
+                    //     'address_id' => $orderBill->address_id,
+                    //     'ship_to_name' => $orderBill->ship_to_name,
+                    //     'expected_delivery_date' => $orderBill->expected_delivery_date
+                    // ],
                     'items_summary' => [
                         'total_items' => count($itemsDetails),
                         'total_quantity' => $totalItemsCount,
@@ -867,8 +867,8 @@ class AppCartOrderController extends Controller
                 return [
                     'cart_id' => $cart->id,
                     'user_id' => $cart->user_id,
-                    'user_name' => $cart->user ? $cart->user->name : null,
-                    'user_email' => $cart->user ? $cart->user->email : null,
+                    // 'user_name' => $cart->user !== null ? $cart->user->name : null,
+                    // 'user_email' => $cart->user !== null ? $cart->user->email : null,
                     'status' => $cart->status,
                     'total_items' => $cartItems->sum('product_quantity'),
                     'total_amount' => $cartItems->sum('total_amount'),
