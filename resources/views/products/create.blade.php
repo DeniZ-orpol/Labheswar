@@ -504,8 +504,7 @@
                     <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
                         <div class="col-span-12">
                             <label for="modal-hsn-code" class="form-label">HSN Code</label>
-                            <input id="modal-hsn-code" name="hsn_code" type="text" class="form-control bg-gray-100"
-                                readonly>
+                            <input id="modal-hsn-code" name="hsn_code" type="text" class="form-control bg-gray-100">
                         </div>
                         <div class="col-span-12">
                             <label for="modal-gst" class="form-label">GST (%)</label>
@@ -571,6 +570,7 @@
         initSearchDropdown('product_category', 'categoryDropdown', '{{ route('categories.search') }}',
             'category');
 
+        setupEnterNavigation()
         // HSN Code dropdown with GST auto-fill
         initHsnDropdown();
         initHsnModal();
@@ -581,6 +581,359 @@
     // Global variables to store selected IDs
     let selectedCategoryId = null;
     let selectedCompanyId = null;
+
+    // START: setup enter navigation
+    function setupEnterNavigation() {
+        let currentFieldIndex = 0;
+
+        // Define field sequence for product form
+        const formFields = [{
+                selector: '#barcode',
+                type: 'input'
+            },
+            {
+                selector: '#product_name',
+                type: 'input'
+            },
+            {
+                selector: '#search_option',
+                type: 'input'
+            },
+            {
+                selector: 'select[name="unit_type"]',
+                type: 'select'
+            },
+            {
+                selector: '#product_company',
+                type: 'input'
+            },
+            {
+                selector: '#product_category',
+                type: 'input'
+            },
+            {
+                selector: '#hsn_code',
+                type: 'input'
+            },
+            {
+                selector: '#product_cess',
+                type: 'input'
+            },
+            {
+                selector: '#product_mrp',
+                type: 'input'
+            },
+            {
+                selector: '#product_purchase_rate',
+                type: 'input'
+            },
+            {
+                selector: '#product_sale_rate_a',
+                type: 'input'
+            },
+            {
+                selector: '#product_sale_rate_b',
+                type: 'input'
+            },
+            {
+                selector: '#product_sale_rate_c',
+                type: 'input'
+            },
+            {
+                selector: '#converse_carton',
+                type: 'input'
+            },
+            {
+                selector: '#carton_barcode',
+                type: 'input'
+            },
+            {
+                selector: '#converse_box',
+                type: 'input'
+            },
+            {
+                selector: '#box_barcode',
+                type: 'input'
+            },
+            {
+                selector: '#negative_billing',
+                type: 'select'
+            },
+            {
+                selector: '#min_qty',
+                type: 'input'
+            },
+            {
+                selector: '#reorder_qty',
+                type: 'input'
+            },
+            {
+                selector: '#discount',
+                type: 'select'
+            },
+            {
+                selector: '#max_discount',
+                type: 'input'
+            },
+            {
+                selector: '#discount_scheme',
+                type: 'input'
+            },
+            {
+                selector: '#bonus_use',
+                type: 'select'
+            },
+            {
+                selector: '#decimal_btn',
+                type: 'checkbox'
+            },
+            {
+                selector: '#sale_online',
+                type: 'checkbox'
+            },
+            {
+                selector: '#fileInput',
+                type: 'file'
+            }
+        ];
+
+        function focusField(selector) {
+            const element = document.querySelector(selector);
+            if (element) {
+                element.focus();
+                if (element.tagName === 'SELECT') {
+                    // For select elements, simulate click to open dropdown
+                    setTimeout(() => {
+                        if (element.size <= 1) {
+                            element.click();
+                        }
+                    }, 100);
+                }
+            }
+        }
+
+        function handleFormFieldNavigation(e, fieldIndex) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+
+                if (fieldIndex < formFields.length - 1) {
+                    // Move to next form field
+                    currentFieldIndex = fieldIndex + 1;
+                    focusField(formFields[currentFieldIndex].selector);
+                } else {
+                    // Last field, move to submit button
+                    const submitButton = document.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.focus();
+                    }
+                }
+            }
+        }
+
+        function handleSpecialNavigation(e) {
+            const target = e.target;
+
+            if (e.key === 'Enter') {
+                // Handle submit button enter key
+                if (target.tagName === 'BUTTON' && target.type === 'submit') {
+                    e.preventDefault();
+                    // Submit the form
+                    const form = target.closest('form');
+                    if (form) {
+                        form.submit();
+                    }
+                }
+
+                // Handle dropdown selections in search fields
+                if (target.matches('#product_company, #product_category, #hsn_code')) {
+                    const dropdown = target.nextElementSibling;
+                    if (dropdown && dropdown.classList.contains('dropdown-list') && dropdown.classList.contains(
+                        'show')) {
+                        const highlightedItem = dropdown.querySelector('.dropdown-item.highlighted');
+                        if (highlightedItem) {
+                            highlightedItem.click();
+                        } else {
+                            const firstItem = dropdown.querySelector('.dropdown-item');
+                            if (firstItem) {
+                                firstItem.click();
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Handle arrow key navigation for search dropdowns
+            if (target.matches('#product_company, #product_category, #hsn_code')) {
+                const dropdown = target.nextElementSibling;
+                if (dropdown && dropdown.classList.contains('dropdown-list') && dropdown.classList.contains('show')) {
+                    const items = Array.from(dropdown.querySelectorAll('.dropdown-item:not(.no-results)'));
+                    if (items.length === 0) return;
+
+                    let currentIndex = items.findIndex(item => item.classList.contains('highlighted'));
+
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        currentIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+                        updateDropdownHighlight(items, currentIndex);
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        currentIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+                        updateDropdownHighlight(items, currentIndex);
+                    }
+                }
+            }
+
+            // Handle arrow key navigation for normal dropdowns
+            // if (target.matches('#unit_type, #negative_billing, #bonus_use')) {
+            //     const dropdown = target.nextElementSibling;
+            //     if (dropdown && dropdown.classList.contains('dropdown-list') && dropdown.classList.contains('show')) {
+            //         const items = Array.from(dropdown.querySelectorAll('.dropdown-item:not(.no-results)'));
+            //         if (items.length === 0) return;
+
+            //         let currentIndex = items.findIndex(item => item.classList.contains('highlighted'));
+
+            //         if (e.key === 'ArrowDown') {
+            //             e.preventDefault();
+            //             currentIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+            //             updateDropdownHighlight(items, currentIndex);
+            //         } else if (e.key === 'ArrowUp') {
+            //             e.preventDefault();
+            //             currentIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+            //             updateDropdownHighlight(items, currentIndex);
+            //         }
+            //     }
+            // }
+
+            // Handle Escape key to close dropdowns
+            if (e.key === 'Escape') {
+                const dropdowns = document.querySelectorAll('.dropdown-list.show');
+                dropdowns.forEach(dropdown => {
+                    dropdown.classList.remove('show');
+                });
+            }
+        }
+
+        // Function to update dropdown highlighting
+        function updateDropdownHighlight(items, selectedIndex) {
+            items.forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.classList.add('highlighted');
+                    item.style.backgroundColor = '#007bff';
+                    item.style.color = 'white';
+
+                    // Scroll into view if needed
+                    item.scrollIntoView({
+                        block: 'nearest',
+                        behavior: 'smooth'
+                    });
+                } else {
+                    item.classList.remove('highlighted');
+                    item.style.backgroundColor = '';
+                    item.style.color = '';
+                }
+            });
+        }
+
+        // Setup form field navigation
+        formFields.forEach((field, index) => {
+            const element = document.querySelector(field.selector);
+            if (element) {
+                element.addEventListener('keydown', (e) => {
+                    // For search dropdown fields, handle arrow keys and enter differently
+                    if (field.selector.match(/#product_company|#product_category|#hsn_code/)) {
+                        const dropdown = element.nextElementSibling;
+                        if (dropdown && dropdown.classList.contains('dropdown-list') && dropdown
+                            .classList.contains('show')) {
+                            // If dropdown is open, let handleSpecialNavigation handle arrow keys and enter
+                            if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter') {
+                                return;
+                            }
+                        }
+                    }
+
+                    // Normal field navigation
+                    if (e.key === 'Enter') {
+                        handleFormFieldNavigation(e, index);
+                    }
+                });
+
+                // Special handling for checkboxes
+                if (field.type === 'checkbox') {
+                    element.addEventListener('keydown', (e) => {
+                        if (e.key === ' ') {
+                            // Space key toggles checkbox
+                            e.preventDefault();
+                            element.checked = !element.checked;
+                        }
+                    });
+                }
+
+                // Add mouse hover highlighting for dropdown items
+                if (field.selector.match(/#product_company|#product_category|#hsn_code/)) {
+                    element.addEventListener('input', function() {
+                        // Add event listeners for dropdown items when they are created
+                        setTimeout(() => {
+                            const dropdown = element.nextElementSibling;
+                            if (dropdown && dropdown.classList.contains('dropdown-list')) {
+                                const items = dropdown.querySelectorAll(
+                                    '.dropdown-item:not(.no-results)');
+                                items.forEach((item, itemIndex) => {
+                                    item.addEventListener('mouseenter', function() {
+                                        updateDropdownHighlight(Array.from(
+                                            items), itemIndex);
+                                    });
+
+                                    item.addEventListener('mouseleave', function() {
+                                        this.classList.remove('highlighted');
+                                        this.style.backgroundColor = '';
+                                        this.style.color = '';
+                                    });
+                                });
+                            }
+                        }, 100);
+                    });
+                }
+            }
+        });
+
+        // Global event listener for special navigation
+        document.addEventListener('keydown', handleSpecialNavigation);
+
+        // Focus on first field when page loads
+        setTimeout(() => {
+            focusField(formFields[0].selector);
+        }, 500);
+
+        // Handle select dropdown closing with enter
+        document.addEventListener('change', function(e) {
+            if (e.target.tagName === 'SELECT') {
+                // When select changes, trigger enter behavior
+                const enterEvent = new KeyboardEvent('keydown', {
+                    key: 'Enter',
+                    code: 'Enter',
+                    keyCode: 13,
+                    which: 13,
+                    bubbles: true
+                });
+                setTimeout(() => {
+                    e.target.dispatchEvent(enterEvent);
+                }, 100);
+            }
+        });
+
+        // Handle file input navigation
+        document.getElementById('fileInput')?.addEventListener('change', function() {
+            // After file selection, move to submit button
+            setTimeout(() => {
+                const submitButton = document.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.focus();
+                }
+            }, 100);
+        });
+    }
+    
+    // END: setup enter navigation
 
     // Function to select HSN code and auto-fill GST - NOW GLOBAL
     function selectHsnCode(hsnCode, gstData, hsnId = null) {
