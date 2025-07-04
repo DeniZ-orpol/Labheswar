@@ -127,7 +127,7 @@ class AppCartOrderController extends Controller
                     }
 
                     // Check if user already has a different cart
-                    if ($existingUserCart && $existingUserCart->id !== $requestedCartId) {
+                    if ($existingUserCart && $existingUserCart->id != $requestedCartId) {
                         // User has different cart - free the existing cart first
                         $existingUserCart->update([
                             'user_id' => null
@@ -524,6 +524,7 @@ class AppCartOrderController extends Controller
             // Get selected cart
             $cart = Cart::on($branch->connection_name)
                 ->where('id', $cartId)
+                ->where('order_receipt_id', null) // Ensure items are not already part of an order receipt
                 ->first();
 
             if (!$cart) {
@@ -1006,7 +1007,7 @@ class AppCartOrderController extends Controller
                     }
 
                     // Check if user already has a different cart
-                    if ($existingUserCart && $existingUserCart->id !== $requestedCartId) {
+                    if ($existingUserCart && $existingUserCart->id != $requestedCartId) {
                         // User has different cart - free the existing cart first
                         $existingUserCart->update([
                             'user_id' => null
@@ -1202,6 +1203,7 @@ class AppCartOrderController extends Controller
 
             $cartItem = AppCartsOrders::on($connection)
                 ->where('id', $request->cart_item_id)
+                ->where('order_receipt_id', null)
                 ->first();
             // $cartItem = AppCartsOrders::on($connection)
             //     ->where('id', $request->cart_item_id)
@@ -1485,6 +1487,7 @@ class AppCartOrderController extends Controller
                 // Check if cart is now empty
                 $remainingItems = AppCartsOrders::on($branch->connection_name)
                     ->where('cart_id', $cartItem->cart_id)
+                    ->where('order_receipt_id', null)
                     ->count();
 
                 $cartStatus = 'unavailable'; // Cart still has products
