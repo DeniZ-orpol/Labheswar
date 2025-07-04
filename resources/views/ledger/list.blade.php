@@ -13,6 +13,14 @@
                     <div class="space-y-2">
                         <!-- SUNDRY DEBTORS -->
                         <div class="w-full bg-primary border border-white text-white text-center py-4 px-6 rounded-lg transition-colors cursor-pointer">
+                            <a href="{{ route('purchase.party.index') }}" class="block text-white font-medium">
+                            {{-- <a href="#" class="block text-white font-medium"> --}}
+                                PURCHASE PARTY
+                            </a>
+                        </div>
+
+                        <!-- SUNDRY DEBTORS -->
+                        <div class="w-full bg-primary border border-white text-white text-center py-4 px-6 rounded-lg transition-colors cursor-pointer">
                             <a href="{{ route('ledger.index', ['type' => 'SUNDRY DEBTORS']) }}" class="block text-white font-medium">
                             {{-- <a href="#" class="block text-white font-medium"> --}}
                                 SUNDRY DEBTORS
