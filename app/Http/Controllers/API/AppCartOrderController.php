@@ -862,6 +862,7 @@ class AppCartOrderController extends Controller
             $cartsWithDetails = $unavailableCarts->map(function ($cart) use ($branch) {
                 $cartItems = AppCartsOrders::on($branch->connection_name)
                     ->where('cart_id', $cart->id)
+                    ->where('order_receipt_id', null) // Ensure items are not already part of an order receipt
                     ->get();
 
                 return [
@@ -870,9 +871,9 @@ class AppCartOrderController extends Controller
                     // 'user_name' => $cart->user !== null ? $cart->user->name : null,
                     // 'user_email' => $cart->user !== null ? $cart->user->email : null,
                     'status' => $cart->status,
-                    'total_items' => $cartItems->sum('product_quantity'),
+                    'total_items' => $cartItems->sum('product_quantity'), // Total quantity of products in the cart
                     'total_amount' => $cartItems->sum('total_amount'),
-                    'items_count' => $cartItems->count(),
+                    'items_count' => $cartItems->count(), // Count of items in the cart
                     'created_at' => $cart->created_at,
                     'updated_at' => $cart->updated_at
                 ];
