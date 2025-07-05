@@ -524,7 +524,6 @@ class AppCartOrderController extends Controller
             // Get selected cart
             $cart = Cart::on($branch->connection_name)
                 ->where('id', $cartId)
-                ->where('order_receipt_id', null) // Ensure items are not already part of an order receipt
                 ->first();
 
             if (!$cart) {
@@ -538,6 +537,7 @@ class AppCartOrderController extends Controller
             $cartItems = AppCartsOrders::on($branch->connection_name)
                 ->with(['product'])
                 ->where('cart_id', $cartId)
+                ->where('order_receipt_id', null) // Ensure items are not already part of an order receipt
                 ->get();
 
             if ($cartItems->isEmpty()) {
