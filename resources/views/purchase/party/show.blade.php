@@ -6,13 +6,13 @@
             <div class="col-span-12">
                 <div class="box p-5 rounded-md">
                     <div class="flex items-center border-b border-slate-200/60 pb-5 mb-5">
-                        <div class="font-medium text-base truncate">Hsn Code Details</div>
+                        <div class="font-medium text-base truncate">Purchase Party Details</div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-5">
                         <!-- LEFT COLUMN -->
                         <div class="p-5 rounded-md bg-slate-100">
-                            <div class="font-medium text-lg mb-3">Hsn Code Information</div>
+                            <div class="font-medium text-lg mb-3">Purchase Party Information</div>
                             <p><strong>Party Name:</strong> {{ $party->party_name }}</p>
                             <p><strong>GST No:</strong> {{ $party->gst_number ?? '-' }}</p>
                             <p><strong>Mobile No:</strong> {{ $party->mobile_no ?? '-' }}</p>
