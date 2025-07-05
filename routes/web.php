@@ -105,6 +105,7 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     Route::get('/purchase/{id}/edit', [PurchaseController::class, 'edit'])->name('purchase.edit');
     Route::put('/purchase/{id}/update', [PurchaseController::class, 'update'])->name('purchase.update');
     Route::delete('/purchase/{id}/delete', [PurchaseController::class, 'destroy'])->name('purchase.destroy');
+    Route::get('/purchase/history', [PurchaseController::class, 'getPurchaseHistory'])->name('purchase.history');
 
     // Purchase party
     Route::get('/purchase/party', [PurchasePartyController::class, 'index'])->name('purchase.party.index');
@@ -114,7 +115,6 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     Route::put('/purchase/party/{id}/update', [PurchasePartyController::class, 'update'])->name('purchase.party.update');
     Route::delete('/purchase/party/{id}/delete', [PurchasePartyController::class, 'destroy'])->name('purchase.party.destroy');
     Route::get('/purchase/party/{id}/show', [PurchasePartyController::class, 'show'])->name('purchase.party.show');
-    Route::get('/purchase/history', [PurchaseController::class, 'getPurchaseHistory'])->name('purchase.history');
 
     Route::resource('app/orders', AppOrderController::class);
 
@@ -136,7 +136,7 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     Route::post('/purchase/party/modalstore', [PurchasePartyController::class, 'modalStore'])->name('purchase.party.modalstore');
 
     // Ledger routes
-    Route::get('/ledgers', [LedgerController::class, 'getLedgersByType'])->name('ledgers');
+    // Route::get('/ledgers', [LedgerController::class, 'getLedgersByType'])->name('ledgers');
     Route::resource('ledger', LedgerController::class);
     Route::resource('bank', BankDetailsController::class);
     Route::resource('profit-loose', ProfitAndLooseController::class);

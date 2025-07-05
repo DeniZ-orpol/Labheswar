@@ -10,10 +10,6 @@
 
         .column {
             width: 50%;
-            /* Adjust as needed */
-            /* background-color: #f2f2f2; */
-            /* padding: 10px; */
-            /* border: 1px solid #ddd; */
             box-sizing: border-box;
         }
     </style>
@@ -88,9 +84,9 @@
                     <!-- Balancing Method -->
                     <div class="input-form col-span-3 mt-3">
                         <label for="balancing_method" class="form-label w-full flex flex-col sm:flex-row">
-                            Balancing Method<p style="color: red;margin-left: 3px;"> *</p>
+                            Balancing Method
                         </label>
-                        <select id="balancing_method" name="balancing_method" class="form-control field-new" required>
+                        <select id="balancing_method" name="balancing_method" class="form-control field-new">
                             <option value="" selected>Select Balancing Method...</option>
                             <option value="Fifo Base">Fifo Base</option>
                             <option value="On Account">On Account</option>

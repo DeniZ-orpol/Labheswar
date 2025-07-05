@@ -45,7 +45,7 @@
                             Ledger Name<span style="color: red;margin-left: 3px;"> *</span>
                         </label>
                         <input id="ledger_name" type="text" name="ledger_name" class="form-control field-new"
-                        value = {{ $ledger->name }}
+                        value ="{{ $ledger->name }}"
                         required>
                     </div>
 
@@ -102,9 +102,9 @@
                     <!-- Balancing Method -->
                     <div class="input-form col-span-3 mt-3">
                         <label for="balancing_method" class="form-label w-full flex flex-col sm:flex-row">
-                            Balancing Method<p style="color: red;margin-left: 3px;"> *</p>
+                            Balancing Method
                         </label>
-                        <select id="balancing_method" name="balancing_method" class="form-control field-new" required>
+                        <select id="balancing_method" name="balancing_method" class="form-control field-new">
                             <option value="" {{ !$ledger->balancing_method ?? 'selected'}} >Select Balancing Method...</option>
                             <option value="Fifo Base" {{ $ledger->balancing_method == 'Fifo Base' ? 'selected' : '' }}>Fifo Base</option>
                             <option value="On Account" {{ $ledger->balancing_method == 'On Account' ? 'selected' : '' }}>On Account</option>

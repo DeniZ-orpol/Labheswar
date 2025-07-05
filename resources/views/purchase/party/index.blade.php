@@ -22,6 +22,7 @@
                         <tr class="bg-primary font-bold text-white">
                             <th>#</th>
                             <th>Party Name</th>
+                            {{-- <th>Ledger Group</th> --}}
                             <th style="TEXT-ALIGN: left;">Actions</th>
                         </tr>
                     </thead>
@@ -31,6 +32,7 @@
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $party->party_name }}</td>
+                                    {{-- <td>{{ $party->ledger_group }}</td> --}}
                                     <td>
                                         <div class="flex gap-2 justify-content-left">
                                             <a href="{{ route('purchase.party.show', $party->id) }}"
@@ -46,10 +48,10 @@
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
                                             </form>
-                                            <a href="{{ route('purchase.party.edit', $party->id) }}"
+                                            {{-- <a href="{{ route('purchase.party.edit', $party->id) }}"
                                                 class="btn btn-primary mr-1 mb-2">
                                                 Edit
-                                            </a>
+                                            </a> --}}
                                         </div>
                                     </td>
                                 </tr>

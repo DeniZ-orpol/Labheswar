@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ledger;
+use App\Models\PurchaseParty;
 use App\Traits\BranchAuthTrait;
 use Exception;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class LedgerController extends Controller
      */
     public function index(Request $request)
     {
-        $type = $request->query('type');
+        $ledgerGroup = $request->query('ledger_group');
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
@@ -30,13 +31,21 @@ class LedgerController extends Controller
         try {
             // For Super Admin, you need to handle differently since $branch is a collection
             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                $ledgers = Ledger::where('type', $type)->get();
+                $query = PurchaseParty::query();
             } else {
-                $ledgers = Ledger::on($branch->connection_name)
-                    ->where('type', $type)
-                    ->get();
+                $query = PurchaseParty::on($branch->connection_name);
             }
-            return view('ledger.index', ['type' => $type], compact('ledgers'));
+
+            if (!empty($ledgerGroup)) {
+                $query->where('ledger_group', $ledgerGroup);
+            }
+
+            $ledgers = $query->paginate(10);
+
+            return view('ledger.index', [
+                'ledgers' => $ledgers,
+                'selectedLedgerGroup' => $ledgerGroup
+            ]);
 
         } catch (Exception $e) {
             dd('Error fetching ledgers: ' . $e->getMessage());

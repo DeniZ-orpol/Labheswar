@@ -1342,13 +1342,59 @@ License: You must have a valid license purchased only from themeforest(the above
                 </li>
 
                 @php
-                    $ledgerMenuOpen = request()->routeIs('ledger.*') || request()->routeIs('ledgers.*');
+                    $ledgerMenuOpen =
+                        request()->routeIs('ledger.*') ||
+                        request()->routeIs('bank.*') ||
+                        request()->routeIs('stock-in-hand.*') ||
+                        request()->routeIs('profit-loose.*');
                 @endphp
-                <li>
-                    <a href="{{ route('ledgers') }}" class="side-menu {{ $ledgerMenuOpen ? 'side-menu--active' : '' }}">
+                {{-- <li>
+                    <a href="{{ route('ledger.index') }}"
+                        class="side-menu {{ $ledgerMenuOpen ? 'side-menu--active' : '' }}">
                         <div class="side-menu__icon"> <i data-lucide="inbox"></i> </div>
                         <div class="side-menu__title"> Ledgers </div>
                     </a>
+                </li> --}}
+                <li>
+                    <a href="javascript:;" class="side-menu">
+                        <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
+                        <div class="side-menu__title">
+                            Ledgers
+                            <i data-lucide="chevron-down" class="side-menu__sub-icon"></i>
+                        </div>
+                    </a>
+
+                    <ul class="{{ $ledgerMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
+
+                        <li>
+                            <a href="{{ route('ledger.index') }}"
+                                class="side-menu {{ request()->routeIs('ledger.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Ledgers </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('bank.index') }}"
+                                class="side-menu {{ request()->routeIs('bank.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Bank </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('stock-in-hand.index') }}"
+                                class="side-menu {{ request()->routeIs('stock-in-hand.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Stock in Hand </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('profit-loose.index') }}"
+                                class="side-menu {{ request()->routeIs('profit-loose.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Profit And Loss </div>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
                 {{-- <li>

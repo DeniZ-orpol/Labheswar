@@ -14,12 +14,23 @@ class PurchaseParty extends Model
         'party_name',
         'company_name',
         'gst_number',
-        'acc_no',
-        'ifsc_code',
-        'station',
-        'pincode',
+        'gst_heading',
         'mobile_no',
         'email',
-        'address'
+        'address',
+        'station',
+        'state',
+        'acc_no',
+        'ifsc_code',
+        'pincode',
+        'ledger_group',
+        'balancing_method',
+        'mail_to',
+        'contact_person',
+        'designation',
+        'note',
+        'ledger_category',
+        'country',
+        'pan_no'
     ];
 }

@@ -29,7 +29,7 @@
                     <!-- Navigation -->
                     <div class="mt-5">
                         <a onclick="goBack()" class="btn btn-outline-primary shadow-md mr-2">Back </a>
-                        <a href="{{ route('purchase.party.edit', $party->id) }}" class="btn btn-primary mr-1 mb-2"> Edit</a>
+                        {{-- <a href="{{ route('purchase.party.edit', $party->id) }}" class="btn btn-primary mr-1 mb-2"> Edit</a> --}}
                     </div>
                 </div>
             </div>

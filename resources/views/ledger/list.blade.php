@@ -11,14 +11,13 @@
             <div class="col-span-12 mt-6">
                 <div class="intro-y mt-8 overflow-auto sm:mt-0 lg:overflow-visible">
                     <div class="space-y-2">
-                        <!-- SUNDRY DEBTORS -->
-                        <div class="w-full bg-primary border border-white text-white text-center py-4 px-6 rounded-lg transition-colors cursor-pointer">
+                        <!-- Purchase Party -->
+                        {{-- <div class="w-full bg-primary border border-white text-white text-center py-4 px-6 rounded-lg transition-colors cursor-pointer">
                             <a href="{{ route('purchase.party.index') }}" class="block text-white font-medium">
-                            {{-- <a href="#" class="block text-white font-medium"> --}}
                                 PURCHASE PARTY
                             </a>
-                        </div>
-
+                        </div> --}}
+                        
                         <!-- SUNDRY DEBTORS -->
                         <div class="w-full bg-primary border border-white text-white text-center py-4 px-6 rounded-lg transition-colors cursor-pointer">
                             <a href="{{ route('ledger.index', ['type' => 'SUNDRY DEBTORS']) }}" class="block text-white font-medium">
