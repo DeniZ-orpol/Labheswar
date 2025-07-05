@@ -565,7 +565,7 @@ class AppCartOrderController extends Controller
                     'cart_status' => $cart->status,
                     'user_id' => $cart->user_id,
                     'cart_items' => $cartItems,
-                    'total_items' => $totalItems,
+                    'total_items' => $cartItems->count(),
                     'cart_total' => $cartTotal,
                     'branch' => $branch->name
                 ]
