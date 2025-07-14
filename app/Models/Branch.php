@@ -35,7 +35,7 @@ class Branch extends Model
 
     public function user()
     {
-        return $this->belongsTo(BranchUsers::class);
+        return $this->belongsTo(User::class);
     }
 
     public function getBranchUsers()

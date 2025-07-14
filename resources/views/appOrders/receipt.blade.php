@@ -96,7 +96,7 @@
     <div class="receipt-container center">
         <div class="logo">
             <img src="https://via.placeholder.com/80x80?text=Logo" alt="Logo"><br>
-            Labheshwar<br>
+            Sweetler<br>
             <hr>
         </div>
         <div class="price-box">₹{{ $order->total }} </div>
@@ -106,7 +106,7 @@
     <div class="receipt-container">
         <div class="center">
             <img src="https://via.placeholder.com/80x80?text=Logo" alt="Logo"><br>
-            <strong>Labheshwar</strong><br>
+            <strong>Sweetler</strong><br>
         </div>
         <hr>
         <div class="small-text">

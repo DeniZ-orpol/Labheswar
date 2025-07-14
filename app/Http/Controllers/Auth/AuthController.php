@@ -170,25 +170,25 @@ class AuthController extends Controller
     /**
      * Get current authenticated user (helper method)
      */
-    // public function getCurrentUser()
-    // {
-    //     if (session('user_type') === 'master') {
-    //         return Auth::user();
-    //     } elseif (session('user_type') === 'branch') {
-    //         $branchConnection = session('branch_connection');
-    //         $branchUserId = session('branch_user_id');
+    public function getCurrentUser()
+    {
+        if (session('user_type') === 'master') {
+            return Auth::user();
+        } elseif (session('user_type') === 'branch') {
+            $branchConnection = session('branch_connection');
+            $branchUserId = session('branch_user_id');
 
-    //         if ($branchConnection && $branchUserId) {
-    //             try {
-    //                 return BranchUsers::forDatabase($branchConnection)->find($branchUserId);
-    //             } catch (\Exception $e) {
-    //                 return null;
-    //             }
-    //         }
-    //     }
+            if ($branchConnection && $branchUserId) {
+                try {
+                    return BranchUsers::forDatabase($branchConnection)->find($branchUserId);
+                } catch (\Exception $e) {
+                    return null;
+                }
+            }
+        }
 
-    //     return null;
-    // }
+        return null;
+    }
 
     /**
      * Check if user has specific permission

@@ -13,7 +13,7 @@ License: You must have a valid license purchased only from themeforest(the above
 
 <head>
     <meta charset="utf-8">
-    <link href="{{ asset('images/logo.png') }}" rel="shortcut icon">
+    <link href="{{ asset('images/fevicon.png') }}" rel="shortcut icon">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description"
         content="Enigma admin is super flexible, powerful, clean & modern responsive tailwind admin template with unlimited possibilities.">
@@ -21,7 +21,7 @@ License: You must have a valid license purchased only from themeforest(the above
         content="admin template, Enigma Admin Template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="LEFT4CODE">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Labheshwar</title>
+    <title>Sweetler</title>
     <!-- BEGIN: CSS Assets-->
     <link rel="stylesheet" href="{{ asset('css/app.css') }}" />
     <!-- DataTables CSS -->
@@ -60,7 +60,7 @@ License: You must have a valid license purchased only from themeforest(the above
     <div class="mobile-menu md:hidden">
         <div class="mobile-menu-bar">
             <a href="{{ route('dashboard') }}" class="flex mr-auto">
-                <img alt="Labheshwar" class="w-6" src="{{ asset('images/logo.png') }}">
+                <img alt="Sweetler" class="w-6" src="{{ asset('images/logo.png') }}">
             </a>
             <a href="javascript:;" class="mobile-menu-toggler"> <i data-lucide="bar-chart-2"
                     class="w-8 h-8 text-white transform -rotate-90"></i> </a>
@@ -818,9 +818,8 @@ License: You must have a valid license purchased only from themeforest(the above
         <div class="h-full flex items-center">
             <!-- BEGIN: Logo -->
             <a href="{{ route('dashboard') }}" class="logo -intro-x hidden md:flex xl:w-[180px] block">
-                <img alt="Midone - HTML Admin Template" class="logo__image w-8"
+                <img alt="Midone - HTML Admin Template" class="logo__image w-20"
                     src="{{ asset('images/logo.png') }}">
-                <span class="logo__text text-white text-lg ml-3"> SGL </span>
             </a>
             <!-- END: Logo -->
             <!-- BEGIN: Breadcrumb -->
@@ -2848,7 +2847,7 @@ License: You must have a valid license purchased only from themeforest(the above
         document.addEventListener('DOMContentLoaded', function() {
             // Disable arrow key functionality for number inputs
             function disableArrowKeys(event) {
-                if (event.target.type === 'number') {
+                if (event.target.type === 'number' && !event.target.classList.contains('page-input')) {
                     if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                         event.preventDefault();
                     }
@@ -2857,7 +2856,7 @@ License: You must have a valid license purchased only from themeforest(the above
 
             // Disable mouse wheel scroll on number input
             function disableScrollOnNumberInput(event) {
-                if (document.activeElement.type === 'number') {
+                if (document.activeElement.type === 'number' && !document.activeElement.classList.contains('page-input')) {
                     event.preventDefault();
                 }
             }

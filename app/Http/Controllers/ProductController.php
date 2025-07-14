@@ -27,18 +27,30 @@ class ProductController extends Controller
         $role = $auth['role'];
         $branch = $auth['branch'];
 
+        $search = $request->get('search');
+
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            $products = Product::with(['category', 'hsnCode', 'pCompany'])
-                ->orderByDesc('id')
-                ->paginate(10);
+            $query = Product::with(['category', 'hsnCode', 'pCompany']);
         } else {
-            $products = Product::on($branch->connection_name)
-                ->with(['category', 'hsnCode', 'pCompany'])
-                ->orderByDesc('id')
-                ->paginate(10);
+            $query = Product::on($branch->connection_name)->with(['category', 'hsnCode', 'pCompany']);
         }
 
-        return view('products.index', compact('products'));
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('product_name', 'LIKE', '%' . $search . '%')
+                    ->orWhere('barcode', 'LIKE', '%' . $search . '%')
+                    ->orWhere('search_option', 'LIKE', '%' . $search . '%');
+            });
+        }
+
+        $products = $query->orderByDesc('id')->paginate(20);
+
+        // Preserve search parameter in pagination links
+        if ($search) {
+            $products->appends(['search' => $search]);
+        }
+
+        return view('products.index', compact('products', 'search'));
     }
 
     /**
@@ -94,6 +106,16 @@ class ProductController extends Controller
                 'bonus_use' => 'nullable',
                 'decimal_btn' => 'nullable',
                 'sale_online' => 'nullable',
+                'price_1' => 'nullable|numeric|min:0',
+                'price_2' => 'nullable|numeric|min:0',
+                'price_3' => 'nullable|numeric|min:0',
+                'price_4' => 'nullable|numeric|min:0',
+                'price_5' => 'nullable|numeric|min:0',
+                'kg_1' => 'nullable|numeric|min:0',
+                'kg_2' => 'nullable|numeric|min:0',
+                'kg_3' => 'nullable|numeric|min:0',
+                'kg_4' => 'nullable|numeric|min:0',
+                'kg_5' => 'nullable|numeric|min:0',
                 // 'gst_active' => 'nullable'
             ]);
 
@@ -209,7 +231,17 @@ class ProductController extends Controller
                 'discount' => $validate['discount'] ?? null,
                 'max_discount' => $validate['max_discount'] ?? 0,
                 'discount_scheme' => $validate['discount_scheme'] ?? null,
-                'bonus_use' => $validate['bonus_use'] == 'yes' ? 1 : 0
+                'bonus_use' => $validate['bonus_use'] == 'yes' ? 1 : 0,
+                'price_1' => $validate['price_1'] ?? 0,
+                'price_2' => $validate['price_2'] ?? 0,
+                'price_3' => $validate['price_3'] ?? 0,
+                'price_4' => $validate['price_4'] ?? 0,
+                'price_5' => $validate['price_5'] ?? 0,
+                'kg_1' => $validate['kg_1'] ?? 0,
+                'kg_2' => $validate['kg_2'] ?? 0,
+                'kg_3' => $validate['kg_3'] ?? 0,
+                'kg_4' => $validate['kg_4'] ?? 0,
+                'kg_5' => $validate['kg_5'] ?? 0,
             ];
 
             // Create the product using branch connection
@@ -255,7 +287,7 @@ class ProductController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit($id, Request $request)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
@@ -273,7 +305,11 @@ class ProductController extends Controller
                 ->firstOrFail();
         }
 
-        return view('products.edit', compact('product'));
+        // Pass page and search parameters to the view
+        $page = $request->get('page');
+        $search = $request->get('search');
+
+        return view('products.edit', compact('product', 'page', 'search'));
     }
 
     /**
@@ -323,6 +359,16 @@ class ProductController extends Controller
                 'bonus_use' => 'nullable',
                 'decimal_btn' => 'nullable',
                 'sale_online' => 'nullable',
+                'price_1' => 'nullable|numeric|min:0',
+                'price_2' => 'nullable|numeric|min:0',
+                'price_3' => 'nullable|numeric|min:0',
+                'price_4' => 'nullable|numeric|min:0',
+                'price_5' => 'nullable|numeric|min:0',
+                'kg_1' => 'nullable|numeric|min:0',
+                'kg_2' => 'nullable|numeric|min:0',
+                'kg_3' => 'nullable|numeric|min:0',
+                'kg_4' => 'nullable|numeric|min:0',
+                'kg_5' => 'nullable|numeric|min:0',
                 // 'gst_active' => 'nullable'
             ]);
 
@@ -399,7 +445,7 @@ class ProductController extends Controller
             //         [
             //             'hsn_code' => $validate['hsn_code'],
             //             // 'gst' => $validate['gst']
-            //         ] 
+            //         ]
             //     );
             //     // Update GST if HSN code already exists
             //     if (!$hsnCode->wasRecentlyCreated) {
@@ -443,12 +489,27 @@ class ProductController extends Controller
                 'discount_scheme' => $validate['discount_scheme'] ?? null,
                 'bonus_use' => $validate['bonus_use'] == 'yes' ? 1 : 0,
                 'updated_by' => session('branch_user_id'), // Track who updated the product
+                'price_1' => $validate['price_1'] ?? 0,
+                'price_2' => $validate['price_2'] ?? 0,
+                'price_3' => $validate['price_3'] ?? 0,
+                'price_4' => $validate['price_4'] ?? 0,
+                'price_5' => $validate['price_5'] ?? 0,
+                'kg_1' => $validate['kg_1'] ?? 0,
+                'kg_2' => $validate['kg_2'] ?? 0,
+                'kg_3' => $validate['kg_3'] ?? 0,
+                'kg_4' => $validate['kg_4'] ?? 0,
+                'kg_5' => $validate['kg_5'] ?? 0,
             ];
 
             // Update the product using branch connection
             $product->update($data);
 
-            return redirect()->route('products.index')->with('success', 'Product updated successfully!');
+            $redirectParams = array_filter([
+                'page' => $request->get('page'),
+                'search' => $request->get('search')
+            ]);
+
+            return redirect()->route('products.index', $redirectParams)->with('success', 'Product updated successfully!');
         } catch (Exception $ex) {
             dd($ex->getMessage());
         }
@@ -512,13 +573,13 @@ class ProductController extends Controller
                     if (!empty($row[0]) || !empty($row[1])) { // Check if name exists
 
                         $companyId = null;
-                        if (!empty($row[5])) {
+                        if (!empty($row[6])) {
                             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                                $company = Company::where('name', $row[5])->first();
+                                $company = Company::where('name', $row[6])->first();
 
                                 if (!$company) {
                                     $companyId = Company::insertGetId([
-                                        'name' => $row[5],
+                                        'name' => $row[6],
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);
@@ -527,12 +588,12 @@ class ProductController extends Controller
                                 }
                             } else {
                                 $company = Company::on($branch->connection_name)
-                                    ->where('name', $row[5])
+                                    ->where('name', $row[6])
                                     ->first();
 
                                 if (!$company) {
                                     $companyId = Company::on($branch->connection_name)->insertGetId([
-                                        'name' => $row[5],
+                                        'name' => $row[6],
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);
@@ -544,13 +605,13 @@ class ProductController extends Controller
 
                         // Handle Category - create or get existing
                         $categoryId = null;
-                        if (!empty($row[6])) {
+                        if (!empty($row[7])) {
                             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                                $category = Category::where('name', $row[6])->first();
+                                $category = Category::where('name', $row[7])->first();
 
                                 if (!$category) {
                                     $categoryId = Category::insertGetId([
-                                        'name' => $row[6],
+                                        'name' => $row[7],
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);
@@ -559,12 +620,12 @@ class ProductController extends Controller
                                 }
                             } else {
                                 $category = Category::on($branch->connection_name)
-                                    ->where('name', $row[6])
+                                    ->where('name', $row[7])
                                     ->first();
 
                                 if (!$category) {
                                     $categoryId = Category::on($branch->connection_name)->insertGetId([
-                                        'name' => $row[6],
+                                        'name' => $row[7],
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);
@@ -576,17 +637,17 @@ class ProductController extends Controller
 
                         // Handle HSN Code - create or get existing
                         $hsnCodeId = null;
-                        if (!empty($row[7])) {
-                            $gst = $row[8] ?? '';
-                            $shortName = $row[9] ?? '';
+                        if (!empty($row[8])) {
+                            $gst = $row[11] ?? '';
+                            $shortName = '';
                             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                                $hsnCode = HsnCode::where('hsn_code', $row[7])
+                                $hsnCode = HsnCode::where('hsn_code', $row[8])
                                     ->where('gst', $gst)
                                     ->first();
 
                                 if (!$hsnCode) {
                                     $hsnCodeId = HsnCode::insertGetId([
-                                        'hsn_code' => $row[7],
+                                        'hsn_code' => $row[8],
                                         'gst' => $gst,
                                         'short_name' => $shortName,
                                         'created_at' => now(),
@@ -597,13 +658,13 @@ class ProductController extends Controller
                                 }
                             } else {
                                 $hsnCode = HsnCode::on($branch->connection_name)
-                                    ->where('hsn_code', $row[7])
+                                    ->where('hsn_code', $row[8])
                                     ->where('gst', $gst)
                                     ->first();
 
                                 if (!$hsnCode) {
                                     $hsnCodeId = HsnCode::on($branch->connection_name)->insertGetId([
-                                        'hsn_code' => $row[7],
+                                        'hsn_code' => $row[8],
                                         'gst' => $gst,
                                         'short_name' => $shortName,
                                         'created_at' => now(),
@@ -614,36 +675,67 @@ class ProductController extends Controller
                                 }
                             }
                         }
+                        // $data = [
+                        //     'product_name' => $row[0] ?? '',
+                        //     'barcode' => $row[1] ?? '',
+                        //     'search_option' => $row[3] ?? '',
+                        //     'unit_types' => $row[4] ?? '',
+                        //     'decimal_btn' => $row[5] == 1 ? 1 : 0,
+                        //     'company' => $companyId ?? '',
+                        //     'category_id' => $categoryId ?? '',
+                        //     'hsn_code_id' => $hsnCodeId ?? '',
+                        //     // 'sgst' => $row[9] ?? '',
+                        //     // 'cgst1' => $row[10] ?? '',
+                        //     // 'cgst2' => $row[11] ?? '',
+                        //     'cess' => 0,
+                        //     'mrp' => $row[13] ?? '',
+                        //     'purchase_rate' => $row[14] ?? '',
+                        //     'sale_rate_a' => $row[15] ?? 0,
+                        //     'sale_rate_b' => 0,
+                        //     'sale_rate_c' => 0,
+                        //     'sale_online' => 0,
+                        //     'converse_carton' => 0,
+                        //     'carton_barcode' => null,
+                        //     'converse_box' => 1,
+                        //     'box_barcode' => null,
+                        //     'negative_billing' => null,
+                        //     'min_qty' => 0,
+                        //     'reorder_qty' => 0,
+                        //     'discount' => null,
+                        //     'max_discount' => 0,
+                        //     'discount_scheme' => null,
+                        //     'bonus_use' => 0,
+                        // ];
                         $data = [
                             'product_name' => $row[0] ?? '',
                             'barcode' => $row[1] ?? '',
-                            'search_option' => $row[2] ?? '',
-                            'unit_types' => $row[3] ?? '',
-                            'decimal_btn' => $row[4] ?? '',
+                            'search_option' => $row[3] ?? '',
+                            'unit_types' => $row[4] ?? '',
+                            'decimal_btn' => $row[5] ?? '',
                             'company' => $companyId ?? '',
                             'category_id' => $categoryId ?? '',
                             'hsn_code_id' => $hsnCodeId ?? '',
                             // 'sgst' => $row[9] ?? '',
                             // 'cgst1' => $row[10] ?? '',
                             // 'cgst2' => $row[11] ?? '',
-                            'cess' => $row[10] ?? '',
-                            'mrp' => $row[11] ?? '',
-                            'purchase_rate' => $row[12] ?? '',
-                            'sale_rate_a' => $row[13] ?? '',
-                            'sale_rate_b' => $row[14] ?? '',
-                            'sale_rate_c' => $row[15] ?? '',
-                            'sale_online' => $row[16] ?? '',
-                            'converse_carton' => $row[17] ?? '',
-                            'carton_barcode' => $row[18] ?? '',
-                            'converse_box' => $row[19] ?? '',
-                            'box_barcode' => $row[20] ?? '',
-                            'negative_billing' => $row[21] ?? '',
-                            'min_qty' => $row[22] ?? '',
-                            'reorder_qty' => $row[23] ?? '',
-                            'discount' => $row[24] ?? '',
-                            'max_discount' => $row[25] ?? '',
-                            'discount_scheme' => $row[26] ?? '',
-                            'bonus_use' => strtoupper($row[27]) === 'YES' ? 1 : 0,
+                            'cess' => 0,
+                            'mrp' => $row[13] ?? '',
+                            'purchase_rate' => $row[14] ?? '',
+                            'sale_rate_a' => $row[15] ?? 0,
+                            'sale_rate_b' => $row[16] ?? 0,
+                            'sale_rate_c' => $row[17] ?? 0,
+                            'sale_online' => $row[18] ?? 0,
+                            'converse_carton' => $row[19] ?? 0,
+                            'carton_barcode' => null,
+                            'converse_box' => $row[20] ?? 1,
+                            'box_barcode' => null,
+                            'negative_billing' => $row[22] ?? null,
+                            'min_qty' => $row[23] ?? 0,
+                            'reorder_qty' => $row[24] ?? 0,
+                            'discount' => $row[25] ?? null,
+                            'max_discount' => $row[26] ?? 0,
+                            'discount_scheme' => $row[27] ?? null,
+                            'bonus_use' => $row[28] ?? 0,
                         ];
 
                         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
@@ -831,7 +923,7 @@ class ProductController extends Controller
                 // For Super Admin, search in the default connection or specify a branch
                 $search = $request->get('search', '');
 
-                $product = Product::where('barcode', trim($search))->first();
+                $product = Product::with('hsnCode')->where('barcode', trim($search))->first();
 
                 if ($product) {
                     return response()->json([
@@ -842,7 +934,7 @@ class ProductController extends Controller
                     ]);
                 }
 
-                $products = Product::where('product_name', 'LIKE', "%{$search}%")
+                $products = Product::with('hsnCode')->where('product_name', 'LIKE', "%{$search}%")
                     ->orWhere('barcode', 'LIKE', "%{$search}%")
                     ->limit(10)
                     ->get();
@@ -851,7 +943,7 @@ class ProductController extends Controller
                 $branchConnection = $branch->connection_name;
 
                 $search = $request->get('search', '');
-                $product = Product::on($branchConnection)->where('barcode', trim($search))->first();
+                $product = Product::on($branchConnection)->with('hsnCode')->where('barcode', trim($search))->first();
 
                 if ($product) {
                     return response()->json([
@@ -863,6 +955,7 @@ class ProductController extends Controller
                 }
 
                 $products = Product::on($branchConnection)
+                    ->with('hsnCode')
                     ->where('product_name', 'LIKE', "%{$search}%")
                     ->orWhere('barcode', 'LIKE', "%{$search}%")
                     ->limit(10)

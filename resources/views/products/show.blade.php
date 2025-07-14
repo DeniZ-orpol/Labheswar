@@ -33,6 +33,16 @@
                             <p><strong>GST Active:</strong> {{ $product->gst_active ? 'Yes' : 'No' }}</p>
                             <p><strong>MRP:</strong> ₹{{ $product->mrp }}</p>
                             <p><strong>Purchase Rate:</strong> ₹{{ $product->purchase_rate }}</p>
+                            <p><strong>Price 1:</strong> ₹{{ $product->price_1 }}</p>
+                            <p><strong>Price 2:</strong> ₹{{ $product->price_2 }}</p>
+                            <p><strong>Price 3:</strong> ₹{{ $product->price_3 }}</p>
+                            <p><strong>Price 4:</strong> ₹{{ $product->price_4 }}</p>
+                            <p><strong>Price 5:</strong> ₹{{ $product->price_5 }}</p>
+                            <p><strong>Kg 1:</strong> {{ $product->Kg_1 }}</p>
+                            <p><strong>Kg 2:</strong> {{ $product->Kg_2 }}</p>
+                            <p><strong>Kg 3:</strong> {{ $product->Kg_3 }}</p>
+                            <p><strong>Kg 4:</strong> {{ $product->Kg_4 }}</p>
+                            <p><strong>Kg 5:</strong> {{ $product->Kg_5 }}</p>
                             <p><strong>Sale Rate A:</strong> ₹{{ $product->sale_rate_a }}</p>
                             <p><strong>Sale Rate B:</strong> ₹{{ $product->sale_rate_b }}</p>
                             <p><strong>Sale Rate C:</strong> ₹{{ $product->sale_rate_c }}</p>

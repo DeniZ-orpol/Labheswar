@@ -19,7 +19,7 @@ License: You must have a valid license purchased only from themeforest(the above
     <meta name="keywords"
         content="admin template, Enigma Admin Template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="LEFT4CODE">
-    <title>Login - Labheshwar</title>
+    <title>Login - Sweetler</title>
     <!-- BEGIN: CSS Assets-->
     <link rel="stylesheet" href="{{ asset('css/app.css') }}" />
     <!-- END: CSS Assets-->
@@ -31,13 +31,13 @@ License: You must have a valid license purchased only from themeforest(the above
             <!-- BEGIN: Login Info -->
             <div class="hidden xl:flex flex-col min-h-screen">
                 {{-- <a href="{{ url('') }}" class="-intro-x flex items-center pt-5">
-                    <img alt="Labheshwar" class="w-12" src="{{ asset('images/logo.png') }}">
+                    <img alt="Sweetler" class="w-12" src="{{ asset('images/logo.png') }}">
                 </a> --}}
                 <div class="my-auto">
-                    <img alt="Labheshwar" class="-intro-x w-1/2 -mt-16"
+                    <img alt="Sweetler" class="-intro-x w-1/2 -mt-16"
                         src="{{ asset('images/logo.png') }}">
                     <div class="-intro-x text-white font-medium text-4xl leading-tight mt-10">
-                        Labheshwar Dairy & Sweets
+                        Sweetler Dairy & Sweets
                     </div>
                     <div class="-intro-x mt-5 text-lg text-white text-opacity-70 dark:text-slate-400">sign in to your account.</div>
                 </div>

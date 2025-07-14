@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('hsn_codes', function (Blueprint $table) {
-            $table->id();
-            $table->string('hsn_code');
-            $table->json('gst')->nullable();
-            $table->timestamps();
+        Schema::table('inventory', function (Blueprint $table) {
+            $table->string('gst')->nullable()->after('reason');
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('hsn_codes');
+        Schema::table('inventory', function (Blueprint $table) {
+            $table->dropColumn('gst');
+        });
     }
 };

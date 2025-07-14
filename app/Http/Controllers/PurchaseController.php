@@ -92,6 +92,10 @@ class PurchaseController extends Controller
                 // Array validation for multiple purchase items
                 'product' => 'required|array|min:1',
                 'product.*' => 'required',
+                'mrp' => 'array',
+                'mrp.*' => 'nullable|numeric|min:0',
+                'expiry_date' => 'array',
+                'expiry_date.*' => 'nullable',
                 'box' => 'array',
                 'box.*' => 'nullable|numeric|min:0',
                 'pcs' => 'array',
@@ -186,9 +190,10 @@ class PurchaseController extends Controller
                         'gst' => $validate['gst'],
                         'product_id' => $productId,
                         'product' => $product->product_name,
-                        'mrp' => $product->mrp ?? 0,
-
+                        
                         // Original form values
+                        'expiry_date' => $validate['expiry_date'][$index] ?? '',
+                        'mrp' => $validate['mrp'][$index] ?? 0,
                         'box' => $boxQuantity,
                         'pcs' => $pcsQuantity,
                         'free' => $freeQuantity,
@@ -204,18 +209,25 @@ class PurchaseController extends Controller
                     ];
 
                     if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                        Purchase::insert($purchaseData);
+                        $purchase = Purchase::create($purchaseData);
                     } else {
-                        Purchase::on($branch->connection_name)->insert($purchaseData);
+                        $purchase = Purchase::on($branch->connection_name)->create($purchaseData);
                     }
+                    
+                    $purchaseId = $purchase->id;
 
                     if ($totalWithFree > 0) {
                         $inventoryData = [
                             'product_id' => $productId,
+                            'purchase_id' => $purchaseId,
                             'type' => 'in', // or 'in' - adjust based on your inventory types
                             'quantity' => $totalWithFree,
+                            'mrp' => $validate['mrp'][$index] ?? 0,
+                            'sale_price' => $validate['mrp'][$index] ?? 0,
+                            'purchase_price' => $validate['purchase_rate'][$index] ?? 0,
                             'unit' => $product->unit_types ?? 'pcs',
                             'reason' => 'Purchase Bill #' . $validate['bill_no'] . ' - Receipt #' . $purchaseReceiptId,
+                            'gst' => $validate['gst'],
                             'created_at' => now(),
                             'updated_at' => now(),
                         ];
@@ -281,12 +293,12 @@ class PurchaseController extends Controller
 
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
             $parties = PurchaseParty::get();
-            $products = Product::get();
+            $products = Product::with('hsnCode')->get();
             $purchaseReceipt = PurchaseReceipt::withDynamic(['purchaseParty', 'createUser', 'updateUser'])
                 ->where('id', $id)
                 ->first();
 
-            $purchaseItems = Purchase::with('product')
+            $purchaseItems = Purchase::with('product.hsnCode')
                 ->where('purchase_receipt_id', $id)
                 ->get()
                 ->map(function ($item) {
@@ -295,14 +307,14 @@ class PurchaseController extends Controller
                 });
         } else {
             $parties = PurchaseParty::on($branch->connection_name)->get();
-            $products = Product::on($branch->connection_name)->get();
+            $products = Product::on($branch->connection_name)->with('hsnCode')->get();
             $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
                 ->withDynamic(['purchaseParty', 'createUser', 'updateUser'])
                 ->where('id', $id)
                 ->first();
 
             $purchaseItems = Purchase::on($branch->connection_name)
-                ->with('product')
+                ->with('product.hsnCode')
                 ->where('purchase_receipt_id', $id)
                 ->get()
                 ->map(function ($item) {
@@ -343,6 +355,10 @@ class PurchaseController extends Controller
                 // Array validation for multiple purchase items
                 'product' => 'required|array|min:1',
                 'product.*' => 'required',
+                'mrp' => 'array',
+                'mrp.*' => 'nullable|numeric|min:0',
+                'expiry_date' => 'array',
+                'expiry_date.*' => 'nullable',
                 'box' => 'required|array',
                 'box.*' => 'nullable|numeric|min:0',
                 'pcs' => 'required|array',
@@ -462,9 +478,11 @@ class PurchaseController extends Controller
                         'gst' => $validate['gst'],
                         'product_id' => $productId,
                         'product' => $product->product_name,
-                        'mrp' => $product->mrp ?? 0,
+                        // 'mrp' => $product->mrp ?? 0,
 
                         // Original form values
+                        'expiry_date' => $validate['expiry_date'][$index] ?? '',
+                        'mrp' => $validate['mrp'][$index] ?? 0,
                         'box' => $validate['box'][$index] ?? 0,
                         'pcs' => $validate['pcs'][$index] ?? 0,
                         'free' => $validate['free'][$index] ?? 0,
@@ -503,6 +521,43 @@ class PurchaseController extends Controller
                             $processedItemIds[] = $itemId;
                         }
 
+                        // Update inventory for existing purchase item
+                        $totalPcs = $validate['total_pcs'][$index] ?? 0;
+                        $freeQuantity = $validate['free'][$index] ?? 0;
+                        $totalWithFree = $totalPcs + $freeQuantity;
+
+                        $inventoryData = [
+                            'product_id' => $productId,
+                            'purchase_id' => $itemId,
+                            'type' => 'in',
+                            'quantity' => $totalWithFree,
+                            'mrp' => $validate['mrp'][$index] ?? 0,
+                            'sale_price' => $validate['mrp'][$index] ?? 0,
+                            'purchase_price' => $validate['purchase_rate'][$index] ?? 0,
+                            'unit' => $product->unit_types ?? 'pcs',
+                            'reason' => 'Purchase Bill #' . $validate['bill_no'] . ' - Receipt #' . $id,
+                            'gst' => $validate['gst'],
+                            'updated_at' => now(),
+                        ];
+
+                        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                            $inventory = Inventory::where('purchase_id', $itemId)->first();
+                            if ($inventory) {
+                                $inventory->update($inventoryData);
+                            } else {
+                                $inventoryData['created_at'] = now();
+                                Inventory::create($inventoryData);
+                            }
+                        } else {
+                            $inventory = Inventory::on($branch->connection_name)->where('purchase_id', $itemId)->first();
+                            if ($inventory) {
+                                $inventory->update($inventoryData);
+                            } else {
+                                $inventoryData['created_at'] = now();
+                                Inventory::on($branch->connection_name)->create($inventoryData);
+                            }
+                        }
+
                     } else {
                         // Create new item
                         $purchaseData['purchase_receipt_id'] = $id;
@@ -514,6 +569,34 @@ class PurchaseController extends Controller
                             $newItemId = Purchase::on($branch->connection_name)->insertGetId($purchaseData);
                         }
                         $processedItemIds[] = $newItemId;
+
+                        // Create inventory record for new purchase item
+                        $totalPcs = $validate['total_pcs'][$index] ?? 0;
+                        $freeQuantity = $validate['free'][$index] ?? 0;
+                        $totalWithFree = $totalPcs + $freeQuantity;
+
+                        if ($totalWithFree > 0) {
+                            $inventoryData = [
+                                'product_id' => $productId,
+                                'purchase_id' => $newItemId,
+                                'type' => 'in',
+                                'quantity' => $totalWithFree,
+                                'mrp' => $validate['mrp'][$index] ?? 0,
+                                'sale_price' => $validate['mrp'][$index] ?? 0,
+                                'purchase_price' => $validate['purchase_rate'][$index] ?? 0,
+                                'unit' => $product->unit_types ?? 'pcs',
+                                'reason' => 'Purchase Bill #' . $validate['bill_no'] . ' - Receipt #' . $id,
+                                'gst' => $validate['gst'],
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ];
+
+                            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                                Inventory::create($inventoryData);
+                            } else {
+                                Inventory::on($branch->connection_name)->create($inventoryData);
+                            }
+                        }
                     }
                 }
 
@@ -522,10 +605,16 @@ class PurchaseController extends Controller
                 if ($itemsToDelete->isNotEmpty()) {
 
                     if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                        // Delete inventory records for removed purchase items
+                        Inventory::whereIn('purchase_id', $itemsToDelete->toArray())->delete();
+
                         Purchase::whereIn('id', $itemsToDelete->toArray())
                             ->where('purchase_receipt_id', $id)
                             ->delete();
                     } else {
+                        // Delete inventory records for removed purchase items
+                        Inventory::on($branch->connection_name)->whereIn('purchase_id', $itemsToDelete->toArray())->delete();
+
                         Purchase::on($branch->connection_name)
                             ->whereIn('id', $itemsToDelete->toArray())
                             ->where('purchase_receipt_id', $id)

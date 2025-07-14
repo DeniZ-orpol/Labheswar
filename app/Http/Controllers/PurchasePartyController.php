@@ -261,9 +261,6 @@ class PurchasePartyController extends Controller
         $role = $authResult['role'];
 
         try {
-            // Get branch connection
-            $branchConnection = $branch->connection_name;
-
             $search = $request->get('search', '');
 
             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
@@ -271,7 +268,7 @@ class PurchasePartyController extends Controller
                     ->limit(10)
                     ->get();
             } else {
-                $parties = PurchaseParty::on($branchConnection)
+                $parties = PurchaseParty::on($branch->connection_name)
                     ->where('party_name', 'LIKE', "%{$search}%")
                     ->limit(10)
                     ->get();

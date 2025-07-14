@@ -107,10 +107,10 @@ class InventoryController extends Controller
                         $groupedInventory = (object) [
                             'product_id' => $productId,
                             'product' => $product,
-                            'type' => 'calculated',
+                            // 'type' => 'calculated',
                             'quantity' => $totalQuantity,
                             'unit' => $productInventories->first()->unit ?? 'pcs',
-                            'reason' => 'Total Stock',
+                            // 'reason' => 'Total Stock',
                             'created_at' => $productInventories->max('created_at'),
                             'updated_at' => $productInventories->max('updated_at')
                         ];
@@ -160,6 +160,10 @@ class InventoryController extends Controller
                 'product_id' => $request->product_id,
                 'quantity' => strtoupper($request->type) == 'IN' ? $request->quantity : -$request->quantity,
                 'type' => $request->type,
+                'mrp' => $request->mrp ?? 0,
+                'sale_price' => $request->sale_price ?? 0,
+                'purchase_price' => $request->purchase_price ?? 0,
+                'gst' => $request->gst,
                 'reason' => $request->reason,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -193,5 +197,23 @@ class InventoryController extends Controller
         }
 
         return view('inventory.create', compact('products'));
+    }
+
+    public function show(string $id) {
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
+        $role = $auth['role'];
+
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $inventories = Inventory::with('product')->where('product_id', $id)->get();
+        } else {
+            $inventories = Inventory::on($branch->connection_name)->with('product')->where('product_id', $id)->get();
+        }
+
+        return response()->json([
+            'success' => true,
+            'inventories' => $inventories
+        ]);
     }
 }

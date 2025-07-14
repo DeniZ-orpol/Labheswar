@@ -3,9 +3,9 @@
 @section('content')
     <div class="content">
         <div class="flex items-center justify-between mt-5 mb-4">
-            <h2 class="text-lg font-medium">Profit and Loose List</h2>
+            <h2 class="text-lg font-medium">Stock In Hand List</h2>
             <a href="{{ route('stock-in-hand.create') }}"
-                class="btn btn-primary shadow-md btn-hover ml-auto">Add Profit-Loose</a>
+                class="btn btn-primary shadow-md btn-hover ml-auto">Add Stock In Hand</a>
         </div>
 
         <div class="intro-y box p-5 mt-2">

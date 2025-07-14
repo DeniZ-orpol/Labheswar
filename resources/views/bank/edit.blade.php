@@ -77,3 +77,69 @@
         <!-- END: Validation Form -->
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    // Setup enter navigation for bank edit form
+    function setupEnterNavigation() {
+        let currentFieldIndex = 0;
+
+        const formFields = [
+            { selector: '#bank_name', type: 'input' },
+            { selector: '#account_no', type: 'input' },
+            { selector: '#ifsc_code', type: 'input' },
+            { selector: '#opening_balance', type: 'input' },
+            { selector: '#close_on', type: 'input' }
+        ];
+
+        function focusField(selector) {
+            const element = document.querySelector(selector);
+            if (element) {
+                element.focus();
+                if (element.tagName === 'SELECT') {
+                    setTimeout(() => {
+                        if (element.size <= 1) {
+                            element.click();
+                        }
+                    }, 100);
+                }
+            }
+        }
+
+        function handleFormFieldNavigation(e, fieldIndex) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+
+                if (fieldIndex < formFields.length - 1) {
+                    currentFieldIndex = fieldIndex + 1;
+                    focusField(formFields[currentFieldIndex].selector);
+                } else {
+                    const submitButton = document.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.focus();
+                    }
+                }
+            }
+        }
+
+        formFields.forEach((field, index) => {
+            const element = document.querySelector(field.selector);
+            if (element) {
+                element.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        handleFormFieldNavigation(e, index);
+                    }
+                });
+            }
+        });
+
+        setTimeout(() => {
+            focusField(formFields[0].selector);
+        }, 500);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        setupEnterNavigation();
+    });
+</script>
+@endpush

@@ -72,11 +72,11 @@ class StockInHandController extends Controller
             $data = [
                 'product_id' => $validated['product'],
                 'price' => $validated['price'] ?? 0,
-                'qty_in_hand' => $validated['qty_in_hand'] ?? 'Profit',
-                'qty_sold' => $validated['qty_in_sold'] ?? 'Loose',
-                'inventory_value' => $validated['inventory_value'] ?? 'Profit',
-                'sale_value' => $validated['sale_value'] ?? 'Loose',
-                'available_stock' => $validated['available_stock'] ?? 'Profit',
+                'qty_in_hand' => $validated['qty_in_hand'] ?? '0',
+                'qty_sold' => $validated['qty_in_sold'] ?? '0',
+                'inventory_value' => $validated['inventory_value'] ?? '0',
+                'sale_value' => $validated['sale_value'] ?? '0',
+                'available_stock' => $validated['available_stock'] ?? '0',
                 'status' => '1'
             ];
 

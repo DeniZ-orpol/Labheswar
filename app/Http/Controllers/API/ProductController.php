@@ -677,39 +677,10 @@ class ProductController extends Controller
     public function searchProduct(Request $request)
     {
         try {
-            // Get authenticated user from token
-            $user = auth()->user();
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized'
-                ], 401);
-            }
-
-            // Check if user is active
-            if ($user->is_active == '0') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User account is not active'
-                ], 403);
-            }
-
-            // Get user's branch from master database
-            $userBranch = Branch::where('id', $user->branch_id)
-                ->where('status', 'active')
-                ->first();
-
-            // If user has no branch or branch is inactive
-            if (!$userBranch) {
-                return response()->json([
-                    'success' => false,
-                    'data' => [],
-                    'message' => 'No accessible branch found for user'
-                ]);
-            }
-
-            // Configure branch database connection
-            configureBranchConnection($userBranch);
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $role = $auth['role'];
+            $branch = $auth['branch'];
 
             $request->validate([
                 'search_keyword' => 'required|string|min:1',
@@ -720,7 +691,7 @@ class ProductController extends Controller
             $searchType = strtolower($request->input('search_type'));
 
             // Build search query based on search type
-            $query = Product::on($userBranch->connection_name);
+            $query = Product::on($branch->connection_name);
 
             if ($searchType === 'barcode') {
                 $query->where('barcode', $searchKeyword);
@@ -734,8 +705,8 @@ class ProductController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'branch' => $userBranch->name,
-                    'branch_code' => $userBranch->code,
+                    'branch' => $branch->name,
+                    'branch_code' => $branch->code,
                     'search_query' => $searchKeyword,
                     'search_type' => $searchType,
                     'total_found' => $products->count(),

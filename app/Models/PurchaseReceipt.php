@@ -31,10 +31,10 @@ class PurchaseReceipt extends Model
     
 
     public function createUser(){
-        return $this->belongsTo(BranchUsers::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function updateUser(){
-        return $this->belongsTo(BranchUsers::class, 'updated_by');
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }

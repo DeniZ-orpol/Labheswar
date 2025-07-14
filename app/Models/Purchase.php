@@ -11,6 +11,7 @@ class Purchase extends Model
     protected $table = 'purchase';
 
     protected $fillable = [
+        'id',
         'purchase_receipt_id',
         'bill_date',
         'purchase_party_id',
@@ -19,6 +20,7 @@ class Purchase extends Model
         'gst',
         'product_id',
         'product',
+        'expiry_date',
         'mrp',
         'box',
         'pcs',

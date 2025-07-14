@@ -41,6 +41,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/cart/assign', [AppCartOrderController::class, 'assignCartToUser']);
     Route::get('/cart/open', [AppCartOrderController::class, 'getAssignedCartId']);
+
+    Route::post('/price', [AppCartOrderController::class, 'price']);
 });
 
 // Route::post('/products/store', [ProductController::class, 'store']);

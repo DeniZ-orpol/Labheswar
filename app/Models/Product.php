@@ -44,6 +44,16 @@ class Product extends Model
         'max_discount',
         'discount_scheme',
         'bonus_use',
+        'price_1',
+        'price_2',
+        'price_3',
+        'price_4',
+        'price_5',
+        'kg_1',
+        'kg_2',
+        'kg_3',
+        'kg_4',
+        'kg_5',
     ];
 
     public function pCompany()

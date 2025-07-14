@@ -152,14 +152,15 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-12 gap-2 grid-updated mt-12">
+            <div class="grid grid-cols-12 gap-2 grid-updated mt-12 custome_scroll" style="overflow-x:auto;" >
                 {{-- <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
                     <button type="button" class="btn btn-primary shadow-md mr-2 btn-hover"> + Add Product</button>
                 </div> --}}
-                <table class="display table intro-y col-span-12 bg-transparent w-full">
+                <table class="display table intro-y col-span-12 bg-transparent  product-table" style="min-width:1400px;" >
                     <thead>
                         <tr class="border-b fs-7 fw-bolder text-gray-700 uppercase text-center">
                             <th scope="col" class="required">Product</th>
+                            <th scope="col" class="required">Expiry</th>
                             <th scope="col" class="required">mrp</th>
                             <th scope="col" class="required">box</th>
                             <th scope="col" class="required">pcs</th>
@@ -175,7 +176,7 @@
                         @foreach ($purchaseItems as $index => $item)
                             <tr class="text-center">
                                 <!-- Product -->
-                                <td class="table__item-desc w-2/5">
+                                <td class="table__item-desc w-1/5">
                                     <div class="search-dropdown">
                                         <input type="text" name="product_search[]"
                                             class="form-control search-input product-search-input"
@@ -194,8 +195,8 @@
                                             <option value="{{ $product->id }}" data-mrp="{{ $product->mrp ?? 0 }}"
                                                 data-name="{{ $product->product_name }}"
                                                 data-box-pcs="{{ $product->converse_box ?? 1 }}"
-                                                data-sgst="{{ $product->gst / 2 ?? 0 }}"
-                                                data-cgst="{{ $product->gst / 2 ?? 0 }}"
+                                                data-sgst="{{ $product->hsnCode->gst / 2 ?? 0 }}"
+                                                data-cgst="{{ $product->hsnCode->gst / 2 ?? 0 }}"
                                                 data-purchase-rate="{{ $product->purchase_rate ?? 0 }}"
                                                 data-sale-rate-a="{{ $product->sale_rate_a ?? 0 }}"
                                                 data-sale-rate-b="{{ $product->sale_rate_b ?? 0 }}"
@@ -208,6 +209,11 @@
                                             </option>
                                         @endforeach
                                     </select>
+                                </td>
+
+                                <!-- Expiry Date -->
+                                <td>
+                                    <input type="text" name="expiry_date[]" placeholder="DD-MM-YYYY" class="form-control field-new" maxlength="255" value="{{ $item->expiry_date ?? null }}">
                                 </td>
 
                                 <!-- MRP -->
@@ -455,6 +461,7 @@
 
         const productFields = [
             '.product-search-input', // Changed to use search input instead of select
+            'input[name="expiry_date[]"]',
             'input[name="mrp[]"]',
             'input[name="box[]"]',
             'input[name="pcs[]"]',
@@ -646,6 +653,7 @@
         let timeout;
         let selectedIndex = -1;
         let currentData = [];
+        let isProcessingBarcodeScan = false;
 
         input.addEventListener('input', function() {
             clearTimeout(timeout);
@@ -654,9 +662,14 @@
 
             if (value.length < 1) {
                 dropdown.classList.remove('show');
+                const scroll_container = document.querySelector('.custome_scroll');
+                    if (scroll_container) scroll_container.style.overflowX = 'auto';
                 currentData = [];
                 return;
             }
+
+            // Check if this looks like a barcode scan
+            const isLikelyBarcodeValue = isLikelyBarcode(value);
 
             timeout = setTimeout(async () => {
                 try {
@@ -687,7 +700,21 @@
                     if (data.auto_select && data.exact_match && currentData.length === 1) {
                         // Auto-select the product for barcode scan
                         const product = currentData[0];
-                        selectProduct(product.product_name, product.id);
+                        // Set processing flag to prevent navigation
+                        isProcessingBarcodeScan = true;
+
+                        // Mark this input as processing barcode
+                        input.dataset.processingBarcode = 'true';
+                        // Auto-select the product for barcode scan
+                        setTimeout(() => {
+                            selectProduct(product.product_name, product.id, true);
+                            // Reset processing flag after selection completes
+                            setTimeout(() => {
+                                isProcessingBarcodeScan = false;
+                                delete input.dataset.processingBarcode;
+                            }, 300);
+                        }, 50);
+                        // selectProduct(product.product_name, product.id);
                         return; // Exit early, don't show dropdown
                     }
 
@@ -708,6 +735,8 @@
 
                     dropdown.innerHTML = html;
                     dropdown.classList.add('show');
+                    const scroll_container = document.querySelector('.custome_scroll');
+                    if (scroll_container) scroll_container.style.overflowX = 'clip';
                     selectedIndex = -1;
 
                     // Add click listeners to dropdown items
@@ -727,9 +756,11 @@
                 } catch (error) {
                     console.error('Product search error:', error);
                     dropdown.classList.remove('show');
+                    const scroll_container = document.querySelector('.custome_scroll');
+                    if (scroll_container) scroll_container.style.overflowX = 'auto';
                     currentData = [];
                 }
-            }, 200);
+            }, isLikelyBarcodeValue ? 100 : 200);
         });
 
         // Add paste event listener for barcode scanner input
@@ -738,6 +769,8 @@
             setTimeout(() => {
                 const value = this.value.trim();
                 if (value && isLikelyBarcode(value)) {
+                    isProcessingBarcodeScan = true;
+                    input.dataset.processingBarcode = 'true';
                     // Trigger the search immediately for pasted barcode
                     this.dispatchEvent(new Event('input'));
                 }
@@ -746,6 +779,14 @@
 
         // Arrow key navigation
         input.addEventListener('keydown', function(e) {
+            // Don't process navigation if barcode is being processed
+            if (isProcessingBarcodeScan || input.dataset.processingBarcode === 'true') {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                }
+                return;
+            }
+
             const items = dropdown.querySelectorAll('.dropdown-item');
 
             if (items.length === 0) return;
@@ -767,6 +808,8 @@
                 }
             } else if (e.key === 'Escape') {
                 dropdown.classList.remove('show');
+                const scroll_container = document.querySelector('.custome_scroll');
+                    if (scroll_container) scroll_container.style.overflowX = 'auto';
                 selectedIndex = -1;
             }
         });
@@ -775,6 +818,8 @@
         document.addEventListener('click', function(e) {
             if (!input.contains(e.target) && !dropdown.contains(e.target)) {
                 dropdown.classList.remove('show');
+                const scroll_container = document.querySelector('.custome_scroll');
+                    if (scroll_container) scroll_container.style.overflowX = 'auto';
                 selectedIndex = -1;
             }
         });
@@ -826,7 +871,7 @@
     }
 
     // Select product function
-    function selectProduct(productName, productId = null) {
+    function selectProduct(productName, productId = null, isBarcodeScan = false) {
         const activeInput = document.activeElement;
         let input, dropdown;
 
@@ -853,6 +898,8 @@
         const row = input.closest('tr');
 
         dropdown.classList.remove('show');
+        const scroll_container = document.querySelector('.custome_scroll');
+                    if (scroll_container) scroll_container.style.overflowX = 'auto';
         input.value = productName;
 
         // Find the product data
@@ -866,6 +913,17 @@
             productData = window.allProducts.find(p => p.id == productId);
         }
 
+        // Check if we have valid product data
+        if (!productData || !productId) {
+            console.log('No valid product data found');
+            input.value = '';
+            delete input.dataset.processingBarcode;
+            setTimeout(() => {
+                input.focus();
+            }, 100);
+            return;
+        }
+
         // Update hidden select
         const existingOption = hiddenSelect.querySelector(`option[value="${productId}"]`);
         if (existingOption) {
@@ -874,8 +932,8 @@
             if (productData) {
                 existingOption.setAttribute('data-mrp', productData.mrp || 0);
                 existingOption.setAttribute('data-name', productData.product_name);
-                existingOption.setAttribute('data-sgst', productData.gst || 0);
-                existingOption.setAttribute('data-cgst', productData.gst || 0);
+                existingOption.setAttribute('data-sgst', productData.hsn_code.gst || 0);
+                existingOption.setAttribute('data-cgst', productData.hsn_code.gst || 0);
                 existingOption.setAttribute('data-purchase-rate', productData.purchase_rate || 0);
                 existingOption.setAttribute('data-sale-rate-a', productData.sale_rate_a || 0);
                 existingOption.setAttribute('data-sale-rate-b', productData.sale_rate_b || 0);
@@ -895,8 +953,8 @@
             if (productData) {
                 newOption.setAttribute('data-mrp', productData.mrp || 0);
                 newOption.setAttribute('data-name', productData.product_name);
-                newOption.setAttribute('data-sgst', productData.gst || 0);
-                newOption.setAttribute('data-cgst', productData.gst || 0);
+                newOption.setAttribute('data-sgst', productData.hsn_code.gst / 2 || 0);
+                newOption.setAttribute('data-cgst', productData.hsn_code.gst / 2 || 0);
                 newOption.setAttribute('data-purchase-rate', productData.purchase_rate || 0);
                 newOption.setAttribute('data-sale-rate-a', productData.sale_rate_a || 0);
                 newOption.setAttribute('data-sale-rate-b', productData.sale_rate_b || 0);
@@ -908,8 +966,8 @@
             } else {
                 newOption.setAttribute('data-mrp', 0);
                 newOption.setAttribute('data-name', productName);
-                newOption.setAttribute('data-sgst', 0);
-                newOption.setAttribute('data-cgst', 0);
+                newOption.setAttribute('data-sgst', productData.hsn_code.gst / 2 || 0);
+                newOption.setAttribute('data-cgst', productData.hsn_code.gst / 2 || 0);
                 newOption.setAttribute('data-purchase-rate', 0);
                 newOption.setAttribute('data-sale-rate-a', 0);
                 newOption.setAttribute('data-sale-rate-b', 0);
@@ -922,7 +980,9 @@
 
             hiddenSelect.appendChild(newOption);
             hiddenSelect.value = productId;
+
         }
+        const detectedBarcodeScan = isBarcodeScan || (productData.barcode && input.value.trim() === productData.barcode);
 
         console.log('Product selected:', {
             productName: productName,
@@ -931,39 +991,75 @@
             isBarcodeScan: productData && productData.barcode && input.value.trim() === productData.barcode
         });
 
-        // Trigger existing functionality
-        loadProductDetails(hiddenSelect);
+        // Mark that product details are being loaded
+        input.dataset.loadingProductDetails = 'true';
 
-        // For barcode scans, auto-focus quantity field and add visual feedback
-        const isBarcodeScan = productData && productData.barcode && input.value.trim() === productData.barcode;
+        try {
+            // Load product details
+            loadProductDetails(hiddenSelect);
 
-        if (isBarcodeScan) {
-            // Add visual feedback for successful barcode scan
-            input.style.backgroundColor = '#d4edda'; // Light green background
-            input.style.borderColor = '#28a745'; // Green border
-
-            // Reset visual feedback after 2 seconds
+            // Wait a moment for product details to load, then move focus
             setTimeout(() => {
-                input.style.backgroundColor = '';
-                input.style.borderColor = '';
-            }, 2000);
+                // Verify that product details were loaded by checking if product name is set and hidden select has value
+                const productNameSet = hiddenSelect.value && hiddenSelect.options[hiddenSelect.selectedIndex];
+                const currentItemElement = document.getElementById('current-item');
+                const productNameDisplayed = currentItemElement && currentItemElement.textContent && currentItemElement.textContent !== '-';
 
-            // Auto-focus MRP field for quick entry
-            const mrpField = row.querySelector('input[name="mrp[]"]');
-            if (mrpField) {
-                setTimeout(() => {
-                    mrpField.focus();
-                    mrpField.select(); // Select the value for quick editing
-                }, 100);
-            }
-        } else {
-            // Move to next field
-            const nextField = row.querySelector('input[name="mrp[]"]');
-            if (nextField) {
-                setTimeout(() => {
-                    nextField.focus();
-                }, 100);
-            }
+                const productDetailsLoaded = productNameSet && productNameDisplayed;
+
+                console.log('Product details loading check:', {
+                    hiddenSelectValue: hiddenSelect.value,
+                    productNameDisplayed: currentItemElement ? currentItemElement.textContent : 'no current-item element',
+                    productDetailsLoaded: productDetailsLoaded
+                });
+
+                // Clear loading flags
+                delete input.dataset.loadingProductDetails;
+                delete input.dataset.processingBarcode;
+
+                if (productDetailsLoaded) {
+                    if (detectedBarcodeScan) {
+                        // Visual feedback for barcode scan
+                        input.style.backgroundColor = '#d4edda';
+                        input.style.borderColor = '#28a745';
+
+                        setTimeout(() => {
+                            input.style.backgroundColor = '';
+                            input.style.borderColor = '';
+                        }, 2000);
+
+                        // Move to expiry date field for barcode scans
+                        const expiryField = row.querySelector('input[name="expiry_date[]"]');
+                        if (expiryField) {
+                            setTimeout(() => {
+                                expiryField.focus();
+                                expiryField.select();
+                            }, 100);
+                        }
+                    } else {
+                        // Move to expiry date field for manual selections
+                        const nextField = row.querySelector('input[name="expiry_date[]"]');
+                        if (nextField) {
+                            setTimeout(() => {
+                                nextField.focus();
+                            }, 100);
+                        }
+                    }
+                } else {
+                    console.log('Product details not loaded properly, staying on current input');
+                    setTimeout(() => {
+                        input.focus();
+                    }, 100);
+                }
+            }, 200); // Give more time for loadProductDetails to complete
+
+        } catch (error) {
+            console.error('Error loading product details:', error);
+            delete input.dataset.loadingProductDetails;
+            delete input.dataset.processingBarcode;
+            setTimeout(() => {
+                input.focus();
+            }, 100);
         }
     }
 
@@ -1055,7 +1151,7 @@
         productSelect.setAttribute('onchange', 'loadProductDetails(this)');
 
         const inputs = newRow.querySelectorAll(
-            'input[name="mrp[]"], input[name="box[]"], input[name="pcs[]"], input[name="purchase_rate[]"], input[name="discount_percent[]"], input[name="discount_lumpsum[]"]'
+            'input[name="expiry_date[]"], input[name="mrp[]"], input[name="box[]"], input[name="pcs[]"], input[name="purchase_rate[]"], input[name="discount_percent[]"], input[name="discount_lumpsum[]"]'
         );
         inputs.forEach(input => {
             input.setAttribute('onchange', 'calculateRowAmount(this)');

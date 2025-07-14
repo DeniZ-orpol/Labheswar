@@ -17,7 +17,13 @@
                     <input type="file" name="excel_file" required accept=".csv, .xlsx, .xls">
                     <button type="submit">Import</button>
                 </form>
-
+                <div class="input-form ml-auto">
+                    <form method="GET" action="{{ route('products.index') }}" class="flex">
+                        <input type="text" name="search" id="search-product" placeholder="Search by name/barcode"
+                            value="{{ request('search') }}" class="form-control flex-1">
+                        <button type="submit" class="btn btn-primary shadow-md btn-hover">Search</button>
+                    </form>
+                </div>
             </div>
 
             <div class="intro-y col-span-12 overflow-auto">
@@ -60,7 +66,7 @@
                                     <div class="flex gap-2">
                                         <a href="{{ route('products.show', $product->id) }}"
                                             class="btn btn-primary">View</a>
-                                        <a href="{{ route('products.edit', $product->id) }}"
+                                        <a href="{{ route('products.edit', array_merge(['product' => $product->id], request()->only(['page', 'search']))) }}"
                                             class="btn btn-primary">Edit</a>
                                         <form action="{{ route('products.destroy', $product->id) }}" method="POST"
                                             onsubmit="return confirm('Are you sure?');">
@@ -83,143 +89,59 @@
                 @if ($isPaginated)
                     <div class="pagination-wrapper">
                         <div class="pagination-info">
-                            Showing {{ $products->firstItem() }} to {{ $products->lastItem() }} of
-                            {{ $products->total() }} entries
+                            @if ($products->total() > 0)
+                                Showing {{ $products->firstItem() }} to {{ $products->lastItem() }} of
+                                {{ $products->total() }} entries
+                            @else
+                                No entries found
+                            @endif
                         </div>
                         <div class="pagination-nav">
                             <nav role="navigation" aria-label="Pagination Navigation">
-                                <ul class="pagination">
-                                    {{-- Previous Page Link --}}
+                                <div class="pagination-controls">
+                                    {{-- Previous Page Button --}}
                                     @if ($products->onFirstPage())
-                                        <li class="page-item disabled" aria-disabled="true">
-                                            <span class="page-link">‹</span>
-                                        </li>
+                                        <button class="page-btn prev-btn disabled" disabled>
+                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                <path fill-rule="evenodd"
+                                                    d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z" />
+                                            </svg>
+                                        </button>
                                     @else
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ $products->previousPageUrl() }}"
-                                                rel="prev">‹</a>
-                                        </li>
+                                        <a href="{{ $products->previousPageUrl() }}" class="page-btn prev-btn">
+                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                <path fill-rule="evenodd"
+                                                    d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z" />
+                                            </svg>
+                                        </a>
                                     @endif
 
-                                    {{-- Page Numbers with Compact Logic --}}
-                                    @php
-                                        $currentPage = $products->currentPage();
-                                        $lastPage = $products->lastPage();
-                                        $showEllipsis = $lastPage > 7; // Show ellipsis if more than 7 pages
-                                    @endphp
+                                    {{-- Page Input --}}
+                                    <div class="page-input-container">
+                                        <span class="page-label">Page</span>
+                                        <input type="number" class="page-input" value="{{ $products->currentPage() }}"
+                                            min="1" max="{{ $products->lastPage() }}"
+                                            onkeypress="if(event.key === 'Enter') goToPage(this.value)">
+                                        <span class="page-total">of {{ $products->lastPage() }}</span>
+                                    </div>
 
-                                    @if (!$showEllipsis)
-                                        {{-- Show all pages if 7 or fewer --}}
-                                        @for ($i = 1; $i <= $lastPage; $i++)
-                                            @if ($i == $currentPage)
-                                                <li class="page-item active">
-                                                    <span class="page-link">{{ $i }}</span>
-                                                </li>
-                                            @else
-                                                <li class="page-item">
-                                                    <a class="page-link"
-                                                        href="{{ $products->url($i) }}">{{ $i }}</a>
-                                                </li>
-                                            @endif
-                                        @endfor
-                                    @else
-                                        {{-- Compact pagination with ellipsis --}}
-
-                                        {{-- Always show first page --}}
-                                        @if ($currentPage != 1)
-                                            <li class="page-item">
-                                                <a class="page-link" href="{{ $products->url(1) }}">1</a>
-                                            </li>
-                                        @else
-                                            <li class="page-item active">
-                                                <span class="page-link">1</span>
-                                            </li>
-                                        @endif
-
-                                        {{-- Show second page if current page is not near the beginning --}}
-                                        @if ($currentPage > 4)
-                                            <li class="page-item">
-                                                <a class="page-link" href="{{ $products->url(2) }}">2</a>
-                                            </li>
-                                        @endif
-
-                                        {{-- Left ellipsis --}}
-                                        @if ($currentPage > 4)
-                                            <li class="page-item disabled">
-                                                <span class="page-link">...</span>
-                                            </li>
-                                        @endif
-
-                                        {{-- Pages around current page --}}
-                                        @php
-                                            $start = max(2, $currentPage - 1);
-                                            $end = min($lastPage - 1, $currentPage + 1);
-
-                                            // Adjust range if we're near the beginning
-                                            if ($currentPage <= 3) {
-                                                $start = 2;
-                                                $end = min($lastPage - 1, 4);
-                                            }
-
-                                            // Adjust range if we're near the end
-                                            if ($currentPage >= $lastPage - 2) {
-                                                $start = max(2, $lastPage - 3);
-                                                $end = $lastPage - 1;
-                                            }
-                                        @endphp
-
-                                        @for ($i = $start; $i <= $end; $i++)
-                                            @if ($i == $currentPage)
-                                                <li class="page-item active">
-                                                    <span class="page-link">{{ $i }}</span>
-                                                </li>
-                                            @else
-                                                <li class="page-item">
-                                                    <a class="page-link"
-                                                        href="{{ $products->url($i) }}">{{ $i }}</a>
-                                                </li>
-                                            @endif
-                                        @endfor
-
-                                        {{-- Right ellipsis --}}
-                                        @if ($currentPage < $lastPage - 3)
-                                            <li class="page-item disabled">
-                                                <span class="page-link">...</span>
-                                            </li>
-                                        @endif
-
-                                        {{-- Show second-to-last page if current page is not near the end --}}
-                                        @if ($currentPage < $lastPage - 3)
-                                            <li class="page-item">
-                                                <a class="page-link"
-                                                    href="{{ $products->url($lastPage - 1) }}">{{ $lastPage - 1 }}</a>
-                                            </li>
-                                        @endif
-
-                                        {{-- Always show last page --}}
-                                        @if ($currentPage != $lastPage)
-                                            <li class="page-item">
-                                                <a class="page-link"
-                                                    href="{{ $products->url($lastPage) }}">{{ $lastPage }}</a>
-                                            </li>
-                                        @else
-                                            <li class="page-item active">
-                                                <span class="page-link">{{ $lastPage }}</span>
-                                            </li>
-                                        @endif
-                                    @endif
-
-                                    {{-- Next Page Link --}}
+                                    {{-- Next Page Button --}}
                                     @if ($products->hasMorePages())
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ $products->nextPageUrl() }}" rel="next">›</a>
-                                        </li>
+                                        <a href="{{ $products->nextPageUrl() }}" class="page-btn next-btn">
+                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                <path fill-rule="evenodd"
+                                                    d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
+                                            </svg>
+                                        </a>
                                     @else
-                                        <li class="page-item disabled" aria-disabled="true">
-                                            <span class="page-link">›</span>
-                                        </li>
+                                        <button class="page-btn next-btn disabled" disabled>
+                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                <path fill-rule="evenodd"
+                                                    d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
+                                            </svg>
+                                        </button>
                                     @endif
-                                </ul>
+                                </div>
                             </nav>
                         </div>
                     </div>
@@ -251,98 +173,86 @@
             align-items: center;
         }
 
-        .pagination {
+        .pagination-controls {
             display: flex;
             align-items: center;
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            gap: 0;
+            gap: 8px;
         }
 
-        .pagination li {
-            margin: 0;
-        }
-
-        .pagination a,
-        .pagination span {
+        .page-btn {
             display: flex;
             align-items: center;
             justify-content: center;
-            min-width: 32px;
-            height: 32px;
-            padding: 0 8px;
-            font-size: 14px;
-            font-weight: 500;
-            text-decoration: none;
+            width: 36px;
+            height: 36px;
             border: 1px solid #e5e7eb;
+            border-radius: 6px;
             background-color: #ffffff;
             color: #374151;
+            text-decoration: none;
             transition: all 0.15s ease;
+            cursor: pointer;
         }
 
-        /* First page button */
-        .pagination .page-item:first-child a {
-            border-radius: 6px 0 0 6px;
-        }
-
-        /* Last page button */
-        .pagination .page-item:last-child a {
-            border-radius: 0 6px 6px 0;
-        }
-
-        /* Single page item (when only one page) */
-        .pagination .page-item:only-child a {
-            border-radius: 6px;
-        }
-
-        /* Active page */
-        .pagination .page-item.active span,
-        .pagination .page-item.active a {
-            background-color: #3b82f6;
-            border-color: #3b82f6;
-            /* color: #ffffff; */
-            font-weight: 600;
-        }
-
-        /* Hover effects */
-        .pagination a:hover {
+        .page-btn:hover:not(.disabled) {
             background-color: #f3f4f6;
             border-color: #d1d5db;
             color: #111827;
         }
 
-        .pagination .page-item.active a:hover,
-        .pagination .page-item.active span:hover {
-            background-color: #2563eb;
-            border-color: #2563eb;
-        }
-
-        /* Disabled state */
-        .pagination .page-item.disabled span,
-        .pagination .page-item.disabled a {
+        .page-btn.disabled {
             color: #9ca3af;
             background-color: #f9fafb;
             border-color: #e5e7eb;
             cursor: not-allowed;
         }
 
-        .pagination .page-item.disabled:hover span,
-        .pagination .page-item.disabled:hover a {
-            background-color: #f9fafb;
-            border-color: #e5e7eb;
+        .page-input-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 16px;
         }
 
-        /* Previous/Next arrow styling */
-        .pagination .page-item:first-child a,
-        .pagination .page-item:last-child a {
-            font-weight: 600;
+        .page-label,
+        .page-total {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
         }
 
-        /* Remove border between adjacent items */
-        .pagination .page-item+.page-item a,
-        .pagination .page-item+.page-item span {
-            border-left: 0;
+        .page-input {
+            width: 60px;
+            height: 36px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            background-color: #ffffff;
+            color: #374151;
+            transition: all 0.15s ease;
+        }
+
+        .page-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .page-input:hover {
+            border-color: #d1d5db;
+        }
+
+        /* Remove spinner arrows from number input */
+        .page-input::-webkit-outer-spin-button,
+        .page-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .page-input[type=number] {
+            -moz-appearance: textfield;
         }
 
         /* Responsive adjustments */
@@ -357,9 +267,66 @@
                 order: 2;
             }
 
-            .pagination {
+            .pagination-nav {
                 order: 1;
+            }
+
+            .page-input-container {
+                margin: 0 8px;
+            }
+
+            .page-input {
+                width: 50px;
             }
         }
     </style>
+@endpush
+
+@push('scripts')
+    <script>
+        function goToPage(pageNumber) {
+            const maxPage = {{ $isPaginated ? $products->lastPage() : 1 }};
+            const currentUrl = new URL(window.location.href);
+
+            // Validate page number
+            pageNumber = parseInt(pageNumber);
+            if (isNaN(pageNumber) || pageNumber < 1) {
+                pageNumber = 1;
+            } else if (pageNumber > maxPage) {
+                pageNumber = maxPage;
+            }
+
+            // Update the input field with validated page number
+            document.querySelector('.page-input').value = pageNumber;
+
+            // Navigate to the page
+            currentUrl.searchParams.set('page', pageNumber);
+            window.location.href = currentUrl.toString();
+        }
+
+        // Auto-select input content when focused
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('search-product');
+            const pageInput = document.querySelector('.page-input');
+            if (pageInput) {
+                pageInput.addEventListener('focus', function() {
+                    this.select();
+                });
+            }
+
+            // Auto-focus search input if there's a search parameter
+            if (searchInput && new URLSearchParams(window.location.search).has('search')) {
+                searchInput.focus();
+            }
+
+            // Handle Enter key in search input
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        this.closest('form').submit();
+                    }
+                });
+            }
+        });
+    </script>
 @endpush

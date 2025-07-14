@@ -40,6 +40,10 @@
                                                 View
                                                 {{-- {{ dd($hsn->id) }} --}}
                                             </a>
+                                            <a href="{{ route('purchase.party.edit', $party->id) }}"
+                                                class="btn btn-primary mr-1 mb-2">
+                                                Edit
+                                            </a> 
                                             <form action=" {{ route('purchase.party.destroy', $party->id) }} "
                                                 method="POST"
                                                 onsubmit="return confirm('Are you sure you want to delete this role?');"
@@ -48,10 +52,7 @@
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
                                             </form>
-                                            {{-- <a href="{{ route('purchase.party.edit', $party->id) }}"
-                                                class="btn btn-primary mr-1 mb-2">
-                                                Edit
-                                            </a> --}}
+                                            
                                         </div>
                                     </td>
                                 </tr>

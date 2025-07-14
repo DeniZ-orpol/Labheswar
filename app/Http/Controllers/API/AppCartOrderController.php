@@ -26,7 +26,6 @@ class AppCartOrderController extends Controller
             $user = $auth['user'];
             $role = $auth['role'];
             $branch = $auth['branch'];
-
             // Validate request - UPDATED for unit-aware product_weight
             $request->validate([
                 'product_id' => 'required|integer',
@@ -753,11 +752,11 @@ class AppCartOrderController extends Controller
                     'customer_name' => $orderBill->customer_name,
                     'customer_contact' => $orderBill->customer_contact,
                     'bill_summary' => [
-                        'sub_total' => $orderBill->sub_total,
-                        'total_taxes' => $orderBill->total_texes,
-                        'discount_rs' => $orderBill->discount_rs,
-                        'discount_percentage' => $orderBill->discount_percentage,
-                        'total' => $orderBill->total
+                        'sub_total' => $orderBill->sub_total, // Total before discount and taxes
+                        'total_taxes' => $orderBill->total_texes, // Total taxes applied
+                        'discount_rs' => $orderBill->discount_rs, // Total discount in rupees
+                        'discount_percentage' => $orderBill->discount_percentage, // Total discount percentage applied
+                        'total' => $orderBill->total // Total after discount and taxes
                     ],
                     // 'payment_info' => [
                     //     'payment_status' => $orderBill->payment_status,
@@ -772,12 +771,12 @@ class AppCartOrderController extends Controller
                     //     'expected_delivery_date' => $orderBill->expected_delivery_date
                     // ],
                     'items_summary' => [
-                        'total_items' => count($itemsDetails),
-                        'total_quantity' => $totalItemsCount,
-                        'loose_quantity_items' => $looseQuantityItems,
-                        'fixed_quantity_items' => $fixedQuantityItems
+                        'total_items' => count($itemsDetails), // Total number of items in the bill
+                        'total_quantity' => $totalItemsCount, // Total quantity of products in the bill
+                        'loose_quantity_items' => $looseQuantityItems, // Count of loose quantity items
+                        'fixed_quantity_items' => $fixedQuantityItems // Count of fixed quantity items
                     ],
-                    'items' => $itemsDetails,
+                    'items' => $itemsDetails, // Detailed bill products information
                     'cart_status' => [
                         'cart_cleared' => $cartCleared,
                         'cart_status' => $cartCleared ? 'available' : 'unavailable' // available when empty, unavailable when has products
@@ -872,9 +871,9 @@ class AppCartOrderController extends Controller
                     // 'user_name' => $cart->user !== null ? $cart->user->name : null,
                     // 'user_email' => $cart->user !== null ? $cart->user->email : null,
                     'status' => $cart->status,
-                    'total_items' => $cartItems->sum('product_quantity'), // Total quantity of products in the cart
+                    'total_items' => $cartItems->sum('product_quantity'),
                     'total_amount' => $cartItems->sum('total_amount'),
-                    'items_count' => $cartItems->count(), // Count of items in the cart
+                    'items_count' => $cartItems->count(),
                     'created_at' => $cart->created_at,
                     'updated_at' => $cart->updated_at
                 ];
@@ -928,7 +927,6 @@ class AppCartOrderController extends Controller
             DB::connection($branch->connection_name)->beginTransaction();
 
             try {
-                //code...
                 // Step 3: Fetch product from DB
                 $product = Product::on($connection)
                     ->with('hsnCode')
@@ -1018,7 +1016,6 @@ class AppCartOrderController extends Controller
                         'user_id' => $user->id
                     ]);
                     $cart = $targetCart;
-
                 } elseif ($newCart) {
                     if ($existingUserCart) {
                         $existingUserCart->update([
@@ -1397,6 +1394,7 @@ class AppCartOrderController extends Controller
                 $cartItem = AppCartsOrders::on($branch->connection_name)
                     ->where('id', $cartItemId)
                     ->where('order_receipt_id', null)
+                    ->orderBy('created_at', 'desc')
                     ->first();
 
                 if (!$cartItem) {
@@ -1429,7 +1427,6 @@ class AppCartOrderController extends Controller
                 // Get inventory record
                 $inventory = Inventory::on($branch->connection_name)
                     ->where('product_id', $cartItem->product_id)
-                    ->orderBy('created_at', 'desc')
                     ->first();
 
                 if (!$inventory) {
@@ -1626,6 +1623,7 @@ class AppCartOrderController extends Controller
             ], 500);
         }
     }
+
     public function assignCartToUser(Request $request)
     {
         $request->validate([
@@ -1655,20 +1653,17 @@ class AppCartOrderController extends Controller
                 ], 404);
             }
 
-            $cart->setConnection($connection);
-
             // 🔄 Unassign all other carts assigned to this user
             Cart::on($connection)
                 ->where('user_id', $user->id)
                 ->where('id', '!=', $cart->id)
                 ->update([
-                    'user_id' => null
+                    'user_id' => null,
                 ]);
 
             // 🔁 Unassign if already assigned to someone else
             if ($cart->user_id !== null && $cart->user_id !== $user->id) {
                 $cart->user_id = null;
-                $cart->status = 'available';
                 $cart->save();
             }
 
@@ -1698,9 +1693,6 @@ class AppCartOrderController extends Controller
         }
     }
 
-
-
-
     public function getAssignedCartId()
     {
         $auth = $this->authenticateAndConfigureBranch();
@@ -1729,5 +1721,85 @@ class AppCartOrderController extends Controller
             'status' => $cart->status,
             'branch_connection' => $connection
         ]);
+    }
+
+    public function price(Request $request)
+    {
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
+        $connection = $branch->connection_name; // your dynamic DB connection
+
+        // ✅ Fetch product from branch's database
+        $product = DB::connection($connection)
+            ->table('products')
+            ->where('id', $request->productId)
+            ->first();
+
+        if (!$product) {
+            return response()->json(['error' => 'Product not found in this branch.'], 404);
+        }
+
+        // Convert product to object if needed (in case it's stdClass)
+        $product = (object) $product;
+
+        // ✅ Handle KG input
+        if ($request->kg !== null) {
+            $kg = (float) $request->kg;
+
+            // Check for fixed 1–5 KG prices
+            if (in_array($kg, [1, 2, 3, 4, 5])) {
+                $field = "price_" . intval($kg);
+                $price = $product->$field ?? 0;
+
+                return response()->json([
+                    'price' => formatNumber($price),
+                    'kg' => formatNumber($kg),
+                    'matched_fixed_price' => true,
+                    'branch_connection' => $connection
+                ]);
+            }
+
+            // Dynamic price
+            $price = weightInKilogramsToPrice($kg, $product);
+            return response()->json([
+                'price' => formatNumber($price),
+                'kg' => formatNumber($kg),
+                'matched_fixed_price' => false,
+                'branch_connection' => $connection
+            ]);
+        }
+
+        // ✅ Handle Grams input
+        if ($request->grams !== null) {
+            $grams = (float) $request->grams;
+            $price = weightInGramsToPrice($grams, $product);
+            return response()->json([
+                'price' => formatNumber($price),
+                'grams' => $grams,
+                'branch_connection' => $connection
+            ]);
+        }
+
+        // ✅ Handle Price to KG + Grams
+        if ($request->Price !== null) {
+            $priceInput = (float) $request->Price;
+            $kg = weightInPriceToKilograms($priceInput, $product);
+            $grams = weightInPriceToGrams($priceInput, $product);
+
+            return response()->json([
+                'success' => true,
+                'price' => $priceInput,
+                'kg' => formatNumber($kg),
+                'grams' => formatNumber($grams),
+                'branch_connection' => $connection
+            ]);
+        }
+
+        return response()->json(
+            [
+                'success' => false,
+                'error' => 'Invalid input. Provide kg, grams, or price.'
+            ],422);
     }
 }

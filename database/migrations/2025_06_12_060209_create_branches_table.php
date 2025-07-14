@@ -4,15 +4,13 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
-    protected $connection = 'master';
     public function up(): void
     {
-        Schema::connection('master')->create('branches', function (Blueprint $table) {
+        Schema::create('branches', function (Blueprint $table) {
             $table->id();
             // $table->unsignedBigInteger('user_id');
             $table->string('name');
@@ -23,6 +21,8 @@ return new class extends Migration
             $table->string('gst_no')->nullable();
             $table->string('database_name', 100);
             $table->string('connection_name', 50);
+            $table->string('db_username')->nullable();
+            $table->string('db_password')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->unsignedBigInteger('branch_admin')->nullable();
             // $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
@@ -56,7 +56,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::connection('master')->dropIfExists('branches');
+        Schema::dropIfExists('branches');
         // Schema::dropIfExists('branches');
     }
 };

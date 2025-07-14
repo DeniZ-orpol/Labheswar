@@ -11,10 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('roles', function (Blueprint $table) {
-            $table->id();
-            $table->string('role_name')->nullable();
-            $table->timestamps();
+        Schema::table('purchase', function (Blueprint $table) {
+            $table->string('expiry_date')->nullable()->after('product');
         });
     }
 
@@ -23,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('roles');
+        Schema::table('purchase', function (Blueprint $table) {
+            $table->dropColumn('expiry_date');
+        });
     }
 };
