@@ -79,7 +79,7 @@
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             Transfer Stock
         </h2>
-        <form action="#" method="POST"
+        <form action="{{route('stock.store')}}" method="POST"
             class="form-updated validate-form box rounded-md mt-5 p-5">
             @csrf <!-- CSRF token for security -->
             <div class="grid grid-cols-12 gap-2 grid-updated">
@@ -130,7 +130,7 @@
                 {{-- <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
                     <button type="button" class="btn btn-primary shadow-md mr-2 btn-hover"> + Add Product</button>
                 </div> --}}
-                <table class="display table intro-y col-span-12 bg-transparent product-table" style="min-width:1400px;">
+                <table class="display table intro-y col-span-12 bg-transparent product-table">
                     <thead>
                         <tr class="border-b fs-7 fw-bolder text-gray-700 uppercase text-center">
                             <th scope="col" class="required">Product</th>

@@ -68,7 +68,7 @@ class StockController extends Controller
             $validate = $request->validate([
                 'branch' => 'required|string|max:255',
                 'date' => 'date',
-                'chalan_no' => 'required|string|max:255',
+                'chalan_no' => 'string|max:255',
 
                 // Array validation for multiple purchase items
                 'product' => 'required|array|min:1',
@@ -87,22 +87,64 @@ class StockController extends Controller
                 'total_pcs.*' => 'numeric|min:0',
             ]);
 
+            // Check inventory availability before starting transaction
+            $inventoryCheckErrors = [];
+
+            foreach ($validate['product'] as $index => $productId) {
+                $product = Product::on($branch->connection_name)->find($productId);
+
+                if (!$product) {
+                    $inventoryCheckErrors[] = "Product with ID {$productId} not found";
+                    continue;
+                }
+
+                $requestedQuantity = $validate['total_pcs'][$index] ?? 0;
+
+                if ($requestedQuantity <= 0) {
+                    continue; // Skip if no quantity requested
+                }
+
+                // Calculate current stock from inventory
+                $currentStock = Inventory::on($branch->connection_name)
+                    ->where('product_id', $productId)
+                    ->selectRaw('SUM(CASE WHEN type = "in" THEN quantity ELSE -quantity END) as available_stock')
+                    ->value('available_stock') ?? 0;
+
+                if ($currentStock < $requestedQuantity) {
+                    $inventoryCheckErrors[] = "Insufficient stock for product '{$product->product_name}'. Available: {$currentStock}, Requested: {$requestedQuantity}";
+                }
+            }
+
+            // If there are inventory errors, return with error message
+            if (!empty($inventoryCheckErrors)) {
+                dd(111);
+                return redirect()->back()
+                    ->with('error', 'Stock transfer failed: ' . implode(', ', $inventoryCheckErrors))
+                    ->withInput();
+            }
+
             \DB::beginTransaction();
 
             try {
                 foreach ($validate['product'] as $index => $productId) {
-                    dd($productId);
                     $product = Product::on($branch->connection_name)->find($productId);
 
                     if (!$product) {
-                        continue; // Skip if product not found
+                        continue; // Skip if product not found (already handled in inventory check)
                     }
 
+                    $requestedQuantity = $validate['total_pcs'][$index] ?? 0;
+
+                    if ($requestedQuantity <= 0) {
+                        continue; // Skip if no quantity requested
+                    }
+
+                    // Create stock transfer record
                     $transferData = [
                         'user_id' => $user->id,
                         'chalan_id' => $validate['chalan_no'],
                         'branch_id' => $validate['branch'],
-                        'date' => $validate['date'] ?? now('dd-mm-YYYY'),
+                        'date' => $validate['date'] ?? now()->format('Y-m-d'),
                         'product_id' => $validate['product'][$index],
                         'mrp' => $validate['mrp'][$index] ?? 0,
                         'box' => $validate['box'][$index] ?? 0,
@@ -112,12 +154,32 @@ class StockController extends Controller
 
                     Stock::on($branch->connection_name)->create($transferData);
 
-                    // Store inventory data for selected branch
+                    // Create outgoing inventory record for current branch
+                    $outgoingInventoryData = [
+                        'product_id' => $productId,
+                        'purchase_id' => null,
+                        'type' => 'out',
+                        'quantity' => '-'.$requestedQuantity,
+                        'mrp' => $validate['mrp'][$index] ?? 0,
+                        'sale_price' => $validate['mrp'][$index] ?? 0,
+                        'purchase_price' => null,
+                        'unit' => $product->unit_types ?? 'PCS',
+                        'reason' => 'Stock Transferred To ' . Branch::find($validate['branch'])->name ?? 'Branch',
+                        'gst' => null,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ];
+
+                    Inventory::on($branch->connection_name)->create($outgoingInventoryData);
+
+                    // Get selected branch and configure connection
                     $selectedBranch = Branch::where('id', $validate['branch'])->firstOrFail();
+                    // Find or create product in destination branch
                     $branchProduct = Product::on($selectedBranch->connection_name)
-                        ->where('product_name', $product->name)
+                        ->where('product_name', $product->product_name)
                         ->orWhere('barcode', $product->barcode)
                         ->first();
+
                     if (!$branchProduct) {
                         $branchProduct = Product::on($selectedBranch->connection_name)->create([
                             'product_name' => $product->product_name,
@@ -165,39 +227,44 @@ class StockController extends Controller
                         ]);
                     }
 
-                    $inventoryData = [
-                        'product_id' => $productId,
+                    // Create incoming inventory record for destination branch
+                    $incomingInventoryData = [
+                        'product_id' => $branchProduct->id,
                         'purchase_id' => null,
                         'type' => 'in',
-                        'quantity' => $validate['total_pcs'][$index] ?? 0,
+                        'quantity' => $requestedQuantity,
                         'mrp' => $validate['mrp'][$index] ?? 0,
                         'sale_price' => $validate['mrp'][$index] ?? 0,
                         'purchase_price' => null,
                         'unit' => $branchProduct->unit_types ?? 'PCS',
-                        'reason' => 'Stock Transferred By ' . $branch->name,
+                        'reason' => 'Stock Transferred From ' . $branch->name,
                         'gst' => null,
                         'created_at' => now(),
                         'updated_at' => now()
                     ];
 
-                    Inventory::on($selectedBranch->connection_name)->create($inventoryData);
+                    Inventory::on($selectedBranch->connection_name)->create($incomingInventoryData);
                 }
 
                 \DB::commit();
 
                 return redirect()->route('stock.index')
-                    ->with('success', 'Stock Transferred successfully');
+                    ->with('success', 'Stock transferred successfully');
+
             } catch (Exception $e) {
+                dd($e->getMessage());
                 \DB::rollback();
                 \Log::error('Stock Transfer failed: ' . $e->getMessage());
                 return redirect()->back()
-                    ->with('error', 'Error Transferring stock: ' . $e->getMessage())
+                    ->with('error', 'Error transferring stock: ' . $e->getMessage())
                     ->withInput();
             }
+
         } catch (Exception $ex) {
+            dd($ex->getMessage());
             \Log::error('Stock Transfer error: ' . $ex->getMessage());
             return redirect()->back()
-                ->with('error', 'Error Transferring purchase: ' . $ex->getMessage())
+                ->with('error', 'Error processing stock transfer: ' . $ex->getMessage())
                 ->withInput();
         }
     }
