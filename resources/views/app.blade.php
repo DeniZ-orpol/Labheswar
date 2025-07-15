@@ -1395,6 +1395,29 @@ License: You must have a valid license purchased only from themeforest(the above
                         </li>
                     </ul>
                 </li>
+                @php
+                    $stockMenuOpen =
+                        request()->routeIs('stock.*');
+                @endphp
+                <li>
+                    <a href="javascript:;" class="side-menu">
+                        <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
+                        <div class="side-menu__title">
+                            Stocks
+                            <i data-lucide="chevron-down" class="side-menu__sub-icon"></i>
+                        </div>
+                    </a>
+
+                    <ul class="{{ $stockMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
+                        <li>
+                            <a href="{{ route('stock.index') }}"
+                                class="side-menu {{ request()->routeIs('stock.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Stock Manage </div>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
 
                 {{-- <li>
                         <a href="javascript:;" class="side-menu">
