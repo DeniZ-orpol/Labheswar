@@ -22,8 +22,8 @@ class UserSeeder extends Seeder
         ]);
 
         User::create([
-            'name' => 'Sweetler Super Admin',
-            'email' => 'sweetlersuperadmin@gmail.com',
+            'name' => 'Super Admin',
+            'email' => 'sglsuperadmin@gmail.com',
             'email_verified_at' => now(),
             'password' => Hash::make('admin@123'),
             'dob' => now()->subYears(29),
@@ -31,6 +31,48 @@ class UserSeeder extends Seeder
             'role' => 'Super admin',
             'role_id' => 1,
             'is_active' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        User::create([
+            'name' => 'Branch 1 Admin',
+            'email' => 'sglbranch1admin@gmail.com',
+            'email_verified_at' => now(),
+            'password' => Hash::make('admin@123'),
+            'dob' => now()->subYears(29),
+            'mobile' => '1234567890',
+            'role' => 'admin',
+            'role_id' => 2,
+            'is_active' => 1,
+            'branch_id' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        User::create([
+            'name' => 'Branch 2 Admin',
+            'email' => 'sglbranch2admin@gmail.com',
+            'email_verified_at' => now(),
+            'password' => Hash::make('admin@123'),
+            'dob' => now()->subYears(29),
+            'mobile' => '1234567890',
+            'role' => 'admin',
+            'role_id' => 2,
+            'is_active' => 1,
+            'branch_id' => 2,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        User::create([
+            'name' => 'Branch 3 Admin',
+            'email' => 'sglbranch3admin@gmail.com',
+            'email_verified_at' => now(),
+            'password' => Hash::make('admin@123'),
+            'dob' => now()->subYears(29),
+            'mobile' => '1234567890',
+            'role' => 'admin',
+            'role_id' => 2,
+            'is_active' => 1,
+            'branch_id' => 3,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
