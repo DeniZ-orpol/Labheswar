@@ -48,9 +48,8 @@ class StockController extends Controller
     public function create()
     {
         $auth = $this->authenticateAndConfigureBranch();
-        $user = $auth['user'];
         $branch = $auth['branch'];
-        $branches = Branch::all();
+        $branches = Branch::where('id' , '!=', $branch->id)->get();
 
         return view('stock.create', compact(['branches']));
     }
