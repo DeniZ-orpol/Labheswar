@@ -39,7 +39,7 @@ class StockController extends Controller
                 ->orderByDesc('id')->paginate(10);
         }
 
-        return view('purchase.index', compact(['parties', 'purchaseReceipt']));
+        return view('stock.index', compact(['parties', 'purchaseReceipt']));
     }
 
     /**
