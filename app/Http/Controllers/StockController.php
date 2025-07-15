@@ -171,9 +171,9 @@ class StockController extends Controller
                     ];
 
                     Inventory::on($branch->connection_name)->create($outgoingInventoryData);
-
                     // Get selected branch and configure connection
                     $selectedBranch = Branch::where('id', $validate['branch'])->firstOrFail();
+                    configureBranchConnection($selectedBranch);
                     // Find or create product in destination branch
                     $branchProduct = Product::on($selectedBranch->connection_name)
                         ->where('product_name', $product->product_name)
@@ -188,12 +188,6 @@ class StockController extends Controller
                             'search_option' => $product->search_option,
                             'unit_types' => $product->unit_types,
                             'decimal_btn' => $product->decimal_btn,
-                            'company' => $product->company,
-                            'category_id' => $product->category_id,
-                            'hsn_code_id' => $product->hsn_code_id,
-                            'sgst' => $product->sgst,
-                            'cgst1' => $product->cgst1,
-                            'cgst2' => $product->cgst2,
                             'cess' => $product->cess,
                             'mrp' => $product->mrp,
                             'purchase_rate' => $product->purchase_rate,
