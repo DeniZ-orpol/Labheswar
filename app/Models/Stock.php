@@ -16,7 +16,7 @@ class Stock extends Model
         'user_id',
         'bill_no',
         'branch_id',
-        'delivery_date',
+        'date',
         'product_id',
         'mrp',
         'box',
