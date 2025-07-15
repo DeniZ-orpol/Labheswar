@@ -10,7 +10,7 @@
         </h2>
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
-                <a href="#" class="btn btn-primary shadow-md mr-2 btn-hover">Transfer Stock</a>
+                <a href="{{ route('stock.create')}}" class="btn btn-primary shadow-md mr-2 btn-hover">Transfer Stock</a>
             </div>
 
             <!-- BEGIN: Users Layout -->

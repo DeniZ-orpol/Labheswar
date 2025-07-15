@@ -48,12 +48,13 @@ class StockController extends Controller
     public function create()
     {
         $auth = $this->authenticateAndConfigureBranch();
-        $user = $auth['user'];
         $branch = $auth['branch'];
-        $branches = Branch::all();
-
-        return view('stock.create', compact(['branches']));
+        $branches = Branch::where('id', '!=', $branch->id)->get();
+        $products = Product::on($branch->connection_name)->get();
+ 
+        return view('stock.create', compact(['branches', 'products']));
     }
+ 
 
     /**
      * Store a newly created resource in storage.

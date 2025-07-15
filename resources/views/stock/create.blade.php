@@ -162,22 +162,15 @@
                                 <select name="product[]" class="form-select text-sm w-full rounded-md hidden-product-select"
                                     style="display: none;" onchange="loadProductDetails(this)">
                                     <option value="">Please Select product</option>
-                                    {{-- @foreach ($products as $product)
+                                    @foreach ($products as $product)
                                         <option value="{{ $product->id }}" data-mrp="{{ $product->mrp ?? 0 }}"
                                             data-name="{{ $product->product_name }}"
                                             data-box-pcs="{{ $product->converse_box ?? 1 }}"
-                                            data-sgst="{{ $product->gst / 2 ?? 0 }}"
-                                            data-cgst="{{ $product->gst / 2 ?? 0 }}"
-                                            data-purchase-rate="{{ $product->purchase_rate ?? 0 }}"
-                                            data-sale-rate-a="{{ $product->sale_rate_a ?? 0 }}"
-                                            data-sale-rate-b="{{ $product->sale_rate_b ?? 0 }}"
-                                            data-sale-rate-c="{{ $product->sale_rate_c ?? 0 }}"
                                             data-barcode="{{ $product->barcode ?? '' }}"
-                                            data-category="{{ $product->category_id ?? '' }}"
                                             data-unit-type="{{ $product->unit_types ?? '' }}">
                                             {{ $product->product_name }}
                                         </option>
-                                    @endforeach --}}
+                                    @endforeach
                                 </select>
                             </td>
 
@@ -206,11 +199,6 @@
                                 <!-- Hidden fields for calculated data -->
                                 <input type="hidden" name="total_pcs[]" class="total-pcs-hidden">
                                 <input type="hidden" name="base_amount[]" class="base-amount-hidden">
-                                <input type="hidden" name="discount_amount[]" class="discount-amount-hidden">
-                                <input type="hidden" name="sgst_rate[]" class="sgst-rate-hidden">
-                                <input type="hidden" name="cgst_rate[]" class="cgst-rate-hidden">
-                                <input type="hidden" name="sgst_amount[]" class="sgst-amount-hidden">
-                                <input type="hidden" name="cgst_amount[]" class="cgst-amount-hidden">
                                 <input type="hidden" name="final_amount[]" class="final-amount-hidden">
                             </td>
 
@@ -228,11 +216,11 @@
             </div>
             <hr>
 
+            <span style="display: none;" id="current-item"></span>
             <!-- Item Purchase Information -->
-            {{-- <div class="intro-y grid grid-cols-3 gap-5 mt-5 col-span-12">
+             {{-- <div class="intro-y grid grid-cols-3 gap-5 mt-5 col-span-12">
                 <!-- Item info column -->
                 <div class="p-5">
-                    <p><strong>Item:</strong> <span id="current-item">-</span></p>
                     <p><strong>SRate:</strong> <span id="current-srate">0.00</span></p>
                     <p><strong>Date:</strong> <span id="current-date">-</span></p>
                 </div>
@@ -241,16 +229,11 @@
                 <div class="p-5">
                     <p><strong>MRP Value:</strong> <span id="total-mrp-value">0.00</span></p>
                     <p><strong>Amount:</strong> <span id="total-amount-value">0.00</span></p>
-                    <p><strong>SGST:</strong> <span id="total-sgst">0.00</span></p>
-                    <p><strong>CGST:</strong> <span id="total-cgst">0.00</span></p>
                     <p><strong>Balance:</strong> <span id="total-balance">0.00</span></p>
                 </div>
 
                 <!-- RIGHT COLUMN -->
                 <div class="p-5">
-                    <p><strong>VALUE OF GOODS:</strong> <span id="value-of-goods">0.00</span></p>
-                    <p><strong>DISCOUNT:</strong> <span id="total-discount">0.00</span></p>
-                    <p><strong>Total GST:</strong> <span id="total-gst">0.00</span></p>
                     <p><strong>Final Amount:</strong> <span id="final-amount">0.00</span></p>
                 </div>
             </div> --}}
@@ -431,3 +414,848 @@
         </div>
     </div> --}}
 @endsection
+
+<script>
+    // START: Set up Enter navigation
+    function setupEnterNavigation() {
+        let currentFieldIndex = 0;
+        let currentRowIndex = 0;
+
+        // Define field sequence
+        const formFields = [{
+                selector: '#party_name',
+                type: 'select'
+            },
+            {
+                selector: '#bill_date',
+                type: 'input'
+            },
+            {
+                selector: '#bill_no',
+                type: 'input'
+            },
+            {
+                selector: '#delivery_date',
+                type: 'input'
+            },
+            {
+                selector: 'select[name="gst"]',
+                type: 'select'
+            }
+        ];
+
+        const productFields = [
+            '.product-search-input', // Changed to use search input instead of select
+            'input[name="mrp[]"]',
+            'input[name="box[]"]',
+            'input[name="pcs[]"]',
+        ];
+
+        function getCurrentProductRow() {
+            const rows = document.querySelectorAll('#product-table-body tr');
+            return rows[currentRowIndex] || rows[rows.length - 1];
+        }
+
+        function focusField(selector, row = null) {
+            let element;
+            if (row) {
+                element = row.querySelector(selector);
+            } else {
+                element = document.querySelector(selector);
+            }
+
+            if (element) {
+                element.focus();
+                if (element.tagName === 'SELECT') {
+                    // For select elements, simulate click to open dropdown
+                    setTimeout(() => {
+                        if (element.size <= 1) {
+                            element.click();
+                        }
+                    }, 100);
+                }
+            }
+        }
+
+        function handleFormFieldNavigation(e, fieldIndex) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+
+                if (fieldIndex < formFields.length - 1) {
+                    // Move to next form field
+                    currentFieldIndex = fieldIndex + 1;
+                    focusField(formFields[currentFieldIndex].selector);
+                } else {
+                    // Move to first product field of first row
+                    currentFieldIndex = 0;
+                    currentRowIndex = 0;
+                    const firstRow = getCurrentProductRow();
+                    focusField(productFields[0], firstRow);
+                }
+            }
+        }
+
+        function handleProductFieldNavigation(e, fieldIndex, row) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+
+                // Special handling for product search field (fieldIndex 0)
+                if (fieldIndex === 0) {
+                    const productInput = row.querySelector('.product-search-input');
+
+                    // Don't navigate if barcode is being processed or product details are loading
+                    if (productInput && (
+                        productInput.dataset.processingBarcode === 'true' ||
+                        productInput.dataset.loadingProductDetails === 'true'
+                    )) {
+                        console.log('Blocking navigation - barcode processing or details loading');
+                        return;
+                    }
+
+                    // Check if product is selected and details are loaded
+                    const hiddenSelect = row.querySelector('.hidden-product-select');
+                    if (hiddenSelect && hiddenSelect.value) {
+                        // Product is selected, check if product name is loaded in the display
+                        const currentItemElement = document.getElementById('current-item');
+                        const productNameLoaded = currentItemElement && currentItemElement.textContent && currentItemElement.textContent !== '-';
+
+                        if (productNameLoaded) {
+                            // Product details are loaded, proceed to next field
+                            focusField(productFields[fieldIndex + 1], row);
+                        } else {
+                            // Product selected but name not displayed yet, wait
+                            console.log('Product selected but name not displayed, waiting...');
+                            setTimeout(() => {
+                                // Try again after a delay
+                                const nameStillLoading = currentItemElement && currentItemElement.textContent && currentItemElement.textContent !== '-';
+                                if (nameStillLoading) {
+                                    focusField(productFields[fieldIndex + 1], row);
+                                } else {
+                                    console.log('Product name still not loaded, staying on product field');
+                                }
+                            }, 300);
+                        }
+                    } else {
+                        // No product selected, don't move
+                        console.log('No product selected, staying on product field');
+                    }
+                    return;
+                }
+
+                // Handle other fields normally
+                if (fieldIndex < productFields.length - 1) {
+                    focusField(productFields[fieldIndex + 1], row);
+                } else {
+                    // Last field - add new row
+                    addProductRow();
+                    currentRowIndex++;
+                    const newRow = getCurrentProductRow();
+                    setTimeout(() => {
+                        focusField(productFields[0], newRow);
+                    }, 100);
+                }
+            } else if (e.key === 'Escape' && fieldIndex === productFields.length - 1) {
+                e.preventDefault();
+                const totalInvoiceField = document.getElementById('total-invoice-value');
+                if (totalInvoiceField) {
+                    totalInvoiceField.focus();
+                }
+            }
+        }
+
+        function handleSpecialNavigation(e) {
+            if (e.key === 'Enter') {
+                const target = e.target;
+
+                // Check if it's a select element that needs special handling
+                if (target.tagName === 'SELECT' && target.name === 'gst') {
+                    // GST dropdown selected, move to product
+                    e.preventDefault();
+                    currentRowIndex = 0;
+                    const firstRow = getCurrentProductRow();
+                    setTimeout(() => {
+                        focusField(productFields[0], firstRow);
+                    }, 100);
+                }
+
+                // Handle total invoice value to submit button navigation
+                if (target.id === 'total-invoice-value') {
+                    e.preventDefault();
+                    // Move focus to submit button
+                    const submitButton = document.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.focus();
+                    }
+                }
+
+                // Handle submit button enter key
+                if (target.tagName === 'BUTTON' && target.type === 'submit') {
+                    e.preventDefault();
+                    // Submit the form
+                    const form = target.closest('form');
+                    if (form) {
+                        form.submit();
+                    }
+                }
+            }
+        }
+
+        // Setup form field navigation
+        formFields.forEach((field, index) => {
+            const element = document.querySelector(field.selector);
+            if (element) {
+                element.addEventListener('keydown', (e) => handleFormFieldNavigation(e, index));
+            }
+        });
+
+        // Setup product field navigation using event delegation
+        document.addEventListener('keydown', function(e) {
+            const target = e.target;
+
+            // Handle product fields
+            if (target.closest('#product-table-body')) {
+                const row = target.closest('tr');
+                const rows = Array.from(document.querySelectorAll('#product-table-body tr'));
+                const rowIndex = rows.indexOf(row);
+
+                productFields.forEach((fieldSelector, fieldIndex) => {
+                    if (target.matches(fieldSelector)) {
+                        currentRowIndex = rowIndex;
+                        handleProductFieldNavigation(e, fieldIndex, row);
+                    }
+                });
+            }
+
+            // Handle special navigation cases
+            handleSpecialNavigation(e);
+        });
+
+        // Focus on first field when page loads
+        setTimeout(() => {
+            focusField(formFields[0].selector);
+        }, 500);
+
+        // Handle select dropdown closing with enter
+        document.addEventListener('change', function(e) {
+            if (e.target.tagName === 'SELECT') {
+                // When select changes, trigger enter behavior
+                const enterEvent = new KeyboardEvent('keydown', {
+                    key: 'Enter',
+                    code: 'Enter',
+                    keyCode: 13,
+                    which: 13,
+                    bubbles: true
+                });
+                setTimeout(() => {
+                    e.target.dispatchEvent(enterEvent);
+                }, 100);
+            }
+        });
+    }
+    // END: Set up Enter navigation
+
+    let productRowCounter = 0;
+    let allProducts = @json($products);
+    let currentProductData = [];
+    let productSelectedIndex = -1;
+
+    // ==================================
+
+    function initProductDropdown() {
+        // Store allProducts globally for the selectProduct function
+        window.allProducts = allProducts;
+
+        // Get all product search inputs (for multiple rows)
+        const productInputs = document.querySelectorAll('.product-search-input');
+
+        productInputs.forEach(input => {
+            setupProductInput(input);
+        });
+    }
+
+
+    // Setup individual product input (like party dropdown)
+    function setupProductInput(input) {
+        const dropdown = input.nextElementSibling;
+        const searchUrl = '{{ route('products.search') }}'; // Your search route
+        let timeout;
+        let selectedIndex = -1;
+        let currentData = [];
+        let isProcessingBarcodeScan = false;
+
+        input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const value = this.value.trim();
+            selectedIndex = -1;
+
+            if (value.length < 1) {
+                dropdown.classList.remove('show');
+                const scroll_container = document.querySelector('.custome_scroll');
+                    if (scroll_container) scroll_container.style.overflowX = 'auto';
+                currentData = [];
+                return;
+            }
+
+            // Check if this looks like a barcode scan
+            const isLikelyBarcodeValue = isLikelyBarcode(value);
+
+            timeout = setTimeout(async () => {
+                try {
+                    let url = `${searchUrl}?search=${encodeURIComponent(value)}`;
+
+                    // Add branch_id if needed
+                    const branchSelect = document.getElementById('branch');
+                    if (branchSelect && branchSelect.value) {
+                        url += `&branch_id=${encodeURIComponent(branchSelect.value)}`;
+                    }
+
+                    console.log('Fetching products from:', url);
+
+                    const response = await fetch(url, {
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const data = await response.json();
+                    console.log('Product search response:', data);
+
+                    currentData = data.products || [];
+                    window.currentProductData = currentData;
+
+                    // Check if it's an exact barcode match for auto-selection
+                    if (data.auto_select && data.exact_match && currentData.length === 1) {
+                        const product = currentData[0];
+
+                        // Set processing flag to prevent navigation
+                        isProcessingBarcodeScan = true;
+
+                        // Mark this input as processing barcode
+                        input.dataset.processingBarcode = 'true';
+
+                        console.log('Auto-selecting product for barcode scan:', product);
+
+                        // Auto-select the product for barcode scan
+                        setTimeout(() => {
+                            selectProduct(product.product_name, product.id, true);
+                            // Reset processing flag after selection completes
+                            setTimeout(() => {
+                                isProcessingBarcodeScan = false;
+                                delete input.dataset.processingBarcode;
+                            }, 300);
+                        }, 50);
+
+                        return; // Exit early, don't show dropdown
+                    }
+
+                    let html = '';
+
+                    // Show existing products
+                    currentData.forEach((product, index) => {
+                        const productInfo = product.barcode ? ` (${product.barcode})` : '';
+                        html +=
+                            `<div class="dropdown-item" data-index="${index}" data-product-id="${product.id}">${product.product_name}${productInfo}</div>`;
+                    });
+
+                    dropdown.innerHTML = html;
+                    dropdown.classList.add('show');
+                    const scroll_container = document.querySelector('.custome_scroll');
+                    if (scroll_container) scroll_container.style.overflowX = 'clip';
+
+                    selectedIndex = -1;
+
+                    // Add click listeners to dropdown items
+                    dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                        item.addEventListener('mousedown', function(e) {
+                            e.preventDefault();
+                            const index = parseInt(this.dataset.index);
+                            selectProduct(currentData[index].product_name, currentData[index].id);
+                        });
+                    });
+
+                } catch (error) {
+                    console.error('Product search error:', error);
+                    dropdown.classList.remove('show');
+                    const scroll_container = document.querySelector('.custome_scroll');
+                    if (scroll_container) scroll_container.style.overflowX = 'auto';
+                    currentData = [];
+                }
+            }, isLikelyBarcodeValue ? 100 : 200);
+        });
+
+        // Add paste event listener for barcode scanner input
+        input.addEventListener('paste', function(e) {
+            setTimeout(() => {
+                const value = this.value.trim();
+                if (value && isLikelyBarcode(value)) {
+                    isProcessingBarcodeScan = true;
+                    input.dataset.processingBarcode = 'true';
+                    this.dispatchEvent(new Event('input'));
+                }
+            }, 10);
+        });
+
+        // Arrow key navigation
+        input.addEventListener('keydown', function(e) {
+            // Don't process navigation if barcode is being processed
+            if (isProcessingBarcodeScan || input.dataset.processingBarcode === 'true') {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                }
+                return;
+            }
+
+            const items = dropdown.querySelectorAll('.dropdown-item');
+
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
+                updateProductHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
+                updateProductHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    const index = parseInt(items[selectedIndex].dataset.index);
+                    selectProduct(currentData[index].product_name, currentData[index].id);
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.remove('show');
+                const scroll_container = document.querySelector('.custome_scroll');
+                    if (scroll_container) scroll_container.style.overflowX = 'auto';
+                selectedIndex = -1;
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+                const scroll_container = document.querySelector('.custome_scroll');
+                    if (scroll_container) scroll_container.style.overflowX = 'auto';
+                selectedIndex = -1;
+            }
+        });
+    }
+
+    // Helper function to detect if input looks like a barcode
+    function isLikelyBarcode(value) {
+        // Remove any whitespace
+        value = value.trim();
+
+        // Check if it's a numeric string with appropriate length
+        if (/^\d{8,13}$/.test(value)) {
+            return true;
+        }
+
+        // Add other barcode patterns if needed
+        return false;
+    }
+
+    // Update highlight function (same as party dropdown) - make it global
+    function updateProductHighlight(dropdown, items, selectedIndex) {
+        items.forEach((item, index) => {
+            item.style.backgroundColor = index === selectedIndex ? '#e9ecef' : '';
+        });
+
+        if (selectedIndex >= 0 && items[selectedIndex]) {
+            const selectedItem = items[selectedIndex];
+            const dropdownScrollTop = dropdown.scrollTop;
+            const dropdownHeight = dropdown.clientHeight;
+            const itemTop = selectedItem.offsetTop;
+            const itemHeight = selectedItem.offsetHeight;
+
+            if (itemTop < dropdownScrollTop) {
+                dropdown.scrollTop = itemTop;
+            } else if (itemTop + itemHeight > dropdownScrollTop + dropdownHeight) {
+                dropdown.scrollTop = itemTop + itemHeight - dropdownHeight;
+            }
+        }
+    }
+
+    // Select product function (like selectParty)
+    function selectProduct(productName, productId = null, isBarcodeScan = false) {
+        const activeInput = document.activeElement;
+        let input, dropdown;
+
+        if (!activeInput || !activeInput.classList.contains('product-search-input')) {
+            const visibleDropdown = document.querySelector('.product-dropdown.show');
+            if (visibleDropdown) {
+                input = visibleDropdown.previousElementSibling;
+                dropdown = visibleDropdown;
+            } else {
+                console.log('Could not find active product input');
+                return;
+            }
+        } else {
+            input = activeInput;
+            dropdown = input.nextElementSibling;
+        }
+
+        const hiddenSelect = input.closest('td').querySelector('.hidden-product-select');
+        const row = input.closest('tr');
+
+        // Close dropdown
+        dropdown.classList.remove('show');
+        const scroll_container = document.querySelector('.custome_scroll');
+                    if (scroll_container) scroll_container.style.overflowX = 'auto';
+
+        // Update search input
+        input.value = productName;
+
+        // Find the product data
+        let productData = null;
+
+        if (window.currentProductData) {
+            productData = window.currentProductData.find(p => p.id == productId);
+        }
+
+        if (!productData && window.allProducts) {
+            productData = window.allProducts.find(p => p.id == productId);
+        }
+
+        // Check if we have valid product data
+        if (!productData || !productId) {
+            console.log('No valid product data found');
+            input.value = '';
+            delete input.dataset.processingBarcode;
+            setTimeout(() => {
+                input.focus();
+            }, 100);
+            return;
+        }
+
+        // Update hidden select with product data
+        hiddenSelect.innerHTML = '';
+        const newOption = document.createElement('option');
+        newOption.value = productId;
+        newOption.textContent = productName;
+        newOption.selected = true;
+
+        // Set all data attributes
+        newOption.setAttribute('data-mrp', productData.mrp || 0);
+        newOption.setAttribute('data-name', productData.product_name);
+        newOption.setAttribute('data-barcode', productData.barcode || '');
+        newOption.setAttribute('data-box-pcs', productData.box_pcs || productData.converse_box || 1);
+
+        hiddenSelect.appendChild(newOption);
+
+        const detectedBarcodeScan = isBarcodeScan || (productData.barcode && input.value.trim() === productData.barcode);
+
+        console.log('Product selected:', {
+            productName: productName,
+            productId: productId,
+            hiddenFieldValue: hiddenSelect.value,
+            isBarcodeScan: detectedBarcodeScan
+        });
+
+        // Mark that product details are being loaded
+        input.dataset.loadingProductDetails = 'true';
+
+        try {
+            // Load product details
+            loadProductDetails(hiddenSelect);
+            
+            // Wait a moment for product details to load, then move focus
+            setTimeout(() => {
+                // Verify that product details were loaded by checking if product name is set and hidden select has value
+                const productNameSet = hiddenSelect.value && hiddenSelect.options[hiddenSelect.selectedIndex];
+                const currentItemElement = document.getElementById('current-item');
+                const productNameDisplayed = currentItemElement && currentItemElement.textContent && currentItemElement.textContent !== '-';
+
+                const productDetailsLoaded = productNameSet && productNameDisplayed;
+
+                console.log('Product details loading check:', {
+                    hiddenSelectValue: hiddenSelect.value,
+                    productNameDisplayed: currentItemElement ? currentItemElement.textContent : 'no current-item element',
+                    productDetailsLoaded: productDetailsLoaded
+                });
+
+                // Clear loading flags
+                delete input.dataset.loadingProductDetails;
+                delete input.dataset.processingBarcode;
+
+                if (productDetailsLoaded) {
+                    if (detectedBarcodeScan) {
+                        // Visual feedback for barcode scan
+                        input.style.backgroundColor = '#d4edda';
+                        input.style.borderColor = '#28a745';
+
+                        setTimeout(() => {
+                            input.style.backgroundColor = '';
+                            input.style.borderColor = '';
+                        }, 2000);
+
+                        // Move to expiry date field for barcode scans
+                        const mrp = row.querySelector('input[name="mrp[]"]');
+                        if (mrp) {
+                            setTimeout(() => {
+                                mrp.focus();
+                                mrp.select();
+                            }, 100);
+                        }
+                    } else {
+                        // Move to expiry date field for manual selections
+                        const nextField = row.querySelector('input[name="mrp[]"]');
+                        if (nextField) {
+                            setTimeout(() => {
+                                nextField.focus();
+                            }, 100);
+                        }
+                    }
+                } else {
+                    console.log('Product details not loaded properly, staying on current input');
+                    setTimeout(() => {
+                        input.focus();
+                    }, 100);
+                }
+            }, 200); // Give more time for loadProductDetails to complete
+
+        } catch (error) {
+            console.error('Error loading product details:', error);
+            delete input.dataset.loadingProductDetails;
+            delete input.dataset.processingBarcode;
+            setTimeout(() => {
+                input.focus();
+            }, 100);
+        }
+    }
+
+    // Function to setup new product rows (for when you add new rows)
+    function setupNewProductRow(row) {
+        const productInput = row.querySelector('.product-search-input');
+        if (productInput) {
+            setupProductInput(productInput);
+        }
+    }
+
+    // ==================================
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const addProductBtn = document.querySelector('.btn.btn-primary.shadow-md.mr-2.btn-hover');
+        if (addProductBtn) {
+            addProductBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                addProductRow();
+            });
+        }
+
+        // Set current date for delivery date
+        const today = new Date();
+        const todayString = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
+        // Initialize calculations
+        calculateAllTotals();
+
+        // Enter navigation setup call
+        setupEnterNavigation();
+        // Delete product row
+        updateDeleteButtons();
+
+        initProductDropdown();
+
+    });
+
+
+    // Add new product row
+    function addProductRow() {
+        const tableBody = document.getElementById('product-table-body');
+        const existingRow = tableBody.querySelector('tr');
+        const newRow = existingRow.cloneNode(true);
+
+        // Clear all input values
+        newRow.querySelectorAll('input').forEach(input => input.value = '');
+        newRow.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+
+        // Update event handlers for new row
+        const productSearchInput = newRow.querySelector('.product-search-input');
+        if (productSearchInput) {
+            // productSearchInput.setAttribute('onkeyup', 'searchProducts(this)');
+            productSearchInput.setAttribute('onfocus', 'showProductDropdown(this)');
+        }
+
+        const hiddenSelect = newRow.querySelector('.hidden-product-select');
+        if (hiddenSelect) {
+            hiddenSelect.setAttribute('onchange', 'loadProductDetails(this)');
+        }
+
+        const inputs = newRow.querySelectorAll(
+            'input[name="mrp[]"], input[name="box[]"], input[name="pcs[]"]'
+        );
+        inputs.forEach(input => {
+            input.setAttribute('onchange', 'calculateRowAmount(this)');
+        });
+
+        // Ensure the delete button has the correct onclick handler
+        const deleteButton = newRow.querySelector('button[onclick*="removeRow"]');
+        if (deleteButton) {
+            deleteButton.setAttribute('onclick', 'removeRow(this)');
+        }
+
+        tableBody.appendChild(newRow);
+
+        setupNewProductRow(newRow);
+
+        // Update delete button states
+        updateDeleteButtons();
+    }
+
+    function removeRow(button) {
+        const row = button.closest('tr');
+        const tableBody = row.closest('tbody');
+        const allRows = tableBody.querySelectorAll('tr');
+
+        if (allRows.length > 1) {
+            row.remove();
+            calculateAllTotals();
+
+            // Update currentRowIndex if needed
+            const remainingRows = tableBody.querySelectorAll('tr');
+            if (currentRowIndex >= remainingRows.length) {
+                currentRowIndex = remainingRows.length - 1;
+            }
+
+            // Re-enable/disable delete buttons based on row count
+            updateDeleteButtons();
+
+            // Hide purchase history if no product is selected in any row
+            const hasSelectedProducts = Array.from(remainingRows).some(row => {
+                const hiddenSelect = row.querySelector('.hidden-product-select');
+                return hiddenSelect && hiddenSelect.value;
+            });
+
+            if (!hasSelectedProducts) {
+                hidePurchaseHistory();
+            }
+        } else {
+            alert('At least one product row is required.');
+        }
+    }
+
+    function updateDeleteButtons() {
+        const tableBody = document.getElementById('product-table-body');
+        const allRows = tableBody.querySelectorAll('tr');
+        const deleteButtons = tableBody.querySelectorAll('button[onclick*="removeRow"]');
+
+        if (allRows.length === 1) {
+            // Disable delete button if only one row
+            deleteButtons.forEach(button => {
+                button.disabled = true;
+                button.classList.add('opacity-50', 'cursor-not-allowed');
+                button.classList.remove('hover:bg-red-100');
+            });
+        } else {
+            // Enable all delete buttons if more than one row
+            deleteButtons.forEach(button => {
+                button.disabled = false;
+                button.classList.remove('opacity-50', 'cursor-not-allowed');
+                button.classList.add('hover:bg-red-100');
+            });
+        }
+    }
+
+    function loadProductDetails(selectElement) {
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        const productName = selectedOption.getAttribute('data-name') || '-';
+        const productMrp = selectedOption.getAttribute('data-mrp') || '0.00';
+        const boxToPcs = selectedOption.getAttribute('data-box-pcs') || '1';
+        const barcode = selectedOption.getAttribute('data-barcode') || '';
+        const unitType = selectedOption.getAttribute('data-unit-type') || '';
+        const productId = selectedOption.value;
+
+        document.getElementById('current-item').textContent = productName;
+
+        // document.getElementById('current-mrp').textContent = parseFloat(productMrp).toFixed(2);
+
+        // Auto-fill purchase rate if available
+        const row = selectElement.closest('tr');
+        const mrpInput = row.querySelector('input[name="mrp[]"]');
+
+        if (mrpInput && productMrp > 0 && !mrpInput.value) {
+            mrpInput.value = parseFloat(productMrp).toFixed(2);
+        }
+
+
+        calculateAllTotals();
+    }
+
+
+
+    function calculateRowAmount(input) {
+        const row = input.closest('tr');
+        const box = parseFloat(row.querySelector('input[name="box[]"]')?.value || 0);
+        const pcs = parseFloat(row.querySelector('input[name="pcs[]"]')?.value || 0);
+        const purchaseRate = parseFloat(row.querySelector('input[name="mrp[]"]')?.value || 0);
+
+        // Get product details including SGST and CGST rates
+        const hiddenSelect = row.querySelector('.hidden-product-select');
+        const selectedOption = hiddenSelect.options[hiddenSelect.selectedIndex];
+        const boxToPcs = parseFloat(selectedOption.getAttribute('data-box-pcs') || 1);
+        // Calculate total pieces: (box * conversion ratio) + individual pcs
+        // box: total no of box to purchase
+        // boxToPcs: conversion ratio of box
+        // pcs: individual pieces to purchase
+        const totalPcs = (box * boxToPcs) + pcs;
+
+        // Calculate base amount: total pieces * purchase rate
+        let finalAmount = totalPcs * purchaseRate;
+
+        
+
+        // Update amount field
+        const amountInput = row.querySelector('input[name="amount[]"]');
+        if (amountInput) {
+            amountInput.value = finalAmount.toFixed(2);
+        }
+
+        // Update hidden fields for backend submission
+        row.querySelector('.total-pcs-hidden').value = totalPcs;
+        row.querySelector('.final-amount-hidden').value = finalAmount.toFixed(2);
+
+        // Store calculation data in row for summary
+        row.dataset.totalPcs = totalPcs.toFixed(0);
+        row.dataset.finalAmount = finalAmount.toFixed(2);
+
+        // Recalculate totals
+        calculateAllTotals();
+    }
+
+    function calculateAllTotals() {
+        const tableBody = document.getElementById('product-table-body');
+        const rows = tableBody.querySelectorAll('tr');
+
+        let totalMrpValue = 0;
+        let totalFinalAmount = 0;
+        let totalQuantity = 0;
+
+        rows.forEach(row => {
+            // Get product MRP and box conversion
+            const hiddenSelect = row.querySelector('.hidden-product-select');
+            const selectedOption = hiddenSelect.options[hiddenSelect.selectedIndex];
+            const boxToPcs = parseFloat(selectedOption.getAttribute('data-box-pcs') || 1);
+
+            // Get quantities
+            const mrp = parseFloat(row.querySelector('input[name="mrp[]"]')?.value || 0);
+            const box = parseFloat(row.querySelector('input[name="box[]"]')?.value || 0);
+            const pcs = parseFloat(row.querySelector('input[name="pcs[]"]')?.value || 0);
+
+            // Calculate total pieces including box conversion
+            const totalPcs = (box * boxToPcs) + pcs;
+            totalMrpValue += mrp * totalPcs;
+            totalQuantity += totalPcs; // Don't include free in paid quantity
+
+            // Get calculated amounts from row data
+            const finalAmount = parseFloat(row.dataset.finalAmount || 0);
+
+            totalFinalAmount += finalAmount;
+
+            document.getElementById('total-invoice-value').value = totalFinalAmount.toFixed(2);
+        });
+
+    }
+</script>
