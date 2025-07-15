@@ -17,7 +17,7 @@ use Illuminate\Validation\ValidationException;
 
 class StockController extends Controller
 {
-     use BranchAuthTrait;
+    use BranchAuthTrait;
     /**
      * Display a listing of the resource.
      */
@@ -51,17 +51,155 @@ class StockController extends Controller
         $branch = $auth['branch'];
         $branches = Branch::where('id', '!=', $branch->id)->get();
         $products = Product::on($branch->connection_name)->get();
- 
+
         return view('stock.create', compact(['branches', 'products']));
     }
- 
 
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
-        //
+        try {
+            $auth = $this->authenticateAndConfigureBranch();
+            $branch = $auth['branch'];
+            $user = $auth['user'];
+
+            $validate = $request->validate([
+                'branch' => 'required|string|max:255',
+                'date' => 'date',
+                'chalan_no' => 'required|string|max:255',
+
+                // Array validation for multiple purchase items
+                'product' => 'required|array|min:1',
+                'product.*' => 'required',
+                'mrp' => 'array',
+                'mrp.*' => 'nullable|numeric|min:0',
+                'box' => 'array',
+                'box.*' => 'nullable|numeric|min:0',
+                'pcs' => 'array',
+                'pcs.*' => 'nullable|numeric|min:0',
+                'amount' => 'array',
+                'amount.*' => 'numeric|min:0',
+
+                // Calculated fields from frontend
+                'total_pcs' => 'array',
+                'total_pcs.*' => 'numeric|min:0',
+            ]);
+
+            \DB::beginTransaction();
+
+            try {
+                foreach ($validate['product'] as $index => $productId) {
+                    dd($productId);
+                    $product = Product::on($branch->connection_name)->find($productId);
+
+                    if (!$product) {
+                        continue; // Skip if product not found
+                    }
+
+                    $transferData = [
+                        'user_id' => $user->id,
+                        'chalan_id' => $validate['chalan_no'],
+                        'branch_id' => $validate['branch'],
+                        'date' => $validate['date'] ?? now('dd-mm-YYYY'),
+                        'product_id' => $validate['product'][$index],
+                        'mrp' => $validate['mrp'][$index] ?? 0,
+                        'box' => $validate['box'][$index] ?? 0,
+                        'pcs' => $validate['pcs'][$index] ?? 0,
+                        'amount' => $validate['amount'][$index] ?? 0
+                    ];
+
+                    Stock::on($branch->connection_name)->create($transferData);
+
+                    // Store inventory data for selected branch
+                    $selectedBranch = Branch::where('id', $validate['branch'])->firstOrFail();
+                    $branchProduct = Product::on($selectedBranch->connection_name)
+                        ->where('product_name', $product->name)
+                        ->orWhere('barcode', $product->barcode)
+                        ->first();
+                    if (!$branchProduct) {
+                        $branchProduct = Product::on($selectedBranch->connection_name)->create([
+                            'product_name' => $product->product_name,
+                            'barcode' => $product->barcode,
+                            'image' => $product->image,
+                            'search_option' => $product->search_option,
+                            'unit_types' => $product->unit_types,
+                            'decimal_btn' => $product->decimal_btn,
+                            'company' => $product->company,
+                            'category_id' => $product->category_id,
+                            'hsn_code_id' => $product->hsn_code_id,
+                            'sgst' => $product->sgst,
+                            'cgst1' => $product->cgst1,
+                            'cgst2' => $product->cgst2,
+                            'cess' => $product->cess,
+                            'mrp' => $product->mrp,
+                            'purchase_rate' => $product->purchase_rate,
+                            'sale_rate_a' => $product->sale_rate_a,
+                            'sale_rate_b' => $product->sale_rate_b,
+                            'sale_rate_c' => $product->sale_rate_c,
+                            'sale_online' => $product->sale_online,
+                            'gst_active' => $product->gst_active,
+                            'converse_carton' => $product->converse_carton,
+                            'carton_barcode' => $product->carton_barcode,
+                            'converse_box' => $product->converse_box,
+                            'box_barcode' => $product->box_barcode,
+                            'converse_pcs' => $product->converse_pcs,
+                            'negative_billing' => $product->negative_billing,
+                            'min_qty' => $product->min_qty,
+                            'reorder_qty' => $product->reorder_qty,
+                            'discount' => $product->discount,
+                            'max_discount' => $product->max_discount,
+                            'discount_scheme' => $product->discount_scheme,
+                            'bonus_use' => $product->bonus_use,
+                            'price_1' => $product->price_1,
+                            'price_2' => $product->price_2,
+                            'price_3' => $product->price_3,
+                            'price_4' => $product->price_4,
+                            'price_5' => $product->price_5,
+                            'Kg_1' => $product->Kg_1,
+                            'Kg_2' => $product->Kg_2,
+                            'Kg_3' => $product->Kg_3,
+                            'Kg_4' => $product->Kg_4,
+                            'Kg_5' => $product->Kg_5,
+                        ]);
+                    }
+
+                    $inventoryData = [
+                        'product_id' => $productId,
+                        'purchase_id' => null,
+                        'type' => 'in',
+                        'quantity' => $validate['total_pcs'][$index] ?? 0,
+                        'mrp' => $validate['mrp'][$index] ?? 0,
+                        'sale_price' => $validate['mrp'][$index] ?? 0,
+                        'purchase_price' => null,
+                        'unit' => $branchProduct->unit_types ?? 'PCS',
+                        'reason' => 'Stock Transferred By ' . $branch->name,
+                        'gst' => null,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ];
+
+                    Inventory::on($selectedBranch->connection_name)->create($inventoryData);
+                }
+
+                \DB::commit();
+
+                return redirect()->route('stock.index')
+                    ->with('success', 'Stock Transferred successfully');
+            } catch (Exception $e) {
+                \DB::rollback();
+                \Log::error('Stock Transfer failed: ' . $e->getMessage());
+                return redirect()->back()
+                    ->with('error', 'Error Transferring stock: ' . $e->getMessage())
+                    ->withInput();
+            }
+        } catch (Exception $ex) {
+            \Log::error('Stock Transfer error: ' . $ex->getMessage());
+            return redirect()->back()
+                ->with('error', 'Error Transferring purchase: ' . $ex->getMessage())
+                ->withInput();
+        }
     }
 
     /**
