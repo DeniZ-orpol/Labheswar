@@ -198,7 +198,6 @@
                                     maxlength="255" readonly step="0.01">
                                 <!-- Hidden fields for calculated data -->
                                 <input type="hidden" name="total_pcs[]" class="total-pcs-hidden">
-                                <input type="hidden" name="base_amount[]" class="base-amount-hidden">
                                 <input type="hidden" name="final_amount[]" class="final-amount-hidden">
                             </td>
 
@@ -1059,6 +1058,10 @@
 
         initProductDropdown();
 
+
+        const shortTime = Date.now(); // last 6 digits of timestamp
+        document.getElementById('chalan_no').value = 'TR' + shortTime;
+
     });
 
 
@@ -1072,12 +1075,7 @@
         newRow.querySelectorAll('input').forEach(input => input.value = '');
         newRow.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
 
-        // Update event handlers for new row
-        const productSearchInput = newRow.querySelector('.product-search-input');
-        if (productSearchInput) {
-            // productSearchInput.setAttribute('onkeyup', 'searchProducts(this)');
-            productSearchInput.setAttribute('onfocus', 'showProductDropdown(this)');
-        }
+       
 
         const hiddenSelect = newRow.querySelector('.hidden-product-select');
         if (hiddenSelect) {
@@ -1096,6 +1094,9 @@
         if (deleteButton) {
             deleteButton.setAttribute('onclick', 'removeRow(this)');
         }
+
+         newRow.dataset.totalPcs  = 0;
+        newRow.dataset.finalAmount = 0;
 
         tableBody.appendChild(newRow);
 
@@ -1235,19 +1236,19 @@
 
         rows.forEach(row => {
             // Get product MRP and box conversion
-            const hiddenSelect = row.querySelector('.hidden-product-select');
-            const selectedOption = hiddenSelect.options[hiddenSelect.selectedIndex];
-            const boxToPcs = parseFloat(selectedOption.getAttribute('data-box-pcs') || 1);
+            // const hiddenSelect = row.querySelector('.hidden-product-select');
+            // const selectedOption = hiddenSelect.options[hiddenSelect.selectedIndex];
+            // const boxToPcs = parseFloat(selectedOption.getAttribute('data-box-pcs') || 1);
 
-            // Get quantities
-            const mrp = parseFloat(row.querySelector('input[name="mrp[]"]')?.value || 0);
-            const box = parseFloat(row.querySelector('input[name="box[]"]')?.value || 0);
-            const pcs = parseFloat(row.querySelector('input[name="pcs[]"]')?.value || 0);
+            // // Get quantities
+            // const mrp = parseFloat(row.querySelector('input[name="mrp[]"]')?.value || 0);
+            // const box = parseFloat(row.querySelector('input[name="box[]"]')?.value || 0);
+            // const pcs = parseFloat(row.querySelector('input[name="pcs[]"]')?.value || 0);
 
-            // Calculate total pieces including box conversion
-            const totalPcs = (box * boxToPcs) + pcs;
-            totalMrpValue += mrp * totalPcs;
-            totalQuantity += totalPcs; // Don't include free in paid quantity
+            // // Calculate total pieces including box conversion
+            // const totalPcs = (box * boxToPcs) + pcs;
+            // totalMrpValue += mrp * totalPcs;
+            // totalQuantity += totalPcs; // Don't include free in paid quantity
 
             // Get calculated amounts from row data
             const finalAmount = parseFloat(row.dataset.finalAmount || 0);
