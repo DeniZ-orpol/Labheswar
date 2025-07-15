@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Stock;
+use App\Models\Branch;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseParty;
 use App\Models\PurchaseReceipt;
+use App\Models\Stock;
 use App\Traits\BranchAuthTrait;
 use Exception;
 use Illuminate\Http\Request;
@@ -46,8 +47,11 @@ class StockController extends Controller
      */
     public function create()
     {
-        //
+        $branches = Branch::all();
+
+        return view('stock.create', compact(['branches']));
     }
+    
 
     /**
      * Store a newly created resource in storage.
