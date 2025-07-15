@@ -13,7 +13,7 @@ License: You must have a valid license purchased only from themeforest(the above
 
 <head>
     <meta charset="utf-8">
-    <link href="{{ asset('images/fevicon.png') }}" rel="shortcut icon">
+    <link href="{{ asset('images/logo.png') }}" rel="shortcut icon">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description"
         content="Enigma admin is super flexible, powerful, clean & modern responsive tailwind admin template with unlimited possibilities.">
@@ -21,7 +21,7 @@ License: You must have a valid license purchased only from themeforest(the above
         content="admin template, Enigma Admin Template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="LEFT4CODE">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Sweetler</title>
+    <title>Labheshwer</title>
     <!-- BEGIN: CSS Assets-->
     <link rel="stylesheet" href="{{ asset('css/app.css') }}" />
     <!-- DataTables CSS -->
@@ -60,7 +60,7 @@ License: You must have a valid license purchased only from themeforest(the above
     <div class="mobile-menu md:hidden">
         <div class="mobile-menu-bar">
             <a href="{{ route('dashboard') }}" class="flex mr-auto">
-                <img alt="Sweetler" class="w-6" src="{{ asset('images/logo.png') }}">
+                <img alt="Labheshwer" class="w-6" src="{{ asset('images/logo.png') }}">
             </a>
             <a href="javascript:;" class="mobile-menu-toggler"> <i data-lucide="bar-chart-2"
                     class="w-8 h-8 text-white transform -rotate-90"></i> </a>
