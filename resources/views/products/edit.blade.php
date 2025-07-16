@@ -320,13 +320,13 @@
                         </div>
 
                         <!-- Purchase rate -->
-                        <div class="input-form col-span-3 mt-3">
+                        <!-- <div class="input-form col-span-3 mt-3">
                             <label for="product_purchase_rate" class="form-label w-full flex flex-col sm:flex-row">
                                 Purchase Rate
                             </label>
                             <input id="product_purchase_rate" type="number" step="0.0001" name="purchase_rate"
                                 class="form-control field-new" value="{{ $product->purchase_rate }}">
-                        </div>
+                        </div> -->
 
                         <!-- Sale rate A -->
                         <div class="input-form col-span-3 mt-3">
@@ -347,13 +347,13 @@
                         </div>
 
                         <!-- Sale rate C -->
-                        <div class="input-form col-span-3 mt-3">
+                        <!-- <div class="input-form col-span-3 mt-3">
                             <label for="product_sale_rate_c" class="form-label w-full flex flex-col sm:flex-row">
                                 Sale Rate C
                             </label>
                             <input id="product_sale_rate_c" type="number" step="0.01" name="sale_rate_c"
                                 class="form-control field-new" value="{{ $product->sale_rate_c }}">
-                        </div>
+                        </div> -->
 
                         <!-- Carton -->
                         <div class="row mt-1 col-span-3">
@@ -420,7 +420,7 @@
                         <!-- Negative Billing -->
                         <div class="input-form col-span-3 mt-3">
                             <label for="negative_billing" class="form-label w-full flex flex-col sm:flex-row">
-                                Negative Billing
+                                Negative Stock
                             </label>
                             <select id="negative_billing" name="negative_billing" class="form-control field-new">
                                 <option value="NO"
@@ -920,10 +920,10 @@
                 selector: '#product_mrp',
                 type: 'input'
             },
-            {
-                selector: '#product_purchase_rate',
-                type: 'input'
-            },
+            // {
+            //     selector: '#product_purchase_rate',
+            //     type: 'input'
+            // },
             {
                 selector: '#product_sale_rate_a',
                 type: 'input'
@@ -932,10 +932,10 @@
                 selector: '#product_sale_rate_b',
                 type: 'input'
             },
-            {
-                selector: '#product_sale_rate_c',
-                type: 'input'
-            },
+            // {
+            //     selector: '#product_sale_rate_c',
+            //     type: 'input'
+            // },
             {
                 selector: '#converse_carton',
                 type: 'input'
