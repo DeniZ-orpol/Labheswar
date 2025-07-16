@@ -164,9 +164,9 @@ class PurchaseController extends Controller
                     // Get product details for reference
 
                     if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                        $product = Product::find($productId);
+                        $product = Product::with('hsnCode')->find($productId);
                     } else {
-                        $product = Product::on($branch->connection_name)->find($productId);
+                        $product = Product::on($branch->connection_name)->with('hsnCode')->find($productId);
                     }
 
                     if (!$product) {
@@ -222,12 +222,14 @@ class PurchaseController extends Controller
                             'purchase_id' => $purchaseId,
                             'type' => 'in', // or 'in' - adjust based on your inventory types
                             'quantity' => $totalWithFree,
+                            'total_qty' => $totalWithFree,
                             'mrp' => $validate['mrp'][$index] ?? 0,
                             'sale_price' => $validate['mrp'][$index] ?? 0,
                             'purchase_price' => $validate['purchase_rate'][$index] ?? 0,
                             'unit' => $product->unit_types ?? 'pcs',
                             'reason' => 'Purchase Bill #' . $validate['bill_no'] . ' - Receipt #' . $purchaseReceiptId,
                             'gst' => $validate['gst'],
+                            'gst_p' => $validate['gst'] === 'on' ? $product->hsnCode->gst : 0,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ];
@@ -458,9 +460,9 @@ class PurchaseController extends Controller
                 foreach ($validate['product'] as $index => $productId) {
                     // Get product details for reference
                     if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                        $product = Product::find($productId);
+                        $product = Product::with('hsnCode')->find($productId);
                     } else {
-                        $product = Product::on($branch->connection_name)->find($productId);
+                        $product = Product::on($branch->connection_name)->with('hsnCode')->find($productId);
                     }
 
                     if (!$product) {
@@ -531,12 +533,14 @@ class PurchaseController extends Controller
                             'purchase_id' => $itemId,
                             'type' => 'in',
                             'quantity' => $totalWithFree,
+                            'total_qty' => $totalWithFree,
                             'mrp' => $validate['mrp'][$index] ?? 0,
                             'sale_price' => $validate['mrp'][$index] ?? 0,
                             'purchase_price' => $validate['purchase_rate'][$index] ?? 0,
                             'unit' => $product->unit_types ?? 'pcs',
                             'reason' => 'Purchase Bill #' . $validate['bill_no'] . ' - Receipt #' . $id,
                             'gst' => $validate['gst'],
+                            'gst_p' => $validate['gst'] === 'on' ? $product->hsnCode->gst : 0,
                             'updated_at' => now(),
                         ];
 

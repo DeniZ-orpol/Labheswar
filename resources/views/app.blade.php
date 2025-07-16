@@ -1222,13 +1222,13 @@ License: You must have a valid license purchased only from themeforest(the above
                                     <div class="side-menu__title"> Company </div>
                                 </a>
                             </li>
-                            <li>
+                            {{-- <li>
                                 <a href="{{ route('inventory.index') }}"
                                     class="side-menu {{ request()->routeIs('inventory.*') ? 'side-menu--active' : '' }}">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title"> Inventory </div>
                                 </a>
-                            </li>
+                            </li> --}}
                             <li>
                                 <a href="{{ route('hsn_codes.index') }}"
                                     class="side-menu {{ request()->routeIs('hsn_codes.*') ? 'side-menu--active' : '' }}">
@@ -1244,7 +1244,8 @@ License: You must have a valid license purchased only from themeforest(the above
                         $productMenuOpen =
                             request()->routeIs('products.*') ||
                             request()->routeIs('categories.*') ||
-                            request()->routeIs('inventory.*');
+                            request()->routeIs('company.*') ||
+                            request()->routeIs('hsn_codes.*');
                     @endphp
                     <li>
                         <a href="javascript:;" class="side-menu">
@@ -1268,7 +1269,7 @@ License: You must have a valid license purchased only from themeforest(the above
                             </li>
                             <li>
                                 <a href="{{ route('categories.index') }}"
-                                    class="side-menu {{ request()->routeIs('category.*') ? 'side-menu--active' : '' }}">
+                                    class="side-menu {{ request()->routeIs('categories.*') ? 'side-menu--active' : '' }}">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title"> Category </div>
                                 </a>
@@ -1280,13 +1281,13 @@ License: You must have a valid license purchased only from themeforest(the above
                                     <div class="side-menu__title"> Company </div>
                                 </a>
                             </li>
-                            <li>
+                            {{-- <li>
                                 <a href="{{ route('inventory.index') }}"
                                     class="side-menu {{ request()->routeIs('inventory.*') ? 'side-menu--active' : '' }}">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title"> Inventory </div>
                                 </a>
-                            </li>
+                            </li> --}}
                             <li>
                                 <a href="{{ route('hsn_codes.index') }}"
                                     class="side-menu {{ request()->routeIs('hsn_codes.*') ? 'side-menu--active' : '' }}">
@@ -1298,7 +1299,9 @@ License: You must have a valid license purchased only from themeforest(the above
                     </li>
                     @php
                         $stockMenuOpen =
-                            request()->routeIs('stock.*');
+                            request()->routeIs('stock.*') ||
+                            request()->routeIs('inventory.*');
+
                     @endphp
                     <li>
                         <a href="javascript:;" class="side-menu">
@@ -1315,19 +1318,19 @@ License: You must have a valid license purchased only from themeforest(the above
                                 </a>
                             </li>
                             <li>
-                                <a href="{{ route('orders.index') }}"
-                                    class="side-menu {{ request()->routeIs('orders.*') ? 'side-menu--active' : '' }}">
+                                <a href="{{ route('inventory.index') }}"
+                                    class="side-menu {{ request()->routeIs('inventory.*') ? 'side-menu--active' : '' }}">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title"> Stock Summary </div>
                                 </a>
                             </li>
-                            <li>
-                                <a href="{{ route('orders.index') }}"
+                            {{-- <li>
+                                <a href="#"
                                     class="side-menu {{ request()->routeIs('orders.*') ? 'side-menu--active' : '' }}">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title"> Stock Movement Analysis   </div>
                                 </a>
-                            </li>
+                            </li> --}}
                         </ul>
                     </li>
                     @php
@@ -1418,7 +1421,7 @@ License: You must have a valid license purchased only from themeforest(the above
                             <a href="{{ route('bank.index') }}"
                                 class="side-menu {{ request()->routeIs('bank.*') ? 'side-menu--active' : '' }}">
                                 <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title"> Bank </div>
+                                <div class="side-menu__title"> Bank & Cash </div>
                             </a>
                         </li>
                         <!-- <li>

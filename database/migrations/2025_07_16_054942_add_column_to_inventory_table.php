@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('inventory', function (Blueprint $table) {
+            $table->unsignedBigInteger('chalan_id')->nullable()->after('purchase_id');
+            $table->integer('total_qty')->nullable()->after('type');
+            $table->integer('gst_p')->nullable()->after('gst');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('inventory', function (Blueprint $table) {
+            $table->dropColumn(['chalan_id', 'total_qty', 'gst_p']);
+        });
+    }
+};
