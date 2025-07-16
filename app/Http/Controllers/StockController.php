@@ -60,7 +60,7 @@ class StockController extends Controller
 
         // Get all stocks matching the chalan_id
         $chalan = ChalanReceipt::on($branch->connection_name)
-        ->with(['stocks.product']) // Optional: eager-load product name
+        ->with(['stocks.product.hsnCode']) // Optional: eager-load product name
         ->where('id', $id)
         ->first();
 
