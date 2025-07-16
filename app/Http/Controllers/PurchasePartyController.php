@@ -57,14 +57,14 @@ class PurchasePartyController extends Controller
                 'gst_heading' => 'nullable|string',
                 'acc_no' => 'nullable|string',
                 'ifsc_code' => 'nullable|string',
-                'station' => 'nullable|string',
+                // 'station' => 'nullable|string',
                 'state' => 'nullable|string',
                 'pincode' => 'nullable|string',
                 'mobile_no' => 'nullable|string',
                 'email' => 'nullable|string',
                 'address' => 'nullable|string',
                 'balancing_method' => 'nullable|string|max:255',
-                'mail_to' => 'nullable|string|max:255',
+                // 'mail_to' => 'nullable|string|max:255',
                 'contact_person' => 'nullable|string|max:255',
                 'designation' => 'nullable|string|max:255',
                 'note' => 'nullable|string|max:255',
@@ -82,13 +82,13 @@ class PurchasePartyController extends Controller
                 'mobile_no' => $validate['mobile_no'] ?? null,
                 'email' => $validate['email'] ?? null,
                 'address' => $validate['address'] ?? null,
-                'station' => $validate['station'] ?? null,
+                // 'station' => $validate['station'] ?? null,
                 'state' => $validate['state'] ?? null,
                 'acc_no' => $validate['acc_no'] ?? null,
                 'ifsc_code' => $validate['ifsc_code'] ?? null,
                 'pincode' => $validate['pincode'] ?? null,
                 'balancing_method' => $validate['balancing_method'] ?? null,
-                'mail_to' => $validate['mail_to'] ?? null,
+                // 'mail_to' => $validate['mail_to'] ?? null,
                 'contact_person' => $validate['contact_person'] ?? null,
                 'designation' => $validate['designation'] ?? null,
                 'note' => $validate['note'] ?? null,
@@ -167,14 +167,14 @@ class PurchasePartyController extends Controller
                 'gst_heading' => 'nullable|string',
                 'acc_no' => 'nullable|string',
                 'ifsc_code' => 'nullable|string',
-                'station' => 'nullable|string',
+                // 'station' => 'nullable|string',
                 'state' => 'nullable|string',
                 'pincode' => 'nullable|string',
                 'mobile_no' => 'nullable|string',
                 'email' => 'nullable|string',
                 'address' => 'nullable|string',
                 'balancing_method' => 'nullable|string|max:255',
-                'mail_to' => 'nullable|string|max:255',
+                // 'mail_to' => 'nullable|string|max:255',
                 'contact_person' => 'nullable|string|max:255',
                 'designation' => 'nullable|string|max:255',
                 'note' => 'nullable|string|max:255',
@@ -192,13 +192,13 @@ class PurchasePartyController extends Controller
                 'mobile_no' => $validate['mobile_no'] ?? null,
                 'email' => $validate['email'] ?? null,
                 'address' => $validate['address'] ?? null,
-                'station' => $validate['station'] ?? null,
+                // 'station' => $validate['station'] ?? null,
                 'state' => $validate['state'] ?? null,
                 'acc_no' => $validate['acc_no'] ?? null,
                 'ifsc_code' => $validate['ifsc_code'] ?? null,
                 'pincode' => $validate['pincode'] ?? null,
                 'balancing_method' => $validate['balancing_method'] ?? null,
-                'mail_to' => $validate['mail_to'] ?? null,
+                // 'mail_to' => $validate['mail_to'] ?? null,
                 'contact_person' => $validate['contact_person'] ?? null,
                 'designation' => $validate['designation'] ?? null,
                 'note' => $validate['note'] ?? null,
@@ -297,11 +297,11 @@ class PurchasePartyController extends Controller
 
         $validate = $request->validate([
             'party_name' => 'required|string',
-            'company_name' => 'required|string',
+            // 'company_name' => 'required|string',
             'gst_number' => 'required|string',
             'acc_no' => 'required|string',
             'ifsc_code' => 'required|string',
-            'station' => 'required|string',
+            // 'station' => 'required|string',
             'pincode' => 'string',
             'mobile_no' => 'string',
             'email' => 'string',
@@ -311,11 +311,11 @@ class PurchasePartyController extends Controller
 
         $data = [
             'party_name' => $validate['party_name'],
-            'company_name' => $validate['party_name'],
+            // 'company_name' => $validate['party_name'],
             'gst_number' => $validate['party_name'],
             'acc_no' => $validate['party_name'],
             'ifsc_code' => $validate['party_name'],
-            'station' => $validate['party_name'],
+            // 'station' => $validate['party_name'],
             'pincode' => $validate['party_name'],
             'mobile_no' => $validate['party_name'],
             'email' => $validate['party_name'],
@@ -323,11 +323,16 @@ class PurchasePartyController extends Controller
         ];
 
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            PurchaseParty::create($data);
+            $party = PurchaseParty::create($data);
         } else {
-            PurchaseParty::on($branch->connection_name)->create($data);
+            $party = PurchaseParty::on($branch->connection_name)->create($data);
         }
 
-        return redirect()->route('purchase.party.index')->with('success', 'Purchase Party Created Successfully!');
+        // return redirect()->route('purchase.party.index')->with('success', 'Purchase Party Created Successfully!');
+        return response()->json([
+            'success' => true,
+            'message' => 'Purchase Party Created Successfully!',
+            'data' => $party,
+        ]);
     }
 }

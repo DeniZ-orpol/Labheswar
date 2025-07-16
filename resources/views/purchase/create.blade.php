@@ -201,7 +201,7 @@
 
                             <!-- Expiry Date -->
                             <td>
-                                <input type="text" name="expiry_date[]" placeholder="DD-MM-YYYY" class="form-control field-new" maxlength="255">
+                                <input type="date" name="expiry_date[]" placeholder="DD-MM-YYYY" class="form-control field-new" maxlength="255">
                             </td>
 
                             <!-- Box -->
@@ -414,11 +414,16 @@
                                 placeholder="Enter party name" required>
                         </div>
                         <div class="col-span-6">
+                            <label for="modal-party-email" class="form-label">Email</label>
+                            <input id="modal-party-email" name="party_email" type="email" class="form-control"
+                                placeholder="Enter Email address">
+                        </div>
+                        <!-- <div class="col-span-6">
                             <label for="modal-company-name" class="form-label">Company Name<span
                                     style="color: red;margin-left: 3px;">*</span></label>
                             <input id="modal-company-name" name="company_name" type="text" class="form-control"
                                 placeholder="Enter company name" required>
-                        </div>
+                        </div> -->
                         <div class="col-span-12">
                             <label for="modal-gst-number" class="form-label">Gst No.<span
                                     style="color: red;margin-left: 3px;">*</span></label>
@@ -437,12 +442,12 @@
                             <input id="modal-ifsc-code" name="ifsc_code" type="text" class="form-control"
                                 placeholder="Enter IFSC Code" required>
                         </div>
-                        <div class="col-span-6">
+                        <!-- <div class="col-span-6">
                             <label for="modal-station" class="form-label">Station<span
                                     style="color: red;margin-left: 3px;">*</span></label>
                             <input id="modal-station" name="station" type="text" class="form-control"
                                 placeholder="Enter station" required>
-                        </div>
+                        </div> -->
                         <div class="col-span-6">
                             <label for="modal-pincode" class="form-label">Pin Code</label>
                             <input id="modal-pincode" name="pincode" type="text" class="form-control"
@@ -452,11 +457,6 @@
                             <label for="modal-party-phone" class="form-label">Mobile NO.</label>
                             <input id="modal-party-phone" name="party_phone" type="text" class="form-control"
                                 placeholder="Enter phone number">
-                        </div>
-                        <div class="col-span-6">
-                            <label for="modal-party-email" class="form-label">Email</label>
-                            <input id="modal-party-email" name="party_email" type="email" class="form-control"
-                                placeholder="Enter Email address">
                         </div>
                         <div class="col-span-12">
                             <label for="modal-party-address" class="form-label">Address</label>
@@ -1239,7 +1239,8 @@
             }
 
             // Create form data
-            const formData = new FormData();
+            const formElement = document.getElementById("party-form");
+            const formData = new FormData(formElement);
             formData.append('party_name', partyName);
             if (partyPhone) formData.append('party_phone', partyPhone);
             if (partyAddress) formData.append('party_address', partyAddress);
@@ -1492,7 +1493,7 @@
         // Update event handlers for new row
         const productSearchInput = newRow.querySelector('.product-search-input');
         if (productSearchInput) {
-            productSearchInput.setAttribute('onkeyup', 'searchProducts(this)');
+            // productSearchInput.setAttribute('onkeyup', 'searchProducts(this)');
             productSearchInput.setAttribute('onfocus', 'showProductDropdown(this)');
         }
 

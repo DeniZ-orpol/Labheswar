@@ -142,7 +142,7 @@
                         <!-- search option -->
                         <div class="input-form col-span-3 mt-3">
                             <label for="search_option" class="form-label w-full flex flex-col sm:flex-row">
-                                Search Option
+                                Alias
                             </label>
                             <input id="search_option" type="text" name="search_option" class="form-control field-new"
                                 value="{{ $product->search_option }}">

@@ -40,16 +40,16 @@
                             <option value="SUNDRY CREDITORS (SUPPLIERS)">SUNDRY CREDITORS (SUPPLIERS)</option>
                         </select>
                     </div>
-                    <div class="input-form col-span-3 mt-3">
-                        <label class="form-label">Party Name<span style="color: red;margin-left: 3px;">
-                                *</span></label>
-                        <input type="text" name="party_name" class="form-control field-new" required>
-                    </div>
                     <!-- GST No -->
                     <div class="input-form col-span-3 mt-3">
                         <label for="gst_number" class="form-label w-full flex flex-col sm:flex-row">GST No</label>
                         <input id="gst_number" type="text" name="gst_number" class="form-control field-new">
                     </div>
+                    <div class="input-form col-span-3 mt-3">
+                        <label class="form-label">Party Name<span style="color: red;margin-left: 3px;">
+                                *</span></label>
+                        <input type="text" name="party_name" class="form-control field-new" required>
+                    </div>                    
                     <!-- State -->
                     <div class="input-form col-span-3 mt-3">
                         <label for="state" class="form-label w-full flex flex-col sm:flex-row">State</label>
@@ -68,15 +68,10 @@
                         <label class="form-label">Gst NO.</label>
                         <input type="text" name="gst_number" class="form-control field-new">
                     </div> --}}
-                    
-                    <div class="input-form col-span-3 mt-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" name="email" class="form-control field-new">
-                    </div>
-                    <div class="input-form col-span-3 mt-3">
+                    {{-- <div class="input-form col-span-3 mt-3">
                         <label class="form-label">Station</label>
                         <input type="text" name="station" class="form-control field-new">
-                    </div>
+                    </div> --}}
                     <div class="input-form col-span-3 mt-3">
                         <label class="form-label">Pin Code</label>
                         <input type="text" name="pincode" class="form-control field-new"
@@ -117,9 +112,13 @@
                         <input id="gst_heading" type="text" name="gst_heading" class="form-control field-new">
                     </div> --}}
                     <!-- Mail To -->
-                    <div class="input-form col-span-3 mt-3">
+                    {{-- <div class="input-form col-span-3 mt-3">
                         <label for="mail_to" class="form-label w-full flex flex-col sm:flex-row">Mail To</label>
                         <input id="mail_to" type="text" name="mail_to" class="form-control field-new">
+                    </div> --}}
+                    <div class="input-form col-span-3 mt-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control field-new">
                     </div>
                     <!-- Contact person -->
                     <div class="input-form col-span-3 mt-3">
@@ -259,7 +258,7 @@
                 { selector: '#state', type: 'input' },
                 { selector: '#pan_no', type: 'input' },
                 { selector: 'input[name="email"]', type: 'input' },
-                { selector: 'input[name="station"]', type: 'input' },
+                // { selector: 'input[name="station"]', type: 'input' },
                 { selector: 'input[name="pincode"]', type: 'input' },
                 { selector: '#address', type: 'textarea' },
                 { selector: '#balancing_method', type: 'select' },

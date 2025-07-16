@@ -825,8 +825,16 @@ License: You must have a valid license purchased only from themeforest(the above
             <!-- BEGIN: Breadcrumb -->
             <nav aria-label="breadcrumb" class="-intro-x h-[45px] mr-auto">
                 <ol class="breadcrumb breadcrumb-light">
-                    <li class="breadcrumb-item"><a href="#">Application</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+                    <li class="breadcrumb-item">
+                        <div class="font-medium">
+                            <div class="font-medium">{{ $user->name }}</div>
+                        </div>
+                        @if ($user->role_data->role_name !== 'Super Admin')
+                            <div class="text-xs text-white/60 mt-0.5 dark:text-slate-500">
+                                {{ $user->branch->name }}</div>
+                        @endif
+                    </li>
+
                 </ol>
             </nav>
             <!-- END: Breadcrumb -->

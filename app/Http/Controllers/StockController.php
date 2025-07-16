@@ -14,7 +14,9 @@ use App\Traits\BranchAuthTrait;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class StockController extends Controller
 {
@@ -29,7 +31,10 @@ class StockController extends Controller
         $branch = $auth['branch'];
         $role = $auth['role'];
 
-        $stocks = Stock::on($branch->connection_name)->get();
+       $stocks = Stock::on($branch->connection_name)
+        ->selectRaw('chalan_id, date, branch_id, user_id, SUM(amount) as total_amount')
+        ->groupBy('chalan_id', 'branch_id', 'user_id', 'date')
+        ->get();
 
         // Get all branches from master database for mapping
         $branches = Branch::all()->keyBy('id');
@@ -42,6 +47,8 @@ class StockController extends Controller
         $stocks->each(function ($stock) use ($users) {
             $stock->user = $users->get($stock->user_id);
         });
+        // dd($stocks);
+        // $stocks = $stocks->groupBy('chalan_id');
 
         // if (strtoupper($role->role_name) === 'SUPER ADMIN') {
         //     $parties = PurchaseParty::get();
@@ -56,6 +63,37 @@ class StockController extends Controller
 
         return view('stock.index', compact(['stocks', 'branches', 'users']));
     }
+
+    public function exportRecordPdf($id)
+    {
+
+            $auth = $this->authenticateAndConfigureBranch();
+            $branch = $auth['branch'];
+
+            // Get all stocks matching the chalan_id
+            $stocks = Stock::on($branch->connection_name)
+                ->where('chalan_id', $id)
+                ->get();
+
+            if ($stocks->isEmpty()) {
+                abort(404, 'Stock records not found for this Chalan ID.');
+            }
+
+            // Get common info from the first record
+            $first = $stocks->first();
+            $branchData = Branch::find($first->branch_id);
+            $userData = User::with('branch')->find($first->user_id);
+
+            // return Pdf::loadView('stock.record_pdf', compact('stocks', 'branchData', 'userData'))
+            //     ->download('stock_' . $id . '.pdf');
+                
+            $pdf = Pdf::loadView('stock.chalan_pdf', compact('stocks', 'branchData', 'userData'));
+
+            // This will display the PDF in the browser
+            return $pdf->stream('chalan_' . $id . '.pdf');
+
+        }
+            
 
     /**
      * Show the form for creating a new resource.

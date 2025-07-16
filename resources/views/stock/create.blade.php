@@ -239,10 +239,10 @@
             <div class="grid grid-cols-1 gap-5">
                 <div class="p-5 flex justify-end">
                     <div class="text-left">
-                        {{-- <div class="column font-medium text-lg">TOTAL INVOICE VALUE</div>
+                        {{-- <div class="column font-medium text-lg">TOTAL CHALAN VALUE</div>
                         <div class="column font-medium text-lg" id="total-invoice-value">0.00</div> --}}
                         <label for="total-invoice-value" class="form-label w-full flex flex-col sm:flex-row text-lg">
-                            TOTAL INVOICE VALUE
+                            TOTAL CHALAN VALUE
                         </label>
                         <input id="total-invoice-value" type="number" step="0.0001" name="total_invoice_value"
                             class="form-control field-new text-lg" placeholder="0.00" maxlength="255">

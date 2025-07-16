@@ -144,7 +144,8 @@ Route::group(['middleware' => 'auth', 'check.remember'], function () {
     Route::resource('stock-in-hand', StockInHandController::class);
 
     // Stocks routes
-    Route::resource('stock', StockController::class);
+Route::resource('stock', StockController::class);
+Route::get('/stock/{id}/pdf', [StockController::class, 'exportRecordPdf'])->name('stock.record_pdf');
 });
 
 

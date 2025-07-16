@@ -18,7 +18,7 @@
                             <p><strong>Mobile No:</strong> {{ $party->mobile_no ?? '-' }}</p>
                             <p><strong>Email:</strong> {{ $party->email ?? '-' }}</p>
                             <p><strong>Address:</strong> {{ $party->address ?? '-' }}</p>
-                            <p><strong>Station:</strong> {{ $party->station ?? '-' }}</p>
+                            <!-- <p><strong>Station:</strong> {{ $party->station ?? '-' }}</p> -->
                             <p><strong>Account No:</strong> {{ $party->acc_no ?? '-' }}</p>
                             <p><strong>IFSC Code:</strong> {{ $party->ifsc_code ?? '-' }}</p>
                             <p><strong>Pin code:</strong> {{ $party->pincode ?? '-' }}</p>

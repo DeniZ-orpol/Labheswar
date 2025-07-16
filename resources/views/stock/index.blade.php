@@ -38,19 +38,12 @@
                                     <td>{{ $stock->date }}</td>
                                     <td>{{ $stock->branch->name }}</td>
                                     <td>{{ $stock->user->name }}</td>
-                                    <td>{{ $stock->amount }}</td>
+                                    <td>{{ $stock->total_amount }}</td>
                                     <td>
                                         <div class="flex gap-2 justify-content-left">
-                                            <form action="#" method="POST"
-                                                onsubmit="return confirm('Are you sure you want to delete this role?');"
-                                                style="display: inline-block;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
-                                            </form>
-                                            <a href="#"
-                                                class="btn btn-primary mr-1 mb-2">
-                                                Edit
+                                            <a href="{{ route('stock.record_pdf', $stock->chalan_id) }}"
+                                                class="btn btn-success mr-1 mb-2" target="_blank">
+                                                View
                                             </a>
                                         </div>
                                     </td>

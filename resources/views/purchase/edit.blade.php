@@ -213,7 +213,7 @@
 
                                 <!-- Expiry Date -->
                                 <td>
-                                    <input type="text" name="expiry_date[]" placeholder="DD-MM-YYYY" class="form-control field-new" maxlength="255" value="{{ $item->expiry_date ?? null }}">
+                                    <input type="date" name="expiry_date[]" placeholder="DD-MM-YYYY" class="form-control field-new" maxlength="255" value="{{ $item->expiry_date ?? null }}">
                                 </td>
 
                                 <!-- MRP -->
