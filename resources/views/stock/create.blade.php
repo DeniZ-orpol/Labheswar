@@ -116,14 +116,6 @@
                         placeholder="DD/MM or YYYY-MM-DD">
                 </div>
 
-                <!-- Chalan No -->
-                <div class="input-form col-span-4 mt-3">
-                    <label for="chalan_no" class="form-label w-full flex flex-col sm:flex-row">
-                        Chalan No
-                    </label>
-                    <input id="chalan_no" type="text" name="chalan_no" class="form-control field-new"
-                        placeholder="Enter Purchase chalan NO" maxlength="255" readonly>
-                </div>
             </div>
 
             <div class="grid grid-cols-12 gap-2 grid-updated mt-12 custome_scroll" style="overflow-x:auto;">
@@ -135,7 +127,7 @@
                         <tr class="border-b fs-7 fw-bolder text-gray-700 uppercase text-center">
                             <th scope="col" class="required">Product</th>
                             {{-- <th scope="col" class="required">Expiry</th> --}}
-                            <th scope="col" class="required">mrp</th>
+                            <th scope="col" class="required">p.rate</th>
                             <th scope="col" class="required">box</th>
                             <th scope="col" class="required">pcs</th>
                             {{-- <th scope="col" class="required">free</th> --}}
@@ -166,6 +158,7 @@
                                         <option value="{{ $product->id }}" data-mrp="{{ $product->mrp ?? 0 }}"
                                             data-name="{{ $product->product_name }}"
                                             data-box-pcs="{{ $product->converse_box ?? 1 }}"
+                                            data-purchase-rate="{{ $product->purchase_rate ?? 0 }}"
                                             data-barcode="{{ $product->barcode ?? '' }}"
                                             data-unit-type="{{ $product->unit_types ?? '' }}">
                                             {{ $product->product_name }}
@@ -176,7 +169,7 @@
 
                             <!-- MRP -->
                             <td>
-                                <input type="number" name="mrp[]" class="form-control field-new" maxlength="255"
+                                <input type="number" name="prate[]" class="form-control field-new" maxlength="255"
                                     onchange="calculateRowAmount(this)">
                             </td>
 
@@ -254,10 +247,10 @@
             </div>
 
             <!-- Hidden fields for purchase receipt totals -->
-            {{-- <input type="hidden" name="receipt_subtotal" id="receipt-subtotal-hidden">
+            <!-- <input type="hidden" name="receipt_subtotal" id="receipt-subtotal-hidden">
             <input type="hidden" name="receipt_total_discount" id="receipt-total-discount-hidden">
-            <input type="hidden" name="receipt_total_gst_amount" id="receipt-total-gst-amount-hidden">
-            <input type="hidden" name="receipt_total_amount" id="receipt-total-amount-hidden"> --}}
+            <input type="hidden" name="receipt_total_gst_amount" id="receipt-total-gst-amount-hidden"> -->
+            <input type="hidden" name="receipt_total_amount" id="receipt-total-amount-hidden">
 
             <div>
                 <a onclick="goBack()" class="btn btn-outline-primary shadow-md mr-2">Cancel</a>
@@ -422,30 +415,18 @@
 
         // Define field sequence
         const formFields = [{
-                selector: '#party_name',
+                selector: '#branch',
                 type: 'select'
             },
             {
-                selector: '#bill_date',
+                selector: '#date',
                 type: 'input'
             },
-            {
-                selector: '#bill_no',
-                type: 'input'
-            },
-            {
-                selector: '#delivery_date',
-                type: 'input'
-            },
-            {
-                selector: 'select[name="gst"]',
-                type: 'select'
-            }
         ];
 
         const productFields = [
             '.product-search-input', // Changed to use search input instead of select
-            'input[name="mrp[]"]',
+            'input[name="prate[]"]',
             'input[name="box[]"]',
             'input[name="pcs[]"]',
         ];
@@ -938,6 +919,7 @@
 
         // Set all data attributes
         newOption.setAttribute('data-mrp', productData.mrp || 0);
+        newOption.setAttribute('data-purchase-rate', productData.purchase_rate || 0);
         newOption.setAttribute('data-name', productData.product_name);
         newOption.setAttribute('data-barcode', productData.barcode || '');
         newOption.setAttribute('data-box-pcs', productData.box_pcs || productData.converse_box || 1);
@@ -991,16 +973,16 @@
                         }, 2000);
 
                         // Move to expiry date field for barcode scans
-                        const mrp = row.querySelector('input[name="mrp[]"]');
-                        if (mrp) {
+                        const prate = row.querySelector('input[name="prate[]"]');
+                        if (prate) {
                             setTimeout(() => {
-                                mrp.focus();
-                                mrp.select();
+                                prate.focus();
+                                prate.select();
                             }, 100);
                         }
                     } else {
                         // Move to expiry date field for manual selections
-                        const nextField = row.querySelector('input[name="mrp[]"]');
+                        const nextField = row.querySelector('input[name="prate[]"]');
                         if (nextField) {
                             setTimeout(() => {
                                 nextField.focus();
@@ -1059,9 +1041,6 @@
         initProductDropdown();
 
 
-        const shortTime = Date.now(); // last 6 digits of timestamp
-        document.getElementById('chalan_no').value = 'TR' + shortTime;
-
     });
 
 
@@ -1083,7 +1062,7 @@
         }
 
         const inputs = newRow.querySelectorAll(
-            'input[name="mrp[]"], input[name="box[]"], input[name="pcs[]"]'
+            'input[name="prate[]"], input[name="box[]"], input[name="pcs[]"]'
         );
         inputs.forEach(input => {
             input.setAttribute('onchange', 'calculateRowAmount(this)');
@@ -1163,7 +1142,7 @@
     function loadProductDetails(selectElement) {
         const selectedOption = selectElement.options[selectElement.selectedIndex];
         const productName = selectedOption.getAttribute('data-name') || '-';
-        const productMrp = selectedOption.getAttribute('data-mrp') || '0.00';
+        const productPrate = selectedOption.getAttribute('data-purchase-rate') || '0.00';
         const boxToPcs = selectedOption.getAttribute('data-box-pcs') || '1';
         const barcode = selectedOption.getAttribute('data-barcode') || '';
         const unitType = selectedOption.getAttribute('data-unit-type') || '';
@@ -1175,10 +1154,11 @@
 
         // Auto-fill purchase rate if available
         const row = selectElement.closest('tr');
-        const mrpInput = row.querySelector('input[name="mrp[]"]');
+        const prateInput = row.querySelector('input[name="prate[]"]');
 
-        if (mrpInput && productMrp > 0 && !mrpInput.value) {
-            mrpInput.value = parseFloat(productMrp).toFixed(2);
+        console.log(productPrate);
+        if (prateInput && productPrate > 0 && !prateInput.value) {
+            prateInput.value = parseFloat(productPrate).toFixed(2);
         }
 
 
@@ -1191,7 +1171,7 @@
         const row = input.closest('tr');
         const box = parseFloat(row.querySelector('input[name="box[]"]')?.value || 0);
         const pcs = parseFloat(row.querySelector('input[name="pcs[]"]')?.value || 0);
-        const purchaseRate = parseFloat(row.querySelector('input[name="mrp[]"]')?.value || 0);
+        const purchaseRate = parseFloat(row.querySelector('input[name="prate[]"]')?.value || 0);
 
         // Get product details including SGST and CGST rates
         const hiddenSelect = row.querySelector('.hidden-product-select');
@@ -1256,6 +1236,7 @@
             totalFinalAmount += finalAmount;
 
             document.getElementById('total-invoice-value').value = totalFinalAmount.toFixed(2);
+            document.getElementById('receipt-total-amount-hidden').value = totalFinalAmount.toFixed(2);
         });
 
     }

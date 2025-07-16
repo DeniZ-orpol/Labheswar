@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('chalan_receipt', function (Blueprint $table) {
             $table->id();
+            $table->string('chalan_no');
             $table->date('date');
             $table->unsignedBigInteger('from_branch');
             $table->unsignedBigInteger('to_branch');

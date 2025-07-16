@@ -18,9 +18,14 @@ class Stock extends Model
         'branch_id',
         'date',
         'product_id',
-        'mrp',
+        'prate',
         'box',
         'pcs',
         'amount',
     ];
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
 }

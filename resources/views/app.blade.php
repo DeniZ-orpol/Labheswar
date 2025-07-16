@@ -1297,13 +1297,47 @@ License: You must have a valid license purchased only from themeforest(the above
                         </ul>
                     </li>
                     @php
+                        $stockMenuOpen =
+                            request()->routeIs('stock.*');
+                    @endphp
+                    <li>
+                        <a href="javascript:;" class="side-menu">
+                            <div class="side-menu__icon"> <i data-lucide="box"></i> </div>
+                            <div class="side-menu__title"> Inventory <i data-lucide="chevron-down"
+                                    class="side-menu__sub-icon "></i> </div>
+                        </a>
+                        <ul class="{{ $stockMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
+                            <li>
+                                <a href="{{ route('stock.index') }}"
+                                    class="side-menu {{ request()->routeIs('stock.*') ? 'side-menu--active' : '' }}">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Stock Transfer </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('orders.index') }}"
+                                    class="side-menu {{ request()->routeIs('orders.*') ? 'side-menu--active' : '' }}">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Stock Summary </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('orders.index') }}"
+                                    class="side-menu {{ request()->routeIs('orders.*') ? 'side-menu--active' : '' }}">
+                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                    <div class="side-menu__title"> Stock Movement Analysis   </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    @php
                         $orderMenuOpen = request()->routeIs('orders.*');
                     @endphp
 
                     <li>
                         <a href="javascript:;" class="side-menu">
                             <div class="side-menu__icon"> <i data-lucide="box"></i> </div>
-                            <div class="side-menu__title"> App Orders <i data-lucide="chevron-down"
+                            <div class="side-menu__title"> Sales <i data-lucide="chevron-down"
                                     class="side-menu__sub-icon "></i> </div>
                         </a>
                         <ul class="{{ $orderMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
@@ -1311,7 +1345,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                 <a href="{{ route('orders.index') }}"
                                     class="side-menu {{ request()->routeIs('orders.*') ? 'side-menu--active' : '' }}">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                    <div class="side-menu__title"> App Orders List </div>
+                                    <div class="side-menu__title"> B2C </div>
                                 </a>
                             </li>
                         </ul>
@@ -1387,41 +1421,18 @@ License: You must have a valid license purchased only from themeforest(the above
                                 <div class="side-menu__title"> Bank </div>
                             </a>
                         </li>
-                        <li>
+                        <!-- <li>
                             <a href="{{ route('stock-in-hand.index') }}"
                                 class="side-menu {{ request()->routeIs('stock-in-hand.*') ? 'side-menu--active' : '' }}">
                                 <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                 <div class="side-menu__title"> Stock in Hand </div>
                             </a>
-                        </li>
+                        </li> -->
                         <li>
                             <a href="{{ route('profit-loose.index') }}"
                                 class="side-menu {{ request()->routeIs('profit-loose.*') ? 'side-menu--active' : '' }}">
                                 <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                 <div class="side-menu__title"> Profit And Loss </div>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                @php
-                    $stockMenuOpen =
-                        request()->routeIs('stock.*');
-                @endphp
-                <li>
-                    <a href="javascript:;" class="side-menu">
-                        <div class="side-menu__icon"> <i data-lucide="hard-drive"></i> </div>
-                        <div class="side-menu__title">
-                            Stocks
-                            <i data-lucide="chevron-down" class="side-menu__sub-icon"></i>
-                        </div>
-                    </a>
-
-                    <ul class="{{ $stockMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
-                        <li>
-                            <a href="{{ route('stock.index') }}"
-                                class="side-menu {{ request()->routeIs('stock.*') ? 'side-menu--active' : '' }}">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title"> Stock Manage </div>
                             </a>
                         </li>
                     </ul>

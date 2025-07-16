@@ -9,6 +9,7 @@ use App\Models\Purchase;
 use App\Models\PurchaseParty;
 use App\Models\PurchaseReceipt;
 use App\Models\Stock;
+use App\Models\ChalanReceipt;
 use App\Models\User;
 use App\Traits\BranchAuthTrait;
 use Exception;
@@ -31,10 +32,9 @@ class StockController extends Controller
         $branch = $auth['branch'];
         $role = $auth['role'];
 
-       $stocks = Stock::on($branch->connection_name)
-        ->selectRaw('chalan_id, date, branch_id, user_id, SUM(amount) as total_amount')
-        ->groupBy('chalan_id', 'branch_id', 'user_id', 'date')
-        ->get();
+
+        $stocks = ChalanReceipt::on($branch->connection_name)
+            ->get();
 
         // Get all branches from master database for mapping
         $branches = Branch::all()->keyBy('id');
@@ -42,24 +42,12 @@ class StockController extends Controller
 
         // Manually attach branch data to each stock record
         $stocks->each(function ($stock) use ($branches) {
-            $stock->branch = $branches->get($stock->branch_id);
+            $stock->fromBranch = $branches->get($stock->from_branch);
+            $stock->toBranch = $branches->get($stock->to_branch);
         });
         $stocks->each(function ($stock) use ($users) {
             $stock->user = $users->get($stock->user_id);
         });
-        // dd($stocks);
-        // $stocks = $stocks->groupBy('chalan_id');
-
-        // if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-        //     $parties = PurchaseParty::get();
-        //     $purchaseReceipt = PurchaseReceipt::with(['purchaseParty', 'createUser', 'updateUser'])
-        //         ->orderByDesc('id')->paginate(10);
-        // } else {
-            // $parties = PurchaseParty::on($branch->connection_name)->get();
-            // $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
-            //     ->with(['purchaseParty', 'createUser', 'updateUser'])
-            //     ->orderByDesc('id')->paginate(10);
-        // }
 
         return view('stock.index', compact(['stocks', 'branches', 'users']));
     }
@@ -67,32 +55,42 @@ class StockController extends Controller
     public function exportRecordPdf($id)
     {
 
-            $auth = $this->authenticateAndConfigureBranch();
-            $branch = $auth['branch'];
+        $auth = $this->authenticateAndConfigureBranch();
+        $branch = $auth['branch'];
 
-            // Get all stocks matching the chalan_id
-            $stocks = Stock::on($branch->connection_name)
-                ->where('chalan_id', $id)
-                ->get();
+        // Get all stocks matching the chalan_id
+        $chalan = ChalanReceipt::on($branch->connection_name)
+        ->with(['stocks.product']) // Optional: eager-load product name
+        ->where('id', $id)
+        ->first();
 
-            if ($stocks->isEmpty()) {
-                abort(404, 'Stock records not found for this Chalan ID.');
-            }
-
-            // Get common info from the first record
-            $first = $stocks->first();
-            $branchData = Branch::find($first->branch_id);
-            $userData = User::with('branch')->find($first->user_id);
-
-            // return Pdf::loadView('stock.record_pdf', compact('stocks', 'branchData', 'userData'))
-            //     ->download('stock_' . $id . '.pdf');
-                
-            $pdf = Pdf::loadView('stock.chalan_pdf', compact('stocks', 'branchData', 'userData'));
-
-            // This will display the PDF in the browser
-            return $pdf->stream('chalan_' . $id . '.pdf');
-
+        if (!$chalan) {
+            abort(404, 'Chalan receipt not found.');
         }
+
+         // Get all branches from master database for mapping
+        $branches = Branch::all()->keyBy('id');
+        $users = User::all()->keyBy('id');
+
+        // Manually attach branch data to each stock record
+            $chalan->fromBranch = $branches->get($chalan->from_branch);
+            $chalan->toBranch = $branches->get($chalan->to_branch);
+            $chalan->user = $users->get($chalan->user_id);
+
+
+        $pdf = Pdf::loadView('stock.chalan_pdf', [
+            'chalan' => $chalan,
+            'stocks' => $chalan->stocks,
+            'branchData' => $chalan->fromBranch,
+            'toBranchData' => $chalan->toBranch,
+            'userData' => $chalan->user,
+        ]);
+
+
+
+        return $pdf->stream('chalan_' . $id . '.pdf');
+
+    }
             
 
     /**
@@ -121,13 +119,12 @@ class StockController extends Controller
             $validate = $request->validate([
                 'branch' => 'required|string|max:255',
                 'date' => 'date',
-                'chalan_no' => 'string|max:255',
-
+                'receipt_total_amount' => 'required',
                 // Array validation for multiple purchase items
                 'product' => 'required|array|min:1',
                 'product.*' => 'required',
-                'mrp' => 'array',
-                'mrp.*' => 'nullable|numeric|min:0',
+                'prate' => 'array',
+                'prate.*' => 'nullable|numeric|min:0',
                 'box' => 'array',
                 'box.*' => 'nullable|numeric|min:0',
                 'pcs' => 'array',
@@ -179,6 +176,18 @@ class StockController extends Controller
             \DB::beginTransaction();
 
             try {
+                $count = ChalanReceipt::on($branch->connection_name)->count() + 1;
+
+                $chalanData = [
+                    'chalan_no' =>"TR-" .$count,
+                    'from_branch' => $branch->id,
+                    'to_branch' => $validate['branch'],
+                    'user_id' => $user->id,
+                    'date' => $validate['date'] ?? now()->format('Y-m-d'),
+                    'total_amount' => $validate['receipt_total_amount']
+                ];
+                $chalanReceipt = ChalanReceipt::on($branch->connection_name)->create($chalanData);
+
                 foreach ($validate['product'] as $index => $productId) {
                     $product = Product::on($branch->connection_name)->find($productId);
 
@@ -194,12 +203,10 @@ class StockController extends Controller
 
                     // Create stock transfer record
                     $transferData = [
-                        'user_id' => $user->id,
-                        'chalan_id' => $validate['chalan_no'],
-                        'branch_id' => $validate['branch'],
+                        'chalan_id' => $chalanReceipt->id,
                         'date' => $validate['date'] ?? now()->format('Y-m-d'),
                         'product_id' => $validate['product'][$index],
-                        'mrp' => $validate['mrp'][$index] ?? 0,
+                        'prate' => $validate['prate'][$index] ?? 0,
                         'box' => $validate['box'][$index] ?? 0,
                         'pcs' => $validate['pcs'][$index] ?? 0,
                         'amount' => $validate['amount'][$index] ?? 0
@@ -213,8 +220,8 @@ class StockController extends Controller
                         'purchase_id' => null,
                         'type' => 'out',
                         'quantity' => '-'.$requestedQuantity,
-                        'mrp' => $validate['mrp'][$index] ?? 0,
-                        'sale_price' => $validate['mrp'][$index] ?? 0,
+                        'mrp' => $validate['prate'][$index] ?? 0,
+                        'sale_price' => $validate['prate'][$index] ?? 0,
                         'purchase_price' => null,
                         'unit' => $product->unit_types ?? 'PCS',
                         'reason' => 'Stock Transferred To ' . Branch::find($validate['branch'])->name ?? 'Branch',
@@ -280,8 +287,8 @@ class StockController extends Controller
                         'purchase_id' => null,
                         'type' => 'in',
                         'quantity' => $requestedQuantity,
-                        'mrp' => $validate['mrp'][$index] ?? 0,
-                        'sale_price' => $validate['mrp'][$index] ?? 0,
+                        'mrp' => $validate['prate'][$index] ?? 0,
+                        'sale_price' => $validate['prate'][$index] ?? 0,
                         'purchase_price' => null,
                         'unit' => $branchProduct->unit_types ?? 'PCS',
                         'reason' => 'Stock Transferred From ' . $branch->name,

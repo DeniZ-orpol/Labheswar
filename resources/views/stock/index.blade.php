@@ -22,8 +22,9 @@
                             <th>#</th>
                             <th>Chalan NO</th>
                             <th>Date</th>
+                            <th>Transfer From Branch</th>
                             <th>Transfer to Branch</th>
-                            <th>User Name</th>
+                            <th>Transfer By (User Name)</th>
                             <th>Amount</th>
                             {{-- <th>Total</th> --}}
                             <th style="TEXT-ALIGN: left;">Actions</th>
@@ -34,14 +35,15 @@
                             @foreach ($stocks as $stock)
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $stock->chalan_id }}</td>
+                                    <td>{{ $stock->chalan_no }}</td>
                                     <td>{{ $stock->date }}</td>
-                                    <td>{{ $stock->branch->name }}</td>
+                                    <td>{{ $stock->fromBranch->name }}</td>
+                                    <td>{{ $stock->toBranch->name }}</td>
                                     <td>{{ $stock->user->name }}</td>
                                     <td>{{ $stock->total_amount }}</td>
                                     <td>
                                         <div class="flex gap-2 justify-content-left">
-                                            <a href="{{ route('stock.record_pdf', $stock->chalan_id) }}"
+                                            <a href="{{ route('stock.record_pdf', $stock->id) }}"
                                                 class="btn btn-success mr-1 mb-2" target="_blank">
                                                 View
                                             </a>

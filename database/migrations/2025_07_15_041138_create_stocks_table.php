@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('branch_id')->nullable();
             $table->date('date')->nullable();
             $table->unsignedBigInteger('product_id')->nullable();
-            $table->decimal('mrp')->nullable();
+            $table->decimal('prate')->nullable();
             $table->decimal('box')->nullable();
             $table->decimal('pcs')->nullable();
             $table->decimal('amount')->nullable();
