@@ -258,18 +258,18 @@
                         </div>
 
                         <!-- Purchase rate -->
-                        <div class="input-form col-span-3 mt-3">
+                        <!-- <div class="input-form col-span-3 mt-3">
                             <label for="product_purchase_rate" class="form-label w-full flex flex-col sm:flex-row">
                                 Purchase Rate
                             </label>
                             <input id="product_purchase_rate" type="number" step="0.0001" name="purchase_rate"
                                 class="form-control field-new">
-                        </div>
+                        </div> -->
 
                         <!-- Sale rate A -->
                         <div class="input-form col-span-3 mt-3">
                             <label for="product_sale_rate_a" class="form-label w-full flex flex-col sm:flex-row">
-                                Sale Rate A
+                                Sale Rate A 
                             </label>
                             <input id="product_sale_rate_a" type="number" step="0.01" name="sale_rate_a"
                                 class="form-control field-new">
@@ -285,13 +285,13 @@
                         </div>
 
                         <!-- Sale rate C -->
-                        <div class="input-form col-span-3 mt-3">
+                        <!-- <div class="input-form col-span-3 mt-3">
                             <label for="product_sale_rate_c" class="form-label w-full flex flex-col sm:flex-row">
                                 Sale Rate C
                             </label>
                             <input id="product_sale_rate_c" type="number" step="0.01" name="sale_rate_c"
                                 class="form-control field-new">
-                        </div>
+                        </div> -->
 
                         <!-- Carton -->
                         <div class="row mt-3 col-span-3">
@@ -357,7 +357,7 @@
                         <!-- Negative Billing -->
                         <div class="input-form col-span-3 mt-3">
                             <label for="negative_billing" class="form-label w-full flex flex-col sm:flex-row">
-                                Negative Billing
+                                Negative Stock
                             </label>
                             <select id="negative_billing" name="negative_billing" class="form-control field-new">
                                 <option value="NO" selected>NO</option>
@@ -369,7 +369,7 @@
                         </div>
 
                         <!-- Min quantity -->
-                        <div class="input-form col-span-3">
+                        <div class="input-form col-span-3 mt-3">
                             <label for="min_qty" class="form-label w-full flex flex-col sm:flex-row">
                                 Minimum Quantity
                             </label>
@@ -377,7 +377,7 @@
                         </div>
 
                         <!-- Reorder quantity -->
-                        <div class="input-form col-span-3">
+                        <div class="input-form col-span-3 mt-3">
                             <label for="reorder_qty" class="form-label w-full flex flex-col sm:flex-row">
                                 Reorder Quantity
                             </label>
@@ -385,7 +385,7 @@
                         </div>
 
                         <!-- Discount -->
-                        <div class="input-form col-span-3">
+                        <div class="input-form col-span-3 mt-3">
                             <label for="negative_billing" class="form-label w-full flex flex-col sm:flex-row">
                                 Discount
                             </label>
@@ -397,7 +397,7 @@
                         </div>
 
                         <!-- Max Discount -->
-                        <div class="input-form col-span-3">
+                        <div class="input-form col-span-3 mt-3">
                             <label for="max_discount" class="form-label w-full flex flex-col sm:flex-row">
                                 Max Discount (%)
                             </label>
@@ -764,10 +764,10 @@
                 selector: '#product_mrp',
                 type: 'input'
             },
-            {
-                selector: '#product_purchase_rate',
-                type: 'input'
-            },
+            // {
+            //     selector: '#product_purchase_rate',
+            //     type: 'input'
+            // },
             {
                 selector: '#product_sale_rate_a',
                 type: 'input'
@@ -776,10 +776,10 @@
                 selector: '#product_sale_rate_b',
                 type: 'input'
             },
-            {
-                selector: '#product_sale_rate_c',
-                type: 'input'
-            },
+            // {
+            //     selector: '#product_sale_rate_c',
+            //     type: 'input'
+            // },
             {
                 selector: '#converse_carton',
                 type: 'input'
