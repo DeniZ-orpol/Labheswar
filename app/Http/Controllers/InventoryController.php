@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Branch;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Purchase;
 use App\Traits\BranchAuthTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -78,11 +79,11 @@ class InventoryController extends Controller
 
             if ($productIds->isNotEmpty()) {
                 if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                    $products = Product::whereIn('id', $productIds)
+                    $products = Product::with('hsnCode')->whereIn('id', $productIds)
                         ->get()
                         ->keyBy('id');
                 } else {
-                    $products = Product::on($branch->connection_name)
+                    $products = Product::on($branch->connection_name)->with('hsnCode')
                         ->whereIn('id', $productIds)
                         ->get()
                         ->keyBy('id');
@@ -103,19 +104,45 @@ class InventoryController extends Controller
                             $totalQuantity += $inventory->quantity;
                         }
 
-                        // Create single inventory record for this product
-                        $groupedInventory = (object) [
-                            'product_id' => $productId,
-                            'product' => $product,
-                            // 'type' => 'calculated',
-                            'quantity' => $totalQuantity,
-                            'unit' => $productInventories->first()->unit ?? 'pcs',
-                            // 'reason' => 'Total Stock',
-                            'created_at' => $productInventories->max('created_at'),
-                            'updated_at' => $productInventories->max('updated_at')
-                        ];
+                        // Only proceed if there's available stock
+                        if ($totalQuantity > 0) {
+                            // Calculate purchase amounts using FIFO method for available quantity only
+                            $purchaseAmounts = $this->calculatePurchaseAmountsForAvailableStock($productInventories, $totalQuantity);
 
-                        $groupedInventories->push($groupedInventory);
+                            // Create single inventory record for this product
+                            $groupedInventory = (object) [
+                                'product_id' => $productId,
+                                'product' => $product,
+                                // 'type' => 'calculated',
+                                'quantity' => $totalQuantity,
+                                'unit' => $productInventories->first()->unit ?? 'pcs',
+                                // 'reason' => 'Total Stock',
+                                'taxable_value' => $purchaseAmounts['taxable_value'],
+                                'final_value' => $purchaseAmounts['final_value'],
+                                'gst_amount' => $purchaseAmounts['gst_amount'],
+                                'created_at' => $productInventories->max('created_at'),
+                                'updated_at' => $productInventories->max('updated_at')
+                            ];
+
+                            $groupedInventories->push($groupedInventory);
+                        } else {
+                            // If no available stock, still show the product with zero amounts
+                            $groupedInventory = (object) [
+                                'product_id' => $productId,
+                                'product' => $product,
+                                // 'type' => 'calculated',
+                                'quantity' => $totalQuantity,
+                                'unit' => $productInventories->first()->unit ?? 'pcs',
+                                // 'reason' => 'Total Stock',
+                                'taxable_value' => 0,
+                                'final_value' => 0,
+                                'gst_amount' => 0,
+                                'created_at' => $productInventories->max('created_at'),
+                                'updated_at' => $productInventories->max('updated_at')
+                            ];
+
+                            $groupedInventories->push($groupedInventory);
+                        }
                     }
                 });
 
@@ -126,6 +153,51 @@ class InventoryController extends Controller
         return view('inventory.index', compact('inventories'));
     }
 
+    /**
+     * Calculate purchase amounts for available stock using FIFO method
+     */
+    private function calculatePurchaseAmountsForAvailableStock($productInventories, $availableQuantity)
+    {
+        // Sort inventories by created_at (FIFO - First In, First Out)
+        $sortedInventories = $productInventories->sortBy('created_at');
+
+        $remainingQuantity = $availableQuantity;
+        $totalTaxableValue = 0;
+        $totalFinalValue = 0;
+
+        // Process positive quantities (stock in) until we have accounted for available quantity
+        foreach ($sortedInventories as $inventory) {
+            if ($remainingQuantity <= 0) {
+                break;
+            }
+
+            // Only process positive quantities (stock in)
+            if ($inventory->quantity > 0) {
+                // Take the minimum of remaining quantity or current inventory quantity
+                $quantityToConsider = min($remainingQuantity, $inventory->quantity);
+
+                // Calculate taxable value for this portion
+                $taxableValue = $quantityToConsider * $inventory->purchase_price;
+                $totalTaxableValue += $taxableValue;
+
+                // Calculate GST amount and final value
+                $gstAmount = ($taxableValue * $inventory->gst_p) / 100;
+                $finalValue = $taxableValue + $gstAmount;
+                $totalFinalValue += $finalValue;
+
+                // Reduce remaining quantity
+                $remainingQuantity -= $quantityToConsider;
+            }
+        }
+
+        return [
+            'taxable_value' => round($totalTaxableValue, 2),
+            'final_value' => round($totalFinalValue, 2),
+            'gst_amount' => round($totalFinalValue - $totalTaxableValue, 2),
+            // 'average_purchase_price' => $availableQuantity > 0 ? round($totalTaxableValue / $availableQuantity, 2) : 0
+        ];
+    }
+
     public function store(Request $request)
     {
         $auth = $this->authenticateAndConfigureBranch();
@@ -134,36 +206,23 @@ class InventoryController extends Controller
         $role = $auth['role'];
 
         try {
-            // $existing = Inventory::on($branch->connection_name)
-            //     ->where('product_id', $request->product_id)
-            //     ->first();
-
-            // if ($existing) {
-            //     // Update quantity based on type
-            //     $newQty = $existing->quantity;
-            //     if (strtoupper($request->type) == 'IN') {
-            //         $newQty += $request->quantity;
-            //     } elseif (strtoupper($request->type) == 'OUT') {
-            //         $newQty -= $request->quantity;
-            //     }
-
-            //     Inventory::on($branch->connection_name)
-            //         ->where('product_id', $request->product_id)
-            //         ->update([
-            //             'quantity' => $newQty,
-            //             'reason' => $request->reason,
-            //             'updated_at' => now(),
-            //         ]);
-            // } else {
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                $product = Product::with('hsnCode')->find($request->product_id);
+            } else {
+                $product = Product::on($branch->connection_name)->with('hsnCode')->find($request->product_id);
+            }
             // Insert new inventory row
             $data = [
                 'product_id' => $request->product_id,
                 'quantity' => strtoupper($request->type) == 'IN' ? $request->quantity : -$request->quantity,
+                'total_qty' => strtoupper($request->type) == 'IN' ? $request->quantity : -$request->quantity,
+                'unit' => $product->unit_types,
                 'type' => $request->type,
                 'mrp' => $request->mrp ?? 0,
                 'sale_price' => $request->sale_price ?? 0,
                 'purchase_price' => $request->purchase_price ?? 0,
                 'gst' => $request->gst,
+                'gst_p' => $request->gst == 'on' ? $product->hsnCode->gst : 0,
                 'reason' => $request->reason,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -199,7 +258,8 @@ class InventoryController extends Controller
         return view('inventory.create', compact('products'));
     }
 
-    public function show(string $id) {
+    public function show(string $id)
+    {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];

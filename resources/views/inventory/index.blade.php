@@ -16,10 +16,14 @@
                     <thead class="bg-gray-100">
                         <tr>
                             <th>#</th>
-                            <th>Product Image</th>
-                            <th>Product Name</th>
-                            <th>Qty</th>
+                            {{-- <th>Product Image</th> --}}
+                            <th>Item Name</th>
+                            <th>HSN</th>
                             <th>Unit</th>
+                            <th>Qty</th>
+                            {{-- <th>Rate</th> --}}
+                            <th>Taxable Value</th>
+                            <th>Final Value</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -27,25 +31,19 @@
                         @foreach ($inventories as $index => $inventory)
                             <tr>
                                 <td>{{ $index + 1 }}</td>
-                                <td>
-                                    @if ($inventory->product->image)
-                                        <img src="{{ asset('storage/' . $inventory->product->image) }}" alt="Image"
-                                            class="w-10 h-10 rounded-full object-cover">
-                                    @else
-                                        <span class="text-gray-400 italic">No Image</span>
-                                    @endif
-                                </td>
                                 <td>{{ $inventory->product->product_name }}</td>
-                                {{-- {{dd($inventory)}} --}}
+                                <td>{{ $inventory->product->hsnCode->hsn_code.' (gst: '.$inventory->product->hsnCode->gst.'%)' }}</td>
+                                <td>{{ $inventory->product->unit_types ?? '-' }}</td>
                                 <td class="{{ $inventory->quantity < 0 ? 'text-red-500 font-bold' : '' }}">
                                     {{ $inventory->quantity }}
                                 </td>
-                                <td>{{ $inventory->product->unit_types ?? '-' }}</td>
+                                <td>{{ $inventory->taxable_value ?? '-' }}</td>
+                                <td>{{ $inventory->final_value ?? '-' }}</td>
                                 <td>
                                     <div class="flex gap-2">
                                         <button onclick="openInventoryModal({{ $inventory->product_id }})"
                                             class="flex items-center justify-center text-success cursor-pointer hover:text-success-dark">
-                                            View
+                                            History
                                         </button>
                                     </div>
                                 </td>
@@ -184,7 +182,7 @@
 
                 row.innerHTML = `
             <td class="border border-gray-300 px-3 py-2 text-sm">${index + 1}</td>
-            <td class="border border-gray-300 px-3 py-2 text-sm ${inventory.quantity < 0 ? 'text-red-500 font-bold' : ''}">${inventory.quantity}</td>
+            <td class="border border-gray-300 px-3 py-2 text-sm ${inventory.total_qty < 0 ? 'text-red-500 font-bold' : ''}">${inventory.total_qty}</td>
             <td class="border border-gray-300 px-3 py-2 text-sm">${inventory.purchase_id == null ? `${inventory.type} (Opening)` : `${inventory.type} (Purchase)`}</td>
             <td class="border border-gray-300 px-3 py-2 text-sm">₹${parseFloat(inventory.mrp || 0).toFixed(2)}</td>
             <td class="border border-gray-300 px-3 py-2 text-sm">₹${parseFloat(inventory.sale_price || 0).toFixed(2)}</td>
