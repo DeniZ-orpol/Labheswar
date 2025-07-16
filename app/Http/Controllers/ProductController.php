@@ -573,13 +573,13 @@ class ProductController extends Controller
                     if (!empty($row[0]) || !empty($row[1])) { // Check if name exists
 
                         $companyId = null;
-                        if (!empty($row[6])) {
+                        if (!empty($row[5])) {
                             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                                $company = Company::where('name', $row[6])->first();
+                                $company = Company::where('name', $row[5])->first();
 
                                 if (!$company) {
                                     $companyId = Company::insertGetId([
-                                        'name' => $row[6],
+                                        'name' => $row[5],
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);
@@ -588,12 +588,12 @@ class ProductController extends Controller
                                 }
                             } else {
                                 $company = Company::on($branch->connection_name)
-                                    ->where('name', $row[6])
+                                    ->where('name', $row[5])
                                     ->first();
 
                                 if (!$company) {
                                     $companyId = Company::on($branch->connection_name)->insertGetId([
-                                        'name' => $row[6],
+                                        'name' => $row[5],
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);
@@ -605,13 +605,13 @@ class ProductController extends Controller
 
                         // Handle Category - create or get existing
                         $categoryId = null;
-                        if (!empty($row[7])) {
+                        if (!empty($row[6])) {
                             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                                $category = Category::where('name', $row[7])->first();
+                                $category = Category::where('name', $row[6])->first();
 
                                 if (!$category) {
                                     $categoryId = Category::insertGetId([
-                                        'name' => $row[7],
+                                        'name' => $row[6],
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);
@@ -620,12 +620,12 @@ class ProductController extends Controller
                                 }
                             } else {
                                 $category = Category::on($branch->connection_name)
-                                    ->where('name', $row[7])
+                                    ->where('name', $row[6])
                                     ->first();
 
                                 if (!$category) {
                                     $categoryId = Category::on($branch->connection_name)->insertGetId([
-                                        'name' => $row[7],
+                                        'name' => $row[6],
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);
@@ -637,17 +637,17 @@ class ProductController extends Controller
 
                         // Handle HSN Code - create or get existing
                         $hsnCodeId = null;
-                        if (!empty($row[8])) {
-                            $gst = $row[11] ?? '';
-                            $shortName = '';
+                        if (!empty($row[7])) {
+                            $gst = $row[8] ?? '';
+                            $shortName = $row[9] ?? '';
                             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                                $hsnCode = HsnCode::where('hsn_code', $row[8])
+                                $hsnCode = HsnCode::where('hsn_code', $row[7])
                                     ->where('gst', $gst)
                                     ->first();
 
                                 if (!$hsnCode) {
                                     $hsnCodeId = HsnCode::insertGetId([
-                                        'hsn_code' => $row[8],
+                                        'hsn_code' => $row[7],
                                         'gst' => $gst,
                                         'short_name' => $shortName,
                                         'created_at' => now(),
@@ -658,13 +658,13 @@ class ProductController extends Controller
                                 }
                             } else {
                                 $hsnCode = HsnCode::on($branch->connection_name)
-                                    ->where('hsn_code', $row[8])
+                                    ->where('hsn_code', $row[7])
                                     ->where('gst', $gst)
                                     ->first();
 
                                 if (!$hsnCode) {
                                     $hsnCodeId = HsnCode::on($branch->connection_name)->insertGetId([
-                                        'hsn_code' => $row[8],
+                                        'hsn_code' => $row[7],
                                         'gst' => $gst,
                                         'short_name' => $shortName,
                                         'created_at' => now(),
@@ -709,33 +709,32 @@ class ProductController extends Controller
                         $data = [
                             'product_name' => $row[0] ?? '',
                             'barcode' => $row[1] ?? '',
-                            'search_option' => $row[3] ?? '',
-                            'unit_types' => $row[4] ?? '',
-                            'decimal_btn' => $row[5] ?? '',
+                            'search_option' => $row[2] ?? '',
+                            'unit_types' => $row[3] ?? '',
+                            'decimal_btn' => $row[4] ?? '',
                             'company' => $companyId ?? '',
                             'category_id' => $categoryId ?? '',
                             'hsn_code_id' => $hsnCodeId ?? '',
-                            // 'sgst' => $row[9] ?? '',
-                            // 'cgst1' => $row[10] ?? '',
-                            // 'cgst2' => $row[11] ?? '',
-                            'cess' => 0,
-                            'mrp' => $row[13] ?? '',
-                            'purchase_rate' => $row[14] ?? '',
-                            'sale_rate_a' => $row[15] ?? 0,
-                            'sale_rate_b' => $row[16] ?? 0,
-                            'sale_rate_c' => $row[17] ?? 0,
-                            'sale_online' => $row[18] ?? 0,
-                            'converse_carton' => $row[19] ?? 0,
-                            'carton_barcode' => null,
-                            'converse_box' => $row[20] ?? 1,
-                            'box_barcode' => null,
-                            'negative_billing' => $row[22] ?? null,
-                            'min_qty' => $row[23] ?? 0,
-                            'reorder_qty' => $row[24] ?? 0,
-                            'discount' => $row[25] ?? null,
-                            'max_discount' => $row[26] ?? 0,
-                            'discount_scheme' => $row[27] ?? null,
-                            'bonus_use' => $row[28] ?? 0,
+                            'cess' => $row[10] ?? 0,
+                            'mrp' => $row[11] ?? '',
+                            'purchase_rate' => $row[12] ?? '',
+                            'sale_rate_a' => $row[13] ?? 0,
+                            'sale_rate_b' => $row[14] != '' ? $row[14] : 0,
+                            'sale_rate_c' => $row[15] != '' ? $row[15] : 0,
+                            'sale_online' => $row[16] != '' ? $row[16] : 0,
+                            'converse_carton' => $row[17] ?? 0,
+                            'carton_barcode' => $row[18] ?? null,
+                            'converse_box' => $row[19] ?? 1,
+                            'box_barcode' => $row[20] ?? null,
+                            'negative_billing' => $row[21] ?? 'NO',
+                            'min_qty' => $row[22] ?? 0,
+                            'reorder_qty' => $row[23] ?? 0,
+                            'discount' => $row[24] ?? null,
+                            'max_discount' => $row[25] ?? 0,
+                            'discount_scheme' => $row[26] ?? null,
+                            'bonus_use' => $row[27] == 'yes' ? 1 : 0,
+                            'created_at' => now(),
+                            'updated_at' => now()
                         ];
 
                         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
