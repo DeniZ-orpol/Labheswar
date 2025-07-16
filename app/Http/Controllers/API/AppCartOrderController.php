@@ -224,12 +224,12 @@ class AppCartOrderController extends Controller
                     ->where('order_receipt_id', null) // Ensure it's not already part of an order receipt
                     ->first();
 
-                if ($existingCartItem) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Product already exists in cart. Please remove the existing item first or update its quantity.'
-                    ], 400);
-                }
+                // if ($existingCartItem) {
+                //     return response()->json([
+                //         'success' => false,
+                //         'message' => 'Product already exists in cart. Please remove the existing item first or update its quantity.'
+                //     ], 400);
+                // }
 
                 // Calculate cart item values based on product type
                 if ($isLooseQuantity) {
@@ -248,22 +248,29 @@ class AppCartOrderController extends Controller
                 $gstAmount = ($subTotal * $gstPercent) / 100;
                 $totalAmount = $subTotal + $gstAmount;
 
-                // Create new cart item using calculated values
-                $cartItem = AppCartsOrders::on($branch->connection_name)->create([
-                    'user_id' => $user->id,
-                    'cart_id' => $cart->id,
-                    'product_id' => $productId,
-                    'firm_id' => $product->firm_id ?? null,
-                    'product_weight' => $finalWeight, // Store base unit value (e.g., 0.5 for 500g)
-                    'product_price' => $productPrice, // base price without gst
-                    'product_quantity' => $finalQuantity,
-                    'taxes' => $gstAmount,
-                    'sub_total' => $subTotal,
-                    'total_amount' => $totalAmount,
-                    'gst' => $gstAmount,
-                    'gst_p' => $gstPercent,
-                    'return_product' => 0
-                ]);
+                if($existingCartItem) {
+                    $updatedQuantity = $existingCartItem->product_quantity + $finalQuantity;
+                    $existingCartItem->update([
+                        'product_quantity' => $updatedQuantity
+                    ]);
+                } else {
+                    // Create new cart item using calculated values
+                    $cartItem = AppCartsOrders::on($branch->connection_name)->create([
+                        'user_id' => $user->id,
+                        'cart_id' => $cart->id,
+                        'product_id' => $productId,
+                        'firm_id' => $product->firm_id ?? null,
+                        'product_weight' => $finalWeight, // Store base unit value (e.g., 0.5 for 500g)
+                        'product_price' => $productPrice, // base price without gst
+                        'product_quantity' => $finalQuantity,
+                        'taxes' => $gstAmount,
+                        'sub_total' => $subTotal,
+                        'total_amount' => $totalAmount,
+                        'gst' => $gstAmount,
+                        'gst_p' => $gstPercent,
+                        'return_product' => 0
+                    ]);
+                }
 
                 // Update popular products
                 $selection = PopularProducts::on($branch->connection_name)
@@ -320,7 +327,7 @@ class AppCartOrderController extends Controller
                     'data' => [
                         'cart_id' => $cart->id,
                         'cart_status' => $cart->status,
-                        'cart_item' => $cartItem,
+                        'cart_item' => $cartItem ?? $existingCartItem,
                         'remaining_inventory' => $remainingTotalStock,
                         'branch' => $branch->name,
                         'is_loose_quantity' => $isLooseQuantity,
@@ -1070,12 +1077,12 @@ class AppCartOrderController extends Controller
                     ->where('order_receipt_id', null) // Ensure it's not already part of an order receipt
                     ->first();
 
-                if ($existingCartItem) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Product already exists in cart. Please remove the existing item first or update its quantity.'
-                    ], 400);
-                }
+                // if ($existingCartItem) {
+                //     return response()->json([
+                //         'success' => false,
+                //         'message' => 'Product already exists in cart. Please remove the existing item first or update its quantity.'
+                //     ], 400);
+                // }
 
                 // Calculate cart item values based on product type
                 if ($isLooseQuantity) {
@@ -1094,22 +1101,29 @@ class AppCartOrderController extends Controller
                 $gstAmount = ($subTotal * $gstPercent) / 100;
                 $totalAmount = $subTotal + $gstAmount;
 
-                // Create new cart item using calculated values
-                $cartItem = AppCartsOrders::on($branch->connection_name)->create([
-                    'user_id' => $user->id,
-                    'cart_id' => $cart->id,
-                    'product_id' => $productId,
-                    'firm_id' => $product->firm_id ?? null,
-                    'product_weight' => $finalWeight, // Store base unit value (e.g., 0.5 for 500g)
-                    'product_price' => $productPrice, // base price without gst
-                    'product_quantity' => $finalQuantity,
-                    'taxes' => $gstAmount,
-                    'sub_total' => $subTotal,
-                    'total_amount' => $totalAmount,
-                    'gst' => $gstAmount,
-                    'gst_p' => $gstPercent,
-                    'return_product' => 0
-                ]);
+                if ($existingCartItem) {
+                    $updatedQuantity = $existingCartItem->product_quantity + $finalQuantity;
+                    $existingCartItem->update([
+                        'product_quantity' => $updatedQuantity
+                    ]);
+                } else {
+                    // Create new cart item using calculated values
+                    $cartItem = AppCartsOrders::on($branch->connection_name)->create([
+                        'user_id' => $user->id,
+                        'cart_id' => $cart->id,
+                        'product_id' => $productId,
+                        'firm_id' => $product->firm_id ?? null,
+                        'product_weight' => $finalWeight, // Store base unit value (e.g., 0.5 for 500g)
+                        'product_price' => $productPrice, // base price without gst
+                        'product_quantity' => $finalQuantity,
+                        'taxes' => $gstAmount,
+                        'sub_total' => $subTotal,
+                        'total_amount' => $totalAmount,
+                        'gst' => $gstAmount,
+                        'gst_p' => $gstPercent,
+                        'return_product' => 0
+                    ]);
+                }
 
                 // Update popular products
                 $selection = PopularProducts::on($branch->connection_name)
@@ -1166,7 +1180,7 @@ class AppCartOrderController extends Controller
                     'data' => [
                         'cart_id' => $cart->id,
                         'cart_status' => $cart->status,
-                        'cart_item' => $cartItem,
+                        'cart_item' => $cartItem ?? $existingCartItem,
                         'remaining_inventory' => $remainingTotalStock,
                         'branch' => $branch->name,
                         'is_loose_quantity' => $isLooseQuantity,
