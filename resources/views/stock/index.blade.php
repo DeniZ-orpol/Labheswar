@@ -1,8 +1,8 @@
 @extends('app')
 @section('content')
-    @php
+    {{-- @php
         $isPaginated = method_exists($purchaseReceipt, 'links');
-    @endphp
+    @endphp --}}
     <!-- BEGIN: Content -->
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
@@ -22,7 +22,7 @@
                             <th>#</th>
                             <th>Chalan NO</th>
                             <th>Date</th>
-                            <th>Branch Name</th>
+                            <th>Transfer to Branch</th>
                             <th>User Name</th>
                             <th>Amount</th>
                             {{-- <th>Total</th> --}}
@@ -30,15 +30,15 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if ($purchaseReceipt && $purchaseReceipt->count())
-                            @foreach ($purchaseReceipt as $purchaseRec)
+                        @if ($stocks && $stocks->count())
+                            @foreach ($stocks as $stock)
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $purchaseRec->purchaseParty->party_name }}</td>
-                                    <td>{{ $purchaseRec->bill_date }}</td>
-                                    <td>{{ $purchaseRec->delivery_date }}</td>
-                                    <td>{{ $purchaseRec->gst_status }}</td>
-                                    <td>{{ $purchaseRec->total_amount }}</td>
+                                    <td>{{ $stock->chalan_id }}</td>
+                                    <td>{{ $stock->date }}</td>
+                                    <td>{{ $stock->branch->name }}</td>
+                                    <td>{{ $stock->user->name }}</td>
+                                    <td>{{ $stock->amount }}</td>
                                     <td>
                                         <div class="flex gap-2 justify-content-left">
                                             <form action="#" method="POST"
@@ -63,7 +63,7 @@
                         @endif
                     </tbody>
                 </table>
-                @if ($isPaginated)
+                {{-- @if ($isPaginated)
                     <div class="pagination-wrapper">
                         <div class="pagination-info">
                             Showing {{ $purchaseReceipt->firstItem() }} to {{ $purchaseReceipt->lastItem() }} of
@@ -72,7 +72,7 @@
                         <div class="pagination-nav">
                             <nav role="navigation" aria-label="Pagination Navigation">
                                 <ul class="pagination">
-                                    {{-- Previous Page Link --}}
+                                    <!-- Previous Page Link -->
                                     @if ($purchaseReceipt->onFirstPage())
                                         <li class="page-item disabled" aria-disabled="true">
                                             <span class="page-link">‹</span>
@@ -84,7 +84,7 @@
                                         </li>
                                     @endif
 
-                                    {{-- Page Numbers --}}
+                                    <!-- Page Numbers -->
                                     @for ($i = 1; $i <= $purchaseReceipt->lastPage(); $i++)
                                         @if ($i == $purchaseReceipt->currentPage())
                                             <li class="page-item active">
@@ -98,7 +98,7 @@
                                         @endif
                                     @endfor
 
-                                    {{-- Next Page Link --}}
+                                    <!-- Next Page Link -->
                                     @if ($purchaseReceipt->hasMorePages())
                                         <li class="page-item">
                                             <a class="page-link" href="{{ $purchaseReceipt->nextPageUrl() }}"
@@ -113,7 +113,7 @@
                             </nav>
                         </div>
                     </div>
-                @endif
+                @endif --}}
             </div>
             <!-- END: Users Layout -->
         </div>

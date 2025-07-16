@@ -9,6 +9,7 @@ use App\Models\Purchase;
 use App\Models\PurchaseParty;
 use App\Models\PurchaseReceipt;
 use App\Models\Stock;
+use App\Models\User;
 use App\Traits\BranchAuthTrait;
 use Exception;
 use Illuminate\Http\Request;
@@ -28,18 +29,32 @@ class StockController extends Controller
         $branch = $auth['branch'];
         $role = $auth['role'];
 
-        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            $parties = PurchaseParty::get();
-            $purchaseReceipt = PurchaseReceipt::with(['purchaseParty', 'createUser', 'updateUser'])
-                ->orderByDesc('id')->paginate(10);
-        } else {
-            $parties = PurchaseParty::on($branch->connection_name)->get();
-            $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
-                ->with(['purchaseParty', 'createUser', 'updateUser'])
-                ->orderByDesc('id')->paginate(10);
-        }
+        $stocks = Stock::on($branch->connection_name)->get();
 
-        return view('stock.index', compact(['parties', 'purchaseReceipt']));
+        // Get all branches from master database for mapping
+        $branches = Branch::all()->keyBy('id');
+        $users = User::all()->keyBy('id');
+
+        // Manually attach branch data to each stock record
+        $stocks->each(function ($stock) use ($branches) {
+            $stock->branch = $branches->get($stock->branch_id);
+        });
+        $stocks->each(function ($stock) use ($users) {
+            $stock->user = $users->get($stock->user_id);
+        });
+
+        // if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+        //     $parties = PurchaseParty::get();
+        //     $purchaseReceipt = PurchaseReceipt::with(['purchaseParty', 'createUser', 'updateUser'])
+        //         ->orderByDesc('id')->paginate(10);
+        // } else {
+            // $parties = PurchaseParty::on($branch->connection_name)->get();
+            // $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
+            //     ->with(['purchaseParty', 'createUser', 'updateUser'])
+            //     ->orderByDesc('id')->paginate(10);
+        // }
+
+        return view('stock.index', compact(['stocks', 'branches', 'users']));
     }
 
     /**
