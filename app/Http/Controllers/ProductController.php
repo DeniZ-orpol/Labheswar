@@ -126,7 +126,11 @@ class ProductController extends Controller
                 $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
 
                 // Create branch-specific directory
-                $uploadPath = public_path('uploads/' . $branch->connection_name . '/products');
+                if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                    $uploadPath = public_path('uploads/headquarters' . '/products');
+                } else {
+                    $uploadPath = public_path('uploads/' . $branch->connection_name . '/products');
+                }
                 if (!file_exists($uploadPath)) {
                     mkdir($uploadPath, 0755, true);
                 }
@@ -135,7 +139,11 @@ class ProductController extends Controller
                 $file->move($uploadPath, $filename);
 
                 // Store path as: branch_connection/products/filename.jpg
-                $path = 'uploads/' . $branch->connection_name . '/products/' . $filename;
+                if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                    $path = 'uploads/headquarters' . '/products/' . $filename;
+                } else {
+                    $path = 'uploads/' . $branch->connection_name . '/products/' . $filename;
+                }
             }
 
             // Handle Company - use branch connection
@@ -398,7 +406,11 @@ class ProductController extends Controller
                 $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
 
                 // Create branch-specific directory
-                $uploadPath = public_path('uploads/' . $branch->connection_name . '/products');
+                if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                    $uploadPath = public_path('uploads/headquarters' . '/products');
+                } else {
+                    $uploadPath = public_path('uploads/' . $branch->connection_name . '/products');
+                }
                 if (!file_exists($uploadPath)) {
                     mkdir($uploadPath, 0755, true);
                 }
@@ -407,7 +419,11 @@ class ProductController extends Controller
                 $file->move($uploadPath, $filename);
 
                 // Store path as: branch_connection/products/filename.jpg
-                $path = 'uploads/' . $branch->connection_name . '/products/' . $filename;
+                if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                    $path = 'uploads/headquarters' . '/products/' . $filename;
+                } else {
+                    $path = 'uploads/' . $branch->connection_name . '/products/' . $filename;
+                }
             }
 
             // Handle Company - use branch connection
