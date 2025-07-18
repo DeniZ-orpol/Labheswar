@@ -77,6 +77,10 @@ class StockController extends Controller
             $chalan->toBranch = $branches->get($chalan->to_branch);
             $chalan->user = $users->get($chalan->user_id);
 
+        $totalQty = $chalan->stocks->sum(function ($stock) {
+            return ($stock->box * $stock->product->converse_box) + $stock->pcs;
+        });
+
 
         $pdf = Pdf::loadView('stock.chalan_pdf', [
             'chalan' => $chalan,
@@ -84,6 +88,7 @@ class StockController extends Controller
             'branchData' => $chalan->fromBranch,
             'toBranchData' => $chalan->toBranch,
             'userData' => $chalan->user,
+            'totalQty' => $totalQty,
         ]);
 
 

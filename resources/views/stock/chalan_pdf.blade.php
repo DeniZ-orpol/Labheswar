@@ -51,7 +51,7 @@
 
     <div class="header">
         <img class="logo" src="{{ asset('images/logo.png') }}" alt="Logo"><br>
-        <h3>Delivery Chalan (Challan)</h3>
+        <h3>Delivery Challan</h3>
     </div>
 
     <table class="info-table">
@@ -80,10 +80,8 @@
             <tr>
                 <th>ID</th>
                 <th>Item Name</th>
-                <th>HSN</th>
-                <th>Box</th>
-                <th>PCS</th>
-                <th>Amount</th>
+                <th>HSN Code</th>
+                <th>QTY</th>
                 <th>Unit</th>
             </tr>
         </thead>
@@ -93,15 +91,13 @@
                     <td>{{ $loop->index + 1 }}</td>
                     <td>{{ $stock->product->product_name ?? 'N/A' }}</td>
                     <td>{{ $stock->product->hsnCode->hsn_code ?? 'N/A' }}</td>
-                    <td>{{ $stock->box }}</td>
-                    <td>{{ $stock->pcs }}</td>
-                    <td>{{ number_format($stock->amount, 2) }}</td>
-                    <td>{{ $stock->unit ?? '-' }}</td>
+                    <td>{{ ($stock->box * $stock->product->converse_box)  + $stock->pcs }}</td>
+                    <td>{{ $stock->product->unit_types ?? '-' }}</td>
                 </tr>
             @endforeach
             <tr class="total-row">
-                <td colspan="5">Total</td>
-                <td>{{ number_format($chalan->total_amount, 2) }}</td>
+                <td colspan="3">Total</td>
+                <td>{{ number_format($totalQty, 2) }}</td>
                 <td></td>
             </tr>
         </tbody>
