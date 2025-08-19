@@ -110,7 +110,7 @@
                 {{-- <td class="{{ $totalQtyHand < 0 ? 'text-red-500 font-bold' : '' }}">
                     {{ number_format($totalQtyHand, 3) }}
                 </td> --}}
-                <td>{{ $totalQty }} </td>
+                <td class="{{ $totalQty < 0 ? 'text-red-500 font-bold' : '' }}">{{ $totalQty }} </td>
                 <td>{{ $totalQtySold }}</td>
                 <td>{{ number_format($totalTaxable, 2) }}</td>
                 <td>{{ number_format($totalFinal, 2) }}</td>
@@ -140,7 +140,7 @@
                         {{-- <td class="{{ $mainQtyKg < 0 ? 'text-red-500 font-bold' : '' }}">
                             {{ number_format($mainQtyKg, 3) }}
                         </td> --}}
-                        <td>{{ $mainItem->quantity }}</td>
+                        <td class="{{ $mainItem->quantity < 0 ? 'text-red-500 font-bold' : '' }}">{{ $mainItem->quantity }}</td>
                         <td>{{ $mainItem->sold_quantity }}</td>
                         <td>{{ number_format($mainItem->taxable_value, 2) }}</td>
                         <td>{{ number_format($mainItem->final_value, 2) }}</td>
@@ -167,7 +167,7 @@
                             {{-- <td class="{{ $subQtyKg < 0 ? 'text-red-500 font-bold' : '' }}">
                                 {{ number_format($subQtyKg, 3) }}
                             </td> --}}
-                            <td>{{ $subItem->quantity }} ({{ $subItem->total_used ?? 0 }} {{ $subItem->product->unit_types }})</td>
+                            <td class="{{ $subItem->quantity < 0 ? 'text-red-500 font-bold' : '' }}" >{{ $subItem->quantity }} ({{ $subItem->total_used ?? 0 }} {{ $subItem->product->unit_types }})</td>
                             <td>{{ $subItem->sold_quantity }}</td>
                             <td>{{ number_format($subItem->taxable_value, 2) }}</td>
                             <td>{{ number_format($subItem->final_value, 2) }}</td>

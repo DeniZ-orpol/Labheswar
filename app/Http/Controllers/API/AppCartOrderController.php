@@ -225,7 +225,8 @@ class AppCartOrderController extends Controller
                 // Check inventory availability - GET ALL INVENTORY ENTRIES
                 if ($inventorycheckStatus) {
                     $query = Inventory::on($branch->connection_name)
-                        ->where('product_id', $productId);
+                        ->where('product_id', $productId)
+                        ->where('type', 'in');
                     if ($product->negative_billing == "" || strtoupper($product->negative_billing) === "NO") {
                         $query->where('quantity', '>', 0);
                     }
@@ -245,7 +246,7 @@ class AppCartOrderController extends Controller
                             'total_qty' => 0,
                             'mrp' => $product->mrp ?? 0,
                             'sale_price' => $product->sale_rate_a ?? 0,
-                            'purchase_price' => $product->purchase_price ?? 0,
+                            'purchase_price' => $product->purchase_rate ?? 0,
                             'gst' => 'off',
                             'gst_p' => 0,
                             'reason' => null,
@@ -259,7 +260,7 @@ class AppCartOrderController extends Controller
                         } else {
                             Inventory::on($branch->connection_name)->insert($inventory);
                         }
-                        $inventoryEntries = Inventory::on($branch->connection_name)->where('product_id', $productId)->orderBy('created_at', 'asc')->get();
+                        $inventoryEntries = Inventory::on($branch->connection_name)->where('product_id', $productId)->where('type', 'in')->orderBy('created_at', 'asc')->get();
                     }
 
                     // Calculate total available stock
@@ -539,17 +540,17 @@ class AppCartOrderController extends Controller
                 }
 
                 // create me a this product is variant and formula in this product auto_production is on then deduct row muterial and also add this product in inventory
-                if ($product && $product->is_variant === "yes") {
+                if ($product && strtoupper($product->is_variant) === "YES") {
                     $formula = Formula::on($branch->connection_name)
                         ->where('product_id', $productId)
                         ->first();
 
-                    $Inve_product= Inventory::on($branch->connection_name)
-                                ->where('product_id', $productId)
-                                ->orderBy('created_at', 'asc')
-                                ->get();
+                    $Inve_product = Inventory::on($branch->connection_name)
+                        ->where('product_id', $productId)
+                        ->orderBy('created_at', 'asc')
+                        ->get();
 
-                            // If no inventory exists for this product, create an initial record
+                    // If no inventory exists for this product, create an initial record
                     if ($Inve_product->isEmpty()) {
                         Inventory::on($branch->connection_name)->insert([
                             'product_id' => $productId,
@@ -566,7 +567,7 @@ class AppCartOrderController extends Controller
                             'updated_at' => now(),
                         ]);
                     }
-                     if ($formula && $formula->auto_production) {
+                    if ($formula && $formula->auto_production) {
                         $ingredients = is_array($formula->ingredients)
                             ? $formula->ingredients
                             : json_decode($formula->ingredients, true);
@@ -584,6 +585,7 @@ class AppCartOrderController extends Controller
                                 $rowInventoryEntries = Inventory::on($branch->connection_name)
                                     ->where('product_id', $ingredientProductId)
                                     ->orderBy('created_at', 'asc')
+                                    ->where('type', 'in')
                                     ->get();
 
                                 // If no inventory exists for this product, create an initial record
@@ -606,57 +608,71 @@ class AppCartOrderController extends Controller
                                     $rowInventoryEntries = Inventory::on($branch->connection_name)
                                         ->where('product_id', $ingredientProductId)
                                         ->orderBy('created_at', 'asc')
+                                        ->where('type', 'in')
                                         ->get();
                                 }
-
                                 // Deduct raw material quantity (FIFO)
                                 $remainingQty = $requiredQty;
-                                foreach ($rowInventoryEntries as $entry) {
-                                    if ($remainingQty <= 0) break;
-
-                                    $deductQty = $remainingQty;
-                                    $entry->decrement('quantity', $deductQty);
-                                    $remainingQty -= $deductQty;
+                                foreach ($rowInventoryEntries as $index => $entry) {
+                                    if ($index === count($rowInventoryEntries) - 1) {
+                                        // Deduct whatever is left, even if it makes it negative
+                                        $entry->decrement('quantity', $remainingQty);
+                                        $entry->save();
+                                        $remainingQty = 0;
+                                    } else {
+                                        if ($entry->quantity > 0)
+                                            break;
+                                        $deductQty = min($entry->quantity, $remainingQty);
+                                        $entry->decrement('quantity', $deductQty);
+                                        $entry->save();
+                                        $remainingQty -= $deductQty;
+                                    }
                                 }
                             }
                         }
-                    }else{
-
+                    } else {
                         // UPDATED: Deduct inventory using FIFO method
+                        $totalEntries = count($inventoryEntries);
                         $remainingToDeduct = $inventoryCheckQuantity;
-                        
-                        foreach ($inventoryEntries as $inventoryEntry) {
+                        $remainingQty = $requestedQuantity;
+                        foreach ($inventoryEntries as $index => $inventoryEntry) {
                             if ($remainingToDeduct <= 0) {
-                                break; // All quantity has been deducted
+                                break;
                             }
-                            
-                            $availableInThisEntry = $inventoryEntry->quantity;
-                            // $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
-                            $deductFromThisEntry = $remainingToDeduct;
-                            
-                            // Update this inventory entry
-                            $inventoryEntry->decrement('quantity', $deductFromThisEntry);
-        
-                            $remainingToDeduct -= $deductFromThisEntry;
+
+                            // If this is the last entry in FIFO
+                            if ($index === $totalEntries - 1) {
+                                // Deduct whatever is left, even if it makes it negative
+                                $inventoryEntry->decrement('quantity', $remainingToDeduct);
+                                $remainingToDeduct = 0;
+                            } else {
+                                // Deduct only up to available quantity
+                                $deductQty = min($inventoryEntry->quantity, $remainingToDeduct);
+                                $inventoryEntry->decrement('quantity', $deductQty);
+                                $remainingToDeduct -= $deductQty;
+                            }
                         }
                     }
-                }else{
-                    // UPDATED: Deduct inventory using FIFO method
+                } else {
                     $remainingToDeduct = $inventoryCheckQuantity;
+                    $totalEntries = count($inventoryEntries);
 
-                    foreach ($inventoryEntries as $inventoryEntry) {
+                    foreach ($inventoryEntries as $index => $inventoryEntry) {
                         if ($remainingToDeduct <= 0) {
-                            break; // All quantity has been deducted
+                            break;
                         }
-    
-                        $availableInThisEntry = $inventoryEntry->quantity;
-                        // $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
-                        $deductFromThisEntry = $remainingToDeduct;
-    
-                        // Update this inventory entry
-                        $inventoryEntry->decrement('quantity', $deductFromThisEntry);
-    
-                        $remainingToDeduct -= $deductFromThisEntry;
+
+                        // If this is the last entry in FIFO
+                        if ($index === $totalEntries - 1) {
+                            // Deduct whatever is left, even if it makes it negative
+                            $inventoryEntry->decrement('quantity', $remainingToDeduct);
+                            $remainingToDeduct = 0;
+                        } else {
+                            // Deduct only up to available quantity
+                            $deductQty = min($inventoryEntry->quantity, $remainingToDeduct);
+                            $inventoryEntry->decrement('quantity', $deductQty);
+                            $remainingToDeduct -= $deductQty;
+                        }
                     }
                 }
 
@@ -1402,7 +1418,7 @@ class AppCartOrderController extends Controller
                 }
                 if ($inventorycheckStatus) {
                     $query = Inventory::on($branch->connection_name)
-                        ->where('product_id', $productId);
+                        ->where('product_id', $productId)->where('type', 'in');
                     if ($product->negative_billing == "" || strtoupper($product->negative_billing) === "NO") {
                         $query->where('quantity', '>', 0);
                     }
@@ -1628,28 +1644,28 @@ class AppCartOrderController extends Controller
                         ->where('product_id', $productId)
                         ->first();
 
-                        $Inve_product= Inventory::on($branch->connection_name)
-                            ->where('product_id', $productId)
-                            ->orderBy('created_at', 'asc')
-                            ->get();
- 
-                                // If no inventory exists for this product, create an initial record
-                        if ($Inve_product->isEmpty()) {
-                            Inventory::on($branch->connection_name)->insert([
-                                'product_id' => $productId,
-                                'quantity' => 0,
-                                'total_qty' => 0,
-                                'mrp' => $product->mrp ?? 0,
-                                'sale_price' => $product->sale_rate_a ?? 0,
-                                'purchase_price' => $product->purchase_rate ?? 0,
-                                'gst' => 'off',
-                                'gst_p' => 0,
-                                'reason' => null,
-                                'type' => 'in',
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        }
+                    $Inve_product = Inventory::on($branch->connection_name)
+                        ->where('product_id', $productId)
+                        ->orderBy('created_at', 'asc')
+                        ->get();
+
+                    // If no inventory exists for this product, create an initial record
+                    if ($Inve_product->isEmpty()) {
+                        Inventory::on($branch->connection_name)->insert([
+                            'product_id' => $productId,
+                            'quantity' => 0,
+                            'total_qty' => 0,
+                            'mrp' => $product->mrp ?? 0,
+                            'sale_price' => $product->sale_rate_a ?? 0,
+                            'purchase_price' => $product->purchase_rate ?? 0,
+                            'gst' => 'off',
+                            'gst_p' => 0,
+                            'reason' => null,
+                            'type' => 'in',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
                     if ($formula && $formula->auto_production) {
                         $ingredients = is_array($formula->ingredients)
                             ? $formula->ingredients
@@ -1726,22 +1742,25 @@ class AppCartOrderController extends Controller
                         }
                     }
                 } else {
-                    // UPDATED: Deduct inventory using FIFO method
                     $remainingToDeduct = $inventoryCheckQuantity;
+                    $totalEntries = count($inventoryEntries);
 
-                    foreach ($inventoryEntries as $inventoryEntry) {
+                    foreach ($inventoryEntries as $index => $inventoryEntry) {
                         if ($remainingToDeduct <= 0) {
-                            break; // All quantity has been deducted
+                            break;
                         }
 
-                        $availableInThisEntry = $inventoryEntry->quantity;
-                        // $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
-                        $deductFromThisEntry = $remainingToDeduct;
-
-                        // Update this inventory entry
-                        $inventoryEntry->decrement('quantity', $deductFromThisEntry);
-
-                        $remainingToDeduct -= $deductFromThisEntry;
+                        // If this is the last entry in FIFO
+                        if ($index === $totalEntries - 1) {
+                            // Deduct whatever is left, even if it makes it negative
+                            $inventoryEntry->decrement('quantity', $remainingToDeduct);
+                            $remainingToDeduct = 0;
+                        } else {
+                            // Deduct only up to available quantity
+                            $deductQty = min($inventoryEntry->quantity, $remainingToDeduct);
+                            $inventoryEntry->decrement('quantity', $deductQty);
+                            $remainingToDeduct -= $deductQty;
+                        }
                     }
                 }
 
@@ -1872,16 +1891,16 @@ class AppCartOrderController extends Controller
                     ->first();
 
                 if ($latestInventory) {
-                    $latestInventory->quantity += $currentCartQuantity;
+                    // $latestInventory->quantity += $currentCartQuantity;
                     $latestInventory->save();
 
-                    $cartItem->update([
-                        'product_quantity' => 0,
-                        'taxes' => 0,
-                        'sub_total' => 0,
-                        'total_amount' => 0,
-                        'gst' => 0,
-                    ]);
+                    // $cartItem->update([
+                    //     'product_quantity' => 0,
+                    //     'taxes' => 0,
+                    //     'sub_total' => 0,
+                    //     'total_amount' => 0,
+                    //     'gst' => 0,
+                    // ]);
                 }
             }
 
@@ -1893,10 +1912,12 @@ class AppCartOrderController extends Controller
 
             // CALCULATE INVENTORY DEDUCTION QUANTITY
             $inventoryDeductionQuantity = $newQty;
+            $qtyDifference = $newQty - $currentCartQuantity;
 
             // CHECK INVENTORY AVAILABILITY
             $totalAvailableStock = Inventory::on($connection)
                 ->where('product_id', $cartItem->product_id)
+                ->where('type', 'in')
                 ->sum('quantity');
 
             if (($product->negative_billing == "" || strtoupper($product->negative_billing) === "NO") && $totalAvailableStock < $inventoryDeductionQuantity) {
@@ -1905,32 +1926,48 @@ class AppCartOrderController extends Controller
                     'message' => 'Insufficient stock. Available quantity: ' . $totalAvailableStock
                 ], 400);
             }
-
             // DEDUCT NEW QUANTITY FROM INVENTORY USING FIFO
-            if ($inventoryDeductionQuantity > 0) {
-                $query = Inventory::on($connection)
-                    ->where('product_id', $cartItem->product_id);
-                if ($product->negative_billing == "" || strtoupper($product->negative_billing) === "NO") {
-                    $query->where('quantity', '>', 0);
-                }
-                $inventoryEntries = $query->orderBy('created_at', 'asc') // FIFO
+            if ($qtyDifference != 0) {
+                $entries = Inventory::on($connection)
+                    ->where('product_id', $cartItem->product_id)
+                    ->where('type', 'in')
+                    ->when(
+                        ($product->negative_billing == "" || strtoupper($product->negative_billing) === "NO") && $qtyDifference > 0,
+                        fn($q) => $q->where('quantity', '>', 0)
+                    )
+                    ->orderBy('created_at', 'asc')
                     ->get();
 
-                $remainingToDeduct = $inventoryDeductionQuantity;
-
-                foreach ($inventoryEntries as $inventoryEntry) {
-                    if ($remainingToDeduct <= 0) {
-                        break;
+                // Deduct
+                if ($qtyDifference > 0) {
+                    if ($product && strtoupper($product->is_variant) === "YES") {
+                        $formula = Formula::on($connection)->where('product_id', $product->id)->first();
+                        if ($formula && $formula->auto_production) {
+                            $this->processFormula($formula, $branch, $role, $qtyDifference, true);
+                        } else {
+                            $this->deductFIFO($entries, $qtyDifference, true);
+                        }
+                    } else {
+                        $this->deductFIFO($entries, $qtyDifference, true);
                     }
+                }
 
-                    $availableInThisEntry = $inventoryEntry->quantity;
-                    // $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
-                    $deductFromThisEntry = $remainingToDeduct;
-
-                    $inventoryEntry->decrement('quantity', $deductFromThisEntry);
-                    $remainingToDeduct -= $deductFromThisEntry;
+                // Return
+                else {
+                    $returnQty = abs($qtyDifference);
+                    if ($product && strtoupper($product->is_variant) === "YES") {
+                        $formula = Formula::on($connection)->where('product_id', $product->id)->first();
+                        if ($formula && $formula->auto_production) {
+                            $this->processFormula($formula, $branch, $role, $returnQty, false);
+                        } else {
+                            $this->returnFIFO($entries, $returnQty);
+                        }
+                    } else {
+                        $this->returnFIFO($entries, $returnQty);
+                    }
                 }
             }
+
 
             // CALCULATE NEW CART ITEM VALUES
             $subTotal = $newQty * $price;
@@ -1976,6 +2013,67 @@ class AppCartOrderController extends Controller
                 'success' => false,
                 'message' => 'Server error: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    private function deductFIFO($entries, $qty, $allowNegative = true)
+    {
+        $remaining = $qty;
+        $total = count($entries);
+
+        foreach ($entries as $i => $entry) {
+            if ($remaining <= 0)
+                break;
+
+            if ($allowNegative && $i === $total - 1) {
+                $entry->decrement('quantity', $remaining);
+                $remaining = 0;
+            } else {
+                $deductQty = min($entry->quantity, $remaining);
+                $entry->decrement('quantity', $deductQty);
+                $remaining -= $deductQty;
+            }
+            $entry->save();
+        }
+    }
+
+    private function returnFIFO($entries, $qty)
+    {
+        $remaining = $qty;
+        $total = count($entries);
+
+        foreach ($entries as $i => $entry) {
+            if ($remaining <= 0)
+                break;
+
+            if ($i === $total - 1 || $entry->quantity > 0) {
+                $entry->increment('quantity', $remaining);
+                $remaining = 0;
+            }
+            $entry->save();
+        }
+    }
+
+    private function processFormula($formula, $branch, $role, $qty, $isDeduct = true)
+    {
+        $ingredients = is_array($formula->ingredients)
+            ? $formula->ingredients
+            : json_decode($formula->ingredients, true);
+
+        foreach ($ingredients as $ing) {
+            $reqQty = $ing['quantity'] * $qty;
+
+            $rowEntries = Inventory::on($branch->connection_name)
+                ->where('product_id', $ing['product_id'])
+                ->where('type', 'in')
+                ->orderBy('created_at', 'asc')
+                ->get();
+
+            if ($isDeduct) {
+                $this->deductFIFO($rowEntries, $reqQty, true);
+            } else {
+                $this->returnFIFO($rowEntries, $reqQty);
+            }
         }
     }
 
@@ -2126,6 +2224,8 @@ class AppCartOrderController extends Controller
                 $inventory = Inventory::on($branch->connection_name)
                     ->where('product_id', $cartItem->product_id)
                     ->first();
+                // ->where('type', 'in')
+                // ->get();
 
                 if (!$inventory) {
                     return response()->json([
@@ -2174,7 +2274,31 @@ class AppCartOrderController extends Controller
                 ];
 
                 // Add quantity back to inventory
-                $inventory->increment('quantity', $quantityToAddBack);
+                // $inventory->increment('quantity', $quantityToAddBack);
+
+                // Update Inventory with FIFO, with Formula
+                $inventoryEntries = Inventory::on($branch->connection_name)
+                    ->where('product_id', $cartItem->product_id)
+                    ->where('type', 'in')
+                    ->orderBy('created_at', 'asc') // FIFO
+                    ->get();
+                $remainingToReturn = $cartItem->product_quantity;
+                if ($product && strtoupper($product->is_variant) === "YES") {
+                    $formula = Formula::on($branch->connection_name)
+                        ->where('product_id', $product->id)
+                        ->first();
+
+                    if ($formula && $formula->auto_production) {
+                        // Use helper for ingredients
+                        $this->processFormula($formula, $branch, $role, $remainingToReturn, false);
+                    } else {
+                        // Normal return
+                        $this->returnFIFO($inventoryEntries, $remainingToReturn);
+                    }
+                } else {
+                    // Non-variant product return
+                    $this->returnFIFO($inventoryEntries, $remainingToReturn);
+                }
 
                 // Remove the cart item
                 $cartItem->delete();
@@ -2318,21 +2442,21 @@ class AppCartOrderController extends Controller
                     ->where('id', $id)
                     ->first();
 
-              $orderItems = AppCartsOrders::on($branch->connection_name)
-                ->with('product')
-                ->leftJoin('products', 'products.id', '=', 'app_cart_order.product_id')
-                ->where('app_cart_order.order_receipt_id', $id)
-                ->select(
-                    'app_cart_order.*',
-                    DB::raw('COALESCE(app_cart_order.product_name, products.product_name) as product_name'),
-                    'products.barcode',
-                    'products.image',
-                    'products.unit_types',
-                    'products.cess',
-                    DB::raw('FORMAT(app_cart_order.gst_p / 2, 2) as cgst_p'),
-                    DB::raw('FORMAT(app_cart_order.gst_p / 2, 2) as sgst_p')
-                )
-                ->get();
+                $orderItems = AppCartsOrders::on($branch->connection_name)
+                    ->with('product')
+                    ->leftJoin('products', 'products.id', '=', 'app_cart_order.product_id')
+                    ->where('app_cart_order.order_receipt_id', $id)
+                    ->select(
+                        'app_cart_order.*',
+                        DB::raw('COALESCE(app_cart_order.product_name, products.product_name) as product_name'),
+                        'products.barcode',
+                        'products.image',
+                        'products.unit_types',
+                        'products.cess',
+                        DB::raw('FORMAT(app_cart_order.gst_p / 2, 2) as cgst_p'),
+                        DB::raw('FORMAT(app_cart_order.gst_p / 2, 2) as sgst_p')
+                    )
+                    ->get();
 
                 $totalItems = $orderItems->count();
 

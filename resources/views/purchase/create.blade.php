@@ -1624,8 +1624,8 @@
         // Set all data attributes
         newOption.setAttribute('data-mrp', productData.mrp || 0);
         newOption.setAttribute('data-name', productData.product_name);
-        newOption.setAttribute('data-sgst', productData.hsn_code.gst / 2 || 0);
-        newOption.setAttribute('data-cgst', productData.hsn_code.gst / 2 || 0);
+        newOption.setAttribute('data-sgst', (productData.hsn_code ? productData.hsn_code.gst / 2 : 0) || 0);
+        newOption.setAttribute('data-cgst', (productData.hsn_code ? productData.hsn_code.gst / 2 : 0) || 0);
         newOption.setAttribute('data-purchase-rate', productData.purchase_rate || 0);
         newOption.setAttribute('data-sale-rate-a', productData.sale_rate_a || 0);
         newOption.setAttribute('data-sale-rate-b', productData.sale_rate_b || 0);

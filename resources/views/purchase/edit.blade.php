@@ -569,8 +569,10 @@
 
             form.addEventListener('submit', e => {
                 e.preventDefault();
-
+                let isValid = true;
+                const partyName = document.getElementById('party_name');
                 const billNo = document.getElementById('bill_no');
+                 const existingError = partyName.nextElementSibling;
 
                 // Remove previous error
                 billNo.classList.remove('border-red-500', 'border-green-500');
