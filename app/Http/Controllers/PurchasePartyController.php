@@ -14,19 +14,27 @@ class PurchasePartyController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index( Request $request)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
         $role = $auth['role'];
 
-        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            $parties = PurchaseParty::orderBy('id', 'desc')->paginate(10);
-        } else {
-            $parties = PurchaseParty::on($branch->connection_name)->orderBy('id', 'desc')->paginate(10);
+        $query = strtoupper($role->role_name) === 'SUPER ADMIN'
+            ? PurchaseParty::query()
+            : PurchaseParty::on($branch->connection_name);
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where('party_name', 'like', "%{$search}%");
         }
 
+        $parties = $query->orderBy('id', 'desc')->paginate(20);
+
+        if ($request->ajax()) {
+            return view('purchase.party.rows', compact('parties'))->render();
+        }
         return view('purchase.party.index', compact('parties'));
     }
 
@@ -48,7 +56,6 @@ class PurchasePartyController extends Controller
         $branch = $auth['branch'];
         $role = $auth['role'];
 
-        try {
             $validate = $request->validate([
                 'ledger_group' => 'required|string',
                 'party_name' => 'required|string',
@@ -66,6 +73,7 @@ class PurchasePartyController extends Controller
                 'balancing_method' => 'nullable|string|max:255',
                 // 'mail_to' => 'nullable|string|max:255',
                 'contact_person' => 'nullable|string|max:255',
+                'contact_person_no' => 'nullable|max:255',
                 'designation' => 'nullable|string|max:255',
                 'note' => 'nullable|string|max:255',
                 'ledger_category' => 'nullable|string|max:255',
@@ -90,12 +98,15 @@ class PurchasePartyController extends Controller
                 'balancing_method' => $validate['balancing_method'] ?? null,
                 // 'mail_to' => $validate['mail_to'] ?? null,
                 'contact_person' => $validate['contact_person'] ?? null,
+                'contact_person_no' => $validate['contact_person_no'] ?? null,
                 'designation' => $validate['designation'] ?? null,
                 'note' => $validate['note'] ?? null,
                 'ledger_category' => $validate['ledger_category'] ?? null,
                 'country' => $validate['country'] ?? null,
                 'pan_no' => $validate['pan_no'] ?? null,
             ];
+        try {
+
 
             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
                 PurchaseParty::create($data);
@@ -105,7 +116,7 @@ class PurchasePartyController extends Controller
 
             return redirect()->route('purchase.party.index')->with('success', 'Purchase Party Created Successfully!');
         } catch (Exception $ex) {
-            dd($ex->getMessage());
+             return redirect()->route('purchase.party.index')->with('error', 'Failed to create Purchase Party. Please try again.');
         }
     }
 
@@ -158,54 +169,57 @@ class PurchasePartyController extends Controller
         $branch = $auth['branch'];
         $role = $auth['role'];
 
-        try {
-            $validate = $request->validate([
-                'ledger_group' => 'required|string',
-                'party_name' => 'required|string',
-                'company_name' => 'nullable|string',
-                'gst_number' => 'nullable|string',
-                'gst_heading' => 'nullable|string',
-                'acc_no' => 'nullable|string',
-                'ifsc_code' => 'nullable|string',
-                // 'station' => 'nullable|string',
-                'state' => 'nullable|string',
-                'pincode' => 'nullable|string',
-                'mobile_no' => 'nullable|string',
-                'email' => 'nullable|string',
-                'address' => 'nullable|string',
-                'balancing_method' => 'nullable|string|max:255',
-                // 'mail_to' => 'nullable|string|max:255',
-                'contact_person' => 'nullable|string|max:255',
-                'designation' => 'nullable|string|max:255',
-                'note' => 'nullable|string|max:255',
-                'ledger_category' => 'nullable|string|max:255',
-                'country' => 'nullable|string|max:255',
-                'pan_no' => 'nullable|string|max:255',
-            ]);
+        $validate = $request->validate([
+            'ledger_group' => 'required|string',
+            'party_name' => 'required|string',
+            'company_name' => 'nullable|string',
+            'gst_number' => 'nullable|string',
+            'gst_heading' => 'nullable|string',
+            'acc_no' => 'nullable|string',
+            'ifsc_code' => 'nullable|string',
+            // 'station' => 'nullable|string',
+            'state' => 'nullable|string',
+            'pincode' => 'nullable|string',
+            'mobile_no' => 'nullable|string',
+            'email' => 'nullable|string',
+            'address' => 'nullable|string',
+            'balancing_method' => 'nullable|string|max:255',
+            // 'mail_to' => 'nullable|string|max:255',
+            'contact_person' => 'nullable|string|max:255',
+            'contact_person_no' => 'nullable|max:255',
+            'designation' => 'nullable|string|max:255',
+            'note' => 'nullable|string|max:255',
+            'ledger_category' => 'nullable|string|max:255',
+            'country' => 'nullable|string|max:255',
+            'pan_no' => 'nullable|string|max:255',
+        ]);
 
-            $data = [
-                'ledger_group' => $validate['ledger_group'],
-                'party_name' => $validate['party_name'],
-                'company_name' => $validate['company_name'] ?? null,
-                'gst_number' => $validate['gst_number'] ?? null,
-                'gst_heading' => $validate['gst_heading'] ?? null,
-                'mobile_no' => $validate['mobile_no'] ?? null,
-                'email' => $validate['email'] ?? null,
-                'address' => $validate['address'] ?? null,
-                // 'station' => $validate['station'] ?? null,
-                'state' => $validate['state'] ?? null,
-                'acc_no' => $validate['acc_no'] ?? null,
-                'ifsc_code' => $validate['ifsc_code'] ?? null,
-                'pincode' => $validate['pincode'] ?? null,
-                'balancing_method' => $validate['balancing_method'] ?? null,
-                // 'mail_to' => $validate['mail_to'] ?? null,
-                'contact_person' => $validate['contact_person'] ?? null,
-                'designation' => $validate['designation'] ?? null,
-                'note' => $validate['note'] ?? null,
-                'ledger_category' => $validate['ledger_category'] ?? null,
-                'country' => $validate['country'] ?? null,
-                'pan_no' => $validate['pan_no'] ?? null,
-            ];
+        $data = [
+            'ledger_group' => $validate['ledger_group'],
+            'party_name' => $validate['party_name'],
+            'company_name' => $validate['company_name'] ?? null,
+            'gst_number' => $validate['gst_number'] ?? null,
+            'gst_heading' => $validate['gst_heading'] ?? null,
+            'mobile_no' => $validate['mobile_no'] ?? null,
+            'email' => $validate['email'] ?? null,
+            'address' => $validate['address'] ?? null,
+            // 'station' => $validate['station'] ?? null,
+            'state' => $validate['state'] ?? null,
+            'acc_no' => $validate['acc_no'] ?? null,
+            'ifsc_code' => $validate['ifsc_code'] ?? null,
+            'pincode' => $validate['pincode'] ?? null,
+            'balancing_method' => $validate['balancing_method'] ?? null,
+            // 'mail_to' => $validate['mail_to'] ?? null,
+            'contact_person' => $validate['contact_person'] ?? null,
+            'contact_person_no' => $validate['contact_person_no'] ?? null,
+            'designation' => $validate['designation'] ?? null,
+            'note' => $validate['note'] ?? null,
+            'ledger_category' => $validate['ledger_category'] ?? null,
+            'country' => $validate['country'] ?? null,
+            'pan_no' => $validate['pan_no'] ?? null,
+        ];
+
+        try {
 
             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
                 $party = PurchaseParty::findOrFail($id);
@@ -217,7 +231,7 @@ class PurchasePartyController extends Controller
 
             return redirect()->route('ledger.index')->with('success', 'Purchase Party Updated Successfully!');
         } catch (Exception $ex) {
-            dd($ex->getMessage());
+             return redirect()->route('ledger.index')->with('error', 'Failed to update Purchase Party. Please try again.');
         }
     }
 
@@ -298,28 +312,28 @@ class PurchasePartyController extends Controller
         $validate = $request->validate([
             'party_name' => 'required|string',
             // 'company_name' => 'required|string',
-            'gst_number' => 'required|string',
-            'acc_no' => 'required|string',
-            'ifsc_code' => 'required|string',
+            // 'gst_number' => 'nullable|string',
+            // 'acc_no' => 'nullable|string',
+            // 'ifsc_code' => 'nullable|string',
             // 'station' => 'required|string',
-            'pincode' => 'string',
-            'mobile_no' => 'string',
-            'email' => 'string',
-            'address' => 'string',
+            'pincode' => 'nullable',
+            'party_phone' => 'nullable',
+            'party_email' => 'nullable',
+            'party_address' => 'nullable',
         ]);
         // dd($request->all());
 
         $data = [
             'party_name' => $validate['party_name'],
             // 'company_name' => $validate['party_name'],
-            'gst_number' => $validate['party_name'],
-            'acc_no' => $validate['party_name'],
-            'ifsc_code' => $validate['party_name'],
+            'gst_number' => $request->gst_number ?? "",    
+            'acc_no' => $request->acc_no ?? "",
+            'ifsc_code' => $request->ifsc_code ?? "",
             // 'station' => $validate['party_name'],
-            'pincode' => $validate['party_name'],
-            'mobile_no' => $validate['party_name'],
-            'email' => $validate['party_name'],
-            'address' => $validate['party_name'],
+            'pincode' => $validate['pincode'] ?? "",
+            'mobile_no' => $validate['party_phone'] ?? "",
+            'email' => $validate['party_email'] ?? "",
+            'address' => $validate['party_address'] ?? "",
         ];
 
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
@@ -327,7 +341,6 @@ class PurchasePartyController extends Controller
         } else {
             $party = PurchaseParty::on($branch->connection_name)->create($data);
         }
-
         // return redirect()->route('purchase.party.index')->with('success', 'Purchase Party Created Successfully!');
         return response()->json([
             'success' => true,

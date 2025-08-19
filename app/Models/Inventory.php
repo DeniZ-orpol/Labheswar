@@ -13,10 +13,11 @@ class Inventory extends Model
     protected $fillable = [
         'product_id',
         'purchase_id',
-        'chalan_id',
+        'one_to_many_id',
+        'many_to_one_id',
         'type',
-        'quantity',
         'total_qty',
+        'quantity',
         'unit',
         'reason',
         'gst',
@@ -26,6 +27,8 @@ class Inventory extends Model
         'purchase_price',
     ];
 
+    public $timestamps = true;
+
     // Relationships
     public function product()
     {
@@ -34,5 +37,15 @@ class Inventory extends Model
     public function purchase()
     {
         return $this->belongsTo(Purchase::class, 'purchase_id');
+    }
+
+    public function oneToMany()
+    {
+        return $this->belongsTo(OneToMany::class, 'one_to_many_id');
+    }
+
+    public function manyToOne()
+    {
+        return $this->belongsTo(OneToMany::class, 'many_to_one_id');
     }
 }

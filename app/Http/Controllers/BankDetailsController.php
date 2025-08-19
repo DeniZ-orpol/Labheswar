@@ -13,20 +13,29 @@ class BankDetailsController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $auth = $this->authenticateAndConfigureBranch();
-        $user = $auth['user'];
         $branch = $auth['branch'];
         $role = $auth['role'];
 
         try {
-            // For Super Admin, you need to handle differently since $branch is a collection
+            // Decide query based on role
             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                $banks = BankDetails::all();
+                $query = BankDetails::query();
             } else {
-                $banks = BankDetails::on($branch->connection_name)->get();
+                $query = BankDetails::on($branch->connection_name);
             }
+
+            // Paginate for infinite scroll (10 per load)
+            $banks = $query->orderBy('id', 'desc')->paginate(10);
+
+            // Check if AJAX request for scroll
+            if ($request->ajax()) {
+                return view('bank.rows', compact('banks'))->render();
+            }
+
+            // First page normal load
             return view('bank.index', compact('banks'));
 
         } catch (Exception $e) {
@@ -52,23 +61,22 @@ class BankDetailsController extends Controller
         $branch = $auth['branch'];
         $role = $auth['role'];
 
+        $validated = $request->validate([
+            'bank_name' => 'required|string|max:255',
+            'account_no' => 'required|string|max:255',
+            'ifsc_code' => 'required|string|max:11',
+            'opening_balance' => 'nullable|numeric',
+            'close_on' => 'nullable',
+        ]);
+
+        $data = [
+            'bank_name' => $validated['bank_name'],
+            'account_no' => $validated['account_no'],
+            'ifsc_code' => $validated['ifsc_code'],
+            'close_on' => $validated['close_on'] ?? null,
+            'opening_bank_balance' => $validated['opening_balance'] ?? 0
+        ];
         try {
-            $validated = $request->validate([
-                'bank_name' => 'required|string|max:255',
-                'account_no' => 'required|string|max:255',
-                'ifsc_code' => 'required|string|max:11',
-                'opening_balance' => 'nullable|numeric',
-                'close_on' => 'nullable',
-            ]);
-
-            $data = [
-                'bank_name' => $validated['bank_name'],
-                'account_no' => $validated['account_no'],
-                'ifsc_code' => $validated['ifsc_code'],
-                'close_on' => $validated['close_on'] ?? null,
-                'opening_bank_balance' => $validated['opening_balance'] ?? 0
-            ];
-
             // For Super Admin, you need to handle differently since $branch is a collection
             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
                 BankDetails::create($data);
@@ -77,9 +85,8 @@ class BankDetailsController extends Controller
             }
 
             return redirect()->route('bank.index')->with('success', 'Bank details created successfully.');
-
         } catch (Exception $e) {
-            dd('Error fetching ledgers: ' . $e->getMessage());
+            return redirect()->route('bank.index')->with('error', 'Failed to create Bank details. Please try again.');
         }
     }
 
@@ -120,23 +127,23 @@ class BankDetailsController extends Controller
         $branch = $auth['branch'];
         $role = $auth['role'];
 
+        $validated = $request->validate([
+            'bank_name' => 'required|string|max:255',
+            'account_no' => 'required|string|max:255',
+            'ifsc_code' => 'required|string|max:11',
+            'opening_balance' => 'nullable|numeric',
+            'close_on' => 'nullable',
+        ]);
+
+        $data = [
+            'bank_name' => $validated['bank_name'],
+            'account_no' => $validated['account_no'],
+            'ifsc_code' => $validated['ifsc_code'],
+            'close_on' => $validated['close_on'] ?? null,
+            'opening_bank_balance' => $validated['opening_balance'] ?? 0
+        ];
+
         try {
-            $validated = $request->validate([
-                'bank_name' => 'required|string|max:255',
-                'account_no' => 'required|string|max:255',
-                'ifsc_code' => 'required|string|max:11',
-                'opening_balance' => 'nullable|numeric',
-                'close_on' => 'nullable',
-            ]);
-
-            $data = [
-                'bank_name' => $validated['bank_name'],
-                'account_no' => $validated['account_no'],
-                'ifsc_code' => $validated['ifsc_code'],
-                'close_on' => $validated['close_on'] ?? null,
-                'opening_bank_balance' => $validated['opening_balance'] ?? 0
-            ];
-
             // For Super Admin, you need to handle differently since $branch is a collection
             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
                 $bank = BankDetails::where('id', $id)->firstOrFail();
@@ -146,10 +153,9 @@ class BankDetailsController extends Controller
 
             $bank->update($data);
 
-            return redirect()->route('bank.index')->with('success', 'Bank details created successfully.');
-
+            return redirect()->route('bank.index')->with('success', 'Bank details Updated Successfully!');
         } catch (Exception $e) {
-            dd('Error fetching ledgers: ' . $e->getMessage());
+            return redirect()->route('bank.index')->with('error', 'Failed to update bank details. Please try again.');
         }
     }
 

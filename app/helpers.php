@@ -72,35 +72,39 @@ if (!function_exists('testBranchConnection')) {
         $kg = (float) $kg;
 
         // Use price_1 for 1–5 KG fixed mapping
-        if (in_array($kg, [1, 2, 3, 4, 5])) {
-            $field = "price_" . intval($kg);
-            $fixedPrice = $product->$field;
-            if (!is_null($fixedPrice)) {
-                return $fixedPrice;
-            }
-        }
+        // if (in_array($kg, [1, 2, 3, 4, 5])) {
+        //     $field = "price_" . intval($kg);
+        //     $fixedPrice = $product->$field;
+        //     if (!is_null($fixedPrice)) {
+        //         return $fixedPrice;
+        //     }
+        // }
 
         // Default: use price_1 to calculate
-        $perKgPrice = (float) $product->price_1;
+        // $perKgPrice = (float) $product->price_1;
+        $perKgPrice = (float) $product->sale_rate_a;
         return $kg * $perKgPrice;
     }
 
     function weightInGramsToPrice($grams, $product)
     {
-        $perGramPrice = ((float) $product->price_1) / 1000;
+        // $perGramPrice = ((float) $product->price_1) / 1000;
+        $perGramPrice = ((float) $product->sale_rate_a) / 1000;
         return $grams * $perGramPrice;
     }
 
     function weightInPriceToKilograms($price, $product)
     {
-        $perKgPrice = (float) $product->price_1;
+        // $perKgPrice = (float) $product->price_1;
+        $perKgPrice = (float) $product->sale_rate_a;
         if ($perKgPrice == 0) return 0;
         return $price / $perKgPrice;
     }
 
     function weightInPriceToGrams($price, $product)
     {
-        $perGramPrice = ((float) $product->price_1) / 1000;
+        // $perGramPrice = ((float) $product->price_1) / 1000;
+        $perGramPrice = ((float) $product->sale_rate_a) / 1000;
         if ($perGramPrice == 0) return 0;
         return $price / $perGramPrice;
     }

@@ -8,114 +8,54 @@
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             Purchase Party List
         </h2>
+        @if (session('success'))
+            <div id="success-alert" class="alert alert-success"
+                style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px;">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div id="error-alert" class="alert alert-danger"
+                style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 10px;">
+                {{ session('error') }}
+            </div>
+        @endif
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
                 <a href="{{ route('purchase.party.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Create New
                     Party</a>
+                <div class="input-form ml-auto">
+                    <form method="GET" action="{{ route('purchase.party.index') }}" class="flex gap-2">
+                        <input type="text" name="search" id="search-party" placeholder="Search by name"
+                            value="{{ request('search') }}" class="form-control flex-1">
+                        <button type="submit" class="btn btn-primary shadow-md btn-hover">Search</button>
+                    </form>
+                </div>
             </div>
 
             <!-- BEGIN: Users Layout -->
             <!-- DataTable: Add class 'datatable' to your table -->
             <div class="intro-y col-span-12 overflow-auto">
-                <table id="DataTable" class="display table table-bordered intro-y col-span-12">
-                    <thead>
-                        <tr class="bg-primary font-bold text-white">
-                            <th>#</th>
-                            <th>Party Name</th>
-                            {{-- <th>Ledger Group</th> --}}
-                            <th style="TEXT-ALIGN: left;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if ($parties && $parties->count())
-                            @foreach ($parties as $party)
-                                <tr>
-                                    <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $party->party_name }}</td>
-                                    {{-- <td>{{ $party->ledger_group }}</td> --}}
-                                    <td>
-                                        <div class="flex gap-2 justify-content-left">
-                                            <a href="{{ route('purchase.party.show', $party->id) }}"
-                                                class="btn btn-primary mr-1 mb-2">
-                                                View
-                                                {{-- {{ dd($hsn->id) }} --}}
-                                            </a>
-                                            <a href="{{ route('purchase.party.edit', $party->id) }}"
-                                                class="btn btn-primary mr-1 mb-2">
-                                                Edit
-                                            </a> 
-                                            <form action=" {{ route('purchase.party.destroy', $party->id) }} "
-                                                method="POST"
-                                                onsubmit="return confirm('Are you sure you want to delete this role?');"
-                                                style="display: inline-block;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
-                                            </form>
-                                            
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        @else
-                            <tr>
-                                <td colspan="7" class="text-center">No Purchase Party found.</td>
+                <div id="scrollable-table"
+                    style="max-height: calc(100vh - 200px); overflow-y: auto; border: 1px solid #ddd;">
+                    <table id="DataTable" class="display table table-bordered intro-y col-span-12">
+                        <thead style="position: sticky; top: 0; z-index: 10;">
+                            <tr class="bg-primary font-bold text-white">
+                                <th>#</th>
+                                <th>Party Name</th>
+                                {{-- <th>Ledger Group</th> --}}
+                                <th style="TEXT-ALIGN: left;">Actions</th>
                             </tr>
-                        @endif
-                    </tbody>
-                </table>
-                @if ($isPaginated)
-                    <div class="pagination-wrapper">
-                        <div class="pagination-info">
-                            Showing {{ $parties->firstItem() }} to {{ $parties->lastItem() }} of
-                            {{ $parties->total() }} entries
-                        </div>
-                        <div class="pagination-nav">
-                            <nav role="navigation" aria-label="Pagination Navigation">
-                                <ul class="pagination">
-                                    {{-- Previous Page Link --}}
-                                    @if ($parties->onFirstPage())
-                                        <li class="page-item disabled" aria-disabled="true">
-                                            <span class="page-link">‹</span>
-                                        </li>
-                                    @else
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ $parties->previousPageUrl() }}"
-                                                rel="prev">‹</a>
-                                        </li>
-                                    @endif
-
-                                    {{-- Page Numbers --}}
-                                    @for ($i = 1; $i <= $parties->lastPage(); $i++)
-                                        @if ($i == $parties->currentPage())
-                                            <li class="page-item active">
-                                                <span class="page-link">{{ $i }}</span>
-                                            </li>
-                                        @else
-                                            <li class="page-item">
-                                                <a class="page-link"
-                                                    href="{{ $parties->url($i) }}">{{ $i }}</a>
-                                            </li>
-                                        @endif
-                                    @endfor
-
-                                    {{-- Next Page Link --}}
-                                    @if ($parties->hasMorePages())
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ $parties->nextPageUrl() }}" rel="next">›</a>
-                                        </li>
-                                    @else
-                                        <li class="page-item disabled" aria-disabled="true">
-                                            <span class="page-link">›</span>
-                                        </li>
-                                    @endif
-                                </ul>
-                            </nav>
-                        </div>
-                    </div>
-                @endif
+                        </thead>
+                        <tbody id="partyTableBody">
+                            @include('purchase.party.rows', ['page' => 1])
+                        </tbody>
+                    </table>
+                   
+                </div>
             </div>
-
+            <div id="loading" style="display:none;text-align:center;padding:10px;">Loading...</div>
             <!-- END: Users Layout -->
         </div>
     </div>
@@ -261,26 +201,72 @@
     </style>
 @endpush
 
-{{-- @push('scripts')
+@push('scripts')
     <script>
-        function changeBranch() {
-            const branchSelect = document.getElementById('branch_select');
-            const selectedBranchId = branchSelect.value;
+        let page = 1;
+        let loading = false;
+        let currentSearch = '';
+        let noMoreData = false;
+        let debounceTimer = null;
 
-            // Build URL with branch_id parameter
-            const currentUrl = new URL(window.location.href);
+        const searchInput = document.getElementById('search-party');
+        const tableBody = document.getElementById('partyTableBody');
+        const loadingIndicator = document.getElementById('loading');
+        const scrollContainer = document.getElementById('scrollable-table');
 
-            if (selectedBranchId) {
-                currentUrl.searchParams.set('branch_id', selectedBranchId);
-            } else {
-                currentUrl.searchParams.delete('branch_id');
+        // Debounced search
+        searchInput?.addEventListener('keyup', function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                currentSearch = searchInput.value.trim();
+                page = 1;
+                noMoreData = false;
+                tableBody.innerHTML = '';
+                loadMore(page);
+            }, 300);
+        });
+
+        // Infinite scroll
+        scrollContainer.addEventListener('scroll', function () {
+
+            const scrollBottom = scrollContainer.scrollTop + scrollContainer.clientHeight;
+            const scrollHeight = scrollContainer.scrollHeight;
+
+            if (scrollBottom >= scrollHeight - 100 && !loading && !noMoreData) {
+                page++;
+                loadMore(page);
+            }
+        });
+
+        function loadMore(pageToLoad) {
+            loading = true;
+            loadingIndicator.style.display = 'block';
+
+            let url = `{{ route('purchase.party.index') }}?page=${pageToLoad}`;
+            if (currentSearch) {
+                url += `&search=${encodeURIComponent(currentSearch)}`;
             }
 
-            // Remove page parameter when switching branches
-            currentUrl.searchParams.delete('page');
-
-            // Redirect to new URL
-            window.location.href = currentUrl.toString();
+            fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(res => res.text())
+                .then(data => {
+                    loadingIndicator.style.display = 'none';
+                    if (data.trim().length === 0) {
+                        noMoreData = true;
+                        return;
+                    }
+                    tableBody.insertAdjacentHTML('beforeend', data);
+                    loading = false;
+                })
+                .catch(() => {
+                    loading = false;
+                    loadingIndicator.style.display = 'none';
+                });
         }
+
     </script>
-@endpush --}}
+@endpush

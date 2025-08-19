@@ -2,48 +2,53 @@
 
 @section('content')
     <div class="content">
-        <h2 class="intro-y text-lg font-medium mt-10 heading">
-            Orders
-        </h2>
+
+
+        <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
+            <h2 class="intro-y text-lg font-medium mt-5 heading">
+                Orders
+            </h2>
+            <div class="input-form ml-auto mt-5">
+                <form method="GET" action="{{ route('ledger.index') }}" class="flex gap-2">
+                    <input type="text" name="search" id="search" placeholder="Search by Order-Id Like 101 or 102" value=""
+                        class="form-control flex-1">
+                    <button type="submit" class="btn btn-primary shadow-md btn-hover">Search</button>
+                </form>
+            </div>
+        </div>
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             {{-- <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
-                <a href="{{ Route('categories.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add Category</a>
+                <a href="{{ Route('categories.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add Order</a>
             </div> --}}
 
-            <div class="intro-y col-span-12 overflow-auto">
-                <table id="DataTable" class="display table table-bordered w-full">
-                    <thead>
-                        <tr class="bg-primary text-white">
-                            <th class="px-4 py-2">Order ID</th>
-                            <th class="px-4 py-2">Order Date</th>
-                            <th class="px-4 py-2">Sub Total</th>
-                            <th class="px-4 py-2">Texes</th>
-                            <th class="px-4 py-2">Total</th>
-                            <th class="px-4 py-2">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($orders as $index => $order)
-                            <tr class="border-b">
-                                <td class="px-4 py-2">O-ID: {{ $order->id }}</td>
-                                <td class="px-4 py-2">{{ $order->created_at->format('d-m-Y') }}</td>
-                                <td class="px-4 py-2">{{ $order->sub_total }}</td>
-                                <td class="px-4 py-2">{{ $order->total_texes }}</td>
-                                <td class="px-4 py-2">{{ $order->total }}</td>
-                                <td>
-                                    <div class="flex gap-2">
-                                        <a href="{{route('orders.show', $order->id)}}"
-                                            class="btn btn-primary">Order Receipt</a>
-                                    </div>
-                                </td>
+            <div class="intro-y col-span-12 mt-5">
+                <div id="scrollable-table"
+                    style="max-height: calc(100vh - 200px); overflow-y: auto; border: 1px solid #ddd;">
+                    <table id="DataTable" class="display table table-bordered w-full">
+                        <thead style="position: sticky; top: 0; z-index: 10;">
+                            <tr class="bg-primary text-white">
+                                <th class="px-4 py-2">Order ID</th>
+                                <th class="px-4 py-2">Order Date</th>
+                                <th class="px-4 py-2">Sub Total</th>
+                                <th class="px-4 py-2">Texes</th>
+                                <th class="px-4 py-2">Total</th>
+                                <th class="px-4 py-2">Action</th>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="text-center text-gray-500 py-4">No categories found.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody id="order-data">
+                            @if ($orders)
+                                @include('appOrders.rows', ['page' => 1])
+                            @else
+                                <tr>
+                                    <td colspan="4" class="text-center text-gray-500 py-4">No Orders found.</td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
+                <div id="loading" style="display: none; text-align: center; padding: 10px;">
+                    <p>Loading more Data...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -117,23 +122,89 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.tailwindcss.min.js"></script>
 
     <script>
-        $(document).ready(function() {
-            $('#DataTable').DataTable({
-                paging: true,
-                pageLength: 10,
-                lengthMenu: [5, 10, 25, 50],
-                ordering: true,
-                searching: true,
-                responsive: true,
-                language: {
-                    paginate: {
-                        previous: "←",
-                        next: "→"
-                    },
-                    search: "Search:",
-                    lengthMenu: "Show _MENU_ entries"
-                }
+        // $(document).ready(function() {
+        //     $('#DataTable').DataTable({
+        //         paging: true,
+        //         pageLength: 10,
+        //         lengthMenu: [5, 10, 25, 50],
+        //         ordering: true,
+        //         searching: true,
+        //         responsive: true,
+        //         language: {
+        //             paginate: {
+        //                 previous: "←",
+        //                 next: "→"
+        //             },
+        //             search: "Search:",
+        //             lengthMenu: "Show _MENU_ entries"
+        //         }
+        //     });
+        // });
+        let page = 1;
+        let loading = false;
+        let currentSearch = '';
+
+
+        const scrollContainer = document.getElementById('scrollable-table');
+        const dataContainer = document.getElementById('order-data');
+        const loadingIndicator = document.getElementById('loading');
+        const searchInput = document.getElementById('search');
+
+        if (searchInput) {
+            let searchTimer;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(() => {
+                    currentSearch = this.value.trim();
+                    page = 1;
+                    // dataContainer.innerHTML = '';
+                    loadMoreData(page, false);
+                }, 300);
             });
+        }
+
+        scrollContainer.addEventListener('scroll', function() {
+            const scrollBottom = scrollContainer.scrollTop + scrollContainer.clientHeight;
+            const scrollHeight = scrollContainer.scrollHeight;
+
+            if (scrollBottom >= scrollHeight - 100 && !loading) {
+                page++;
+                loadMoreData(page);
+            }
         });
+
+        function loadMoreData(page, append = true) {
+            loading = true;
+            loadingIndicator.style.display = 'block';
+
+            let url = `?page=${page}`;
+            if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+
+            fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(data => {
+                    if (data.trim().length === 0) {
+                        loadingIndicator.innerHTML = '';
+                        return;
+                    }
+                    if (append) {
+                        dataContainer.insertAdjacentHTML('beforeend', data);
+                    } else {
+                        dataContainer.innerHTML = data;
+                    }
+                    loadingIndicator.style.display = 'none';
+                    loading = false;
+                })
+                .catch(error => {
+                    console.error("Error fetching more orders:", error);
+                    loading = false;
+                });
+        }
+
+        loadMoreData(page, false);
     </script>
 @endpush

@@ -4,6 +4,18 @@
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             Hsn Code
         </h2>
+
+        @if (session('success'))
+            <div id="success-alert" class="alert alert-success" style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px;">
+                {{ session('success') }}
+            </div>
+        @endif
+    
+        @if (session('error'))
+            <div id="error-alert" class="alert alert-danger" style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 10px;">
+                {{ session('error') }}
+            </div>
+        @endif
         <form action="{{ route('hsn_codes.update', $hsn->id) }}" method="POST" class="form-updated">
             @csrf
             @method('PUT')
@@ -11,18 +23,24 @@
                 <div class="col-span-3 mt-3">
                     <label for="hsn_code" class="form-label">Hsn Code<span style="color: red;margin-left: 3px;">
                             *</span></label>
-                    <input type="text" name="hsn_code" id="hsn_code" class="form-control field-new" required
+                    <input type="text" name="hsn_code" id="hsn_code" class="form-control field-new" 
                         value="{{ $hsn->hsn_code }}" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    @error('hsn_code')
+                        <div class="text-danger mt-2">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="col-span-3 mt-3">
                     <label for="gst" class="form-label">GST(%)<span style="color: red;margin-left: 3px;">
                             *</span></label>
-                    <input type="text" name="gst" id="gst" class="form-control field-new" required
+                    <input type="text" name="gst" id="gst" class="form-control field-new" 
                         value="{{ $hsn->gst }}"oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')">
+                    @error('gst')
+                        <div class="text-danger mt-2">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="col-span-3 mt-3">
                     <label for="short_name" class="form-label">Short Name</label>
-                    <input type="text" name="short_name" id="short_name" class="form-control field-new" required
+                    <input type="text" name="short_name" id="short_name" class="form-control field-new" 
                         value="{{ $hsn->short_name }}">
                 </div>
             </div>

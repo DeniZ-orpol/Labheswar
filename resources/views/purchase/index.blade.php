@@ -17,104 +17,28 @@
             <!-- BEGIN: Users Layout -->
             <!-- DataTable: Add class 'datatable' to your table -->
             <div class="intro-y col-span-12 overflow-auto">
-                <table id="DataTable" class="display table table-bordered w-full">
-                    <thead>
-                        <tr class="bg-primary font-bold text-white">
-                            <th>#</th>
-                            <th>Party Name</th>
-                            <th>Bill Date</th>
-                            <th>Delivery Date</th>
-                            <th>GST</th>
-                            <th>Total</th>
-                            <th style="TEXT-ALIGN: left;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if ($purchaseReceipt && $purchaseReceipt->count())
-                            @foreach ($purchaseReceipt as $purchaseRec)
-                                <tr>
-                                    <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $purchaseRec->purchaseParty->party_name }}</td>
-                                    <td>{{ $purchaseRec->bill_date }}</td>
-                                    <td>{{ $purchaseRec->delivery_date }}</td>
-                                    <td>{{ $purchaseRec->gst_status }}</td>
-                                    <td>{{ $purchaseRec->total_amount }}</td>
-                                    <td>
-                                        <div class="flex gap-2 justify-content-left">
-                                            <form action="{{ route('purchase.destroy', $purchaseRec->id) }}" method="POST"
-                                                onsubmit="return confirm('Are you sure you want to delete this role?');"
-                                                style="display: inline-block;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
-                                            </form>
-                                            <a href="{{ route('purchase.edit', $purchaseRec->id) }}"
-                                                class="btn btn-primary mr-1 mb-2">
-                                                Edit
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        @else
-                            <tr>
-                                <td colspan="7" class="text-center">No Purchase found.</td>
+                <div id="scrollable-table" style="max-height: calc(100vh - 200px); overflow-y: auto; border: 1px solid #ddd;">
+                    <table id="DataTable" class="display table table-bordered intro-y col-span-12">
+                        <thead style="position: sticky; top: 0; z-index: 10;">
+                            <tr class="bg-primary font-bold text-white">
+                                <th>#</th>
+                                <th>Party Name</th>
+                                <th>Bill Date</th>
+                                <th>Delivery Date</th>
+                                <th>GST</th>
+                                <th>Total</th>
+                                <th style="TEXT-ALIGN: left;">Actions</th>
                             </tr>
-                        @endif
-                    </tbody>
-                </table>
-                @if ($isPaginated)
-                    <div class="pagination-wrapper">
-                        <div class="pagination-info">
-                            Showing {{ $purchaseReceipt->firstItem() }} to {{ $purchaseReceipt->lastItem() }} of
-                            {{ $purchaseReceipt->total() }} entries
-                        </div>
-                        <div class="pagination-nav">
-                            <nav role="navigation" aria-label="Pagination Navigation">
-                                <ul class="pagination">
-                                    {{-- Previous Page Link --}}
-                                    @if ($purchaseReceipt->onFirstPage())
-                                        <li class="page-item disabled" aria-disabled="true">
-                                            <span class="page-link">‹</span>
-                                        </li>
-                                    @else
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ $purchaseReceipt->previousPageUrl() }}"
-                                                rel="prev">‹</a>
-                                        </li>
-                                    @endif
-
-                                    {{-- Page Numbers --}}
-                                    @for ($i = 1; $i <= $purchaseReceipt->lastPage(); $i++)
-                                        @if ($i == $purchaseReceipt->currentPage())
-                                            <li class="page-item active">
-                                                <span class="page-link">{{ $i }}</span>
-                                            </li>
-                                        @else
-                                            <li class="page-item">
-                                                <a class="page-link"
-                                                    href="{{ $purchaseReceipt->url($i) }}">{{ $i }}</a>
-                                            </li>
-                                        @endif
-                                    @endfor
-
-                                    {{-- Next Page Link --}}
-                                    @if ($purchaseReceipt->hasMorePages())
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ $purchaseReceipt->nextPageUrl() }}"
-                                                rel="next">›</a>
-                                        </li>
-                                    @else
-                                        <li class="page-item disabled" aria-disabled="true">
-                                            <span class="page-link">›</span>
-                                        </li>
-                                    @endif
-                                </ul>
-                            </nav>
-                        </div>
-                    </div>
-                @endif
+                        </thead>
+                        
+                        <tbody id="TableBody">
+                            @include('purchase.rows', ['page' => 1])
+                        </tbody>
+                    </table>
+                   
+                </div>
             </div>
+             <div id="loading" style="display:none;text-align:center;padding:10px;">Loading...</div>
             <!-- END: Users Layout -->
         </div>
     </div>
@@ -275,6 +199,41 @@
 
             // Redirect to new URL
             window.location.href = currentUrl.toString();
+        }
+         let page = 1;
+        let loading = false;
+        let lastPage = {{ $purchaseReceipt->lastPage() }};
+
+        window.addEventListener('scroll', function() {
+            if (loading) return;
+
+            if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 100) {
+                if (page < lastPage) {
+                    page++;
+                    loadMore(page);
+                }
+            }
+        });
+
+        function loadMore(page) {
+            loading = true;
+            document.getElementById('loading').style.display = 'block';
+
+            fetch(`{{ route('purchase.index') }}?page=${page}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(res => res.text())
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('TableBody').insertAdjacentHTML('beforeend', data);
+                    loading = false;
+                })
+                .catch(() => {
+                    document.getElementById('loading').style.display = 'none';
+                    loading = false;
+                });
         }
     </script>
 @endpush

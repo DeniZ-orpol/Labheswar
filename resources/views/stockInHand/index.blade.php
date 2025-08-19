@@ -7,6 +7,17 @@
             <a href="{{ route('stock-in-hand.create') }}"
                 class="btn btn-primary shadow-md btn-hover ml-auto">Add Stock In Hand</a>
         </div>
+        @if (session('success'))
+            <div id="success-alert" class="alert alert-success" style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px;">
+                {{ session('success') }}
+            </div>
+        @endif
+    
+        @if (session('error'))
+            <div id="error-alert" class="alert alert-danger" style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 10px;">
+                {{ session('error') }}
+            </div>
+        @endif
 
         <div class="intro-y box p-5 mt-2">
             <div class="overflow-x-auto">

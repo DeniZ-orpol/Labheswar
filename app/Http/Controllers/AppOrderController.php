@@ -13,13 +13,32 @@ class AppOrderController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
 
-        $orders = AppCartsOrderBill::on($branch->connection_name)->paginate(10);
+        $perPage = 20;
+
+        $query = AppCartsOrderBill::on($branch->connection_name);
+
+        // Apply search if present
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+
+            $query->where(function ($q) use ($search) {
+                if (is_numeric($search)) {
+                    $q->where('id', $search);
+                }
+            });
+        }
+
+        $orders = $query->orderBy('id', 'desc')->paginate($perPage);
+        // Return AJAX response for infinite scroll
+        if ($request->ajax()) {
+            return view('appOrders.rows', compact('orders'))->render();
+        }
 
         return view('appOrders.index', compact('orders'));
     }
@@ -54,7 +73,7 @@ class AppOrderController extends Controller
             ->first();
 
         $orderItems = AppCartsOrders::on($branch->connection_name)
-            ->with('product')
+            ->with('product.hsnCode')
             ->where('order_receipt_id', $id)->get();
 
         $totalItems = $orderItems->count();

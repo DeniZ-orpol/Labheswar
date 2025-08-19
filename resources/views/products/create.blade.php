@@ -65,7 +65,6 @@
             border: 1px solid #ddd;
             max-height: 200px;
             overflow-y: auto;
-            z-index: 1000;
             display: none;
         }
 
@@ -106,7 +105,7 @@
             Create Product
         </h2>
         <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data"
-            class="form-updated validate-form">
+            class="form-updated validate-form" id="productForm">
             @csrf <!-- CSRF token for security -->
             <div class="row">
                 <div class="column p-5">
@@ -115,10 +114,9 @@
                         <!-- barcode -->
                         <div class="input-form col-span-3 mt-3">
                             <label for="barcode" class="form-label w-full flex flex-col sm:flex-row">
-                                Barcode<span style="color: red;margin-left: 3px;"> *</span>
+                                Barcode
                             </label>
-                            <input id="barcode" type="text" name="product_barcode" class="form-control field-new"
-                                required>
+                            <input id="barcode" type="text" name="product_barcode" class="form-control field-new">
                         </div>
 
                         <!-- Name -->
@@ -127,13 +125,14 @@
                                 Name<span style="color: red;margin-left: 3px;"> *</span>
                             </label>
                             <input id="product_name" type="text" name="product_name" class="form-control field-new"
-                                placeholder="Enter Product name" required maxlength="255">
+                                placeholder="Enter Product name" maxlength="255">
+                            <div class="error-message text-red-500 text-sm mt-1" id="error_product_name"></div>
                         </div>
 
                         <!-- search option -->
                         <div class="input-form col-span-3 mt-3">
                             <label for="search_option" class="form-label w-full flex flex-col sm:flex-row">
-                                Alias
+                                Search Alias
                             </label>
                             <input id="search_option" type="text" name="search_option" class="form-control field-new">
                         </div>
@@ -143,13 +142,14 @@
                             <label for="unit_type" class="form-label w-full flex flex-col sm:flex-row">
                                 Unit Type<p style="color: red;margin-left: 3px;"> *</p>
                             </label>
-                            <select id="unit_type" name="unit_type" class="form-control field-new" required>
+                            <select id="unit_type" name="unit_type" class="form-control field-new">
                                 <option value="" selected>Choose...</option>
                                 <option value="PCS">PCS</option>
                                 <option value="KG">KG</option>
                                 <option value="LITER">LITER</option>
                                 <option value="BOX">BOX</option>
                             </select>
+                            <div class="error-message text-red-500 text-sm mt-1" id="error_unit_type"></div>
                         </div>
 
                         <!-- Company -->
@@ -258,18 +258,18 @@
                         </div>
 
                         <!-- Purchase rate -->
-                        <!-- <div class="input-form col-span-3 mt-3">
+                        <div class="input-form col-span-3 mt-3">
                             <label for="product_purchase_rate" class="form-label w-full flex flex-col sm:flex-row">
                                 Purchase Rate
                             </label>
                             <input id="product_purchase_rate" type="number" step="0.0001" name="purchase_rate"
                                 class="form-control field-new">
-                        </div> -->
+                        </div>
 
                         <!-- Sale rate A -->
                         <div class="input-form col-span-3 mt-3">
                             <label for="product_sale_rate_a" class="form-label w-full flex flex-col sm:flex-row">
-                                Sale Rate A 
+                                Sale Rate A
                             </label>
                             <input id="product_sale_rate_a" type="number" step="0.01" name="sale_rate_a"
                                 class="form-control field-new">
@@ -285,13 +285,13 @@
                         </div>
 
                         <!-- Sale rate C -->
-                        <!-- <div class="input-form col-span-3 mt-3">
+                        <div class="input-form col-span-3 mt-3">
                             <label for="product_sale_rate_c" class="form-label w-full flex flex-col sm:flex-row">
                                 Sale Rate C
                             </label>
                             <input id="product_sale_rate_c" type="number" step="0.01" name="sale_rate_c"
                                 class="form-control field-new">
-                        </div> -->
+                        </div>
 
                         <!-- Carton -->
                         <div class="row mt-3 col-span-3">
@@ -357,7 +357,7 @@
                         <!-- Negative Billing -->
                         <div class="input-form col-span-3 mt-3">
                             <label for="negative_billing" class="form-label w-full flex flex-col sm:flex-row">
-                                Negative Stock
+                                Negative Billing
                             </label>
                             <select id="negative_billing" name="negative_billing" class="form-control field-new">
                                 <option value="NO" selected>NO</option>
@@ -369,7 +369,7 @@
                         </div>
 
                         <!-- Min quantity -->
-                        <div class="input-form col-span-3 mt-3">
+                        <div class="input-form col-span-3">
                             <label for="min_qty" class="form-label w-full flex flex-col sm:flex-row">
                                 Minimum Quantity
                             </label>
@@ -377,7 +377,7 @@
                         </div>
 
                         <!-- Reorder quantity -->
-                        <div class="input-form col-span-3 mt-3">
+                        <div class="input-form col-span-3">
                             <label for="reorder_qty" class="form-label w-full flex flex-col sm:flex-row">
                                 Reorder Quantity
                             </label>
@@ -385,7 +385,7 @@
                         </div>
 
                         <!-- Discount -->
-                        <div class="input-form col-span-3 mt-3">
+                        <div class="input-form col-span-3">
                             <label for="negative_billing" class="form-label w-full flex flex-col sm:flex-row">
                                 Discount
                             </label>
@@ -397,12 +397,13 @@
                         </div>
 
                         <!-- Max Discount -->
-                        <div class="input-form col-span-3 mt-3">
+                        <div class="input-form col-span-3">
                             <label for="max_discount" class="form-label w-full flex flex-col sm:flex-row">
                                 Max Discount (%)
                             </label>
                             <input id="max_discount" type="number" step="0.0001" name="max_discount"
                                 class="form-control field-new">
+                            <div class="error-message text-red-500 text-sm mt-1" id="error_max_discount"></div>
                         </div>
 
                         <!-- Discount Scheme -->
@@ -425,118 +426,165 @@
                             </select>
                             {{-- <input id="bonus_use" type="text" name="bonus_use" class="form-control field-new"> --}}
                         </div>
+                        <div class="input-form col-span-3 mt-3">
+                            <label for="product_type" class="form-label w-full flex flex-col sm:flex-row">
+                                Product Type<p style="color: red;margin-left: 3px;"> *</p>
+                            </label>
+                            <select id="product_type" name="product_type" class="form-control field-new" required>
+                                <option value="product" selected>Product</option>
+                                <option value="packaging">Packaging</option>
+                                <option value="service">Service</option>
+                                <option value="general">General</option>
+                            </select>
+                            <span id="error_product_type" class="error-message text-red-500 text-sm"></span>
+                        </div>
+                        <div class="row mt-3 gap-2 col-span-3 weight_to_from">
+                            <!-- Weigth From -->
+                            <div class="column">
+                                <div class="input-form col-span-3">
+                                    <label for="weight_from" class="form-label w-full flex flex-col sm:flex-row">
+                                        Weigth From
+                                    </label>
+                                    <input id="weight_from" type="number" name="weight_from"
+                                        class="form-control field-new">
+                                    <span id="error_weight_from" class="error-message text-red-500 text-sm"></span>
+                                </div>
+                            </div>
+                            <!-- Weigth To -->
+                            <div class="column">
+                                <div class="input-form col-span-6">
+                                    <label for="weight_to" class="form-label w-full flex flex-col sm:flex-row">
+                                        Weigth To
+                                    </label>
+                                    <input id="weight_to" type="number" name="weight_to"
+                                        class="form-control field-new">
+                                    <span id="error_weight_to" class="error-message text-red-500 text-sm"></span>
+                                </div>
+                            </div>
+                        </div>
                         {{-- <div class="col-span-3"></div>
                         <div class="col-span-3"></div> --}}
                         <hr class="col-span-12 mt-5">
-                        <div class="column col-span-12">
-                            <!-- Loose quantity decimal button -->
+                        <div class="column col-span-12 xl:col-span-6">
+                            <!-- Decimal Toggle -->
                             <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
-                                <label for="decimal_btn" class="form-label w-full flex flex-col sm:flex-row">
-                                    Decimal
-                                </label>
+                                <label for="decimal_btn"
+                                    class="form-label w-full flex flex-col sm:flex-row">Decimal</label>
                                 <input id="decimal_btn" type="checkbox" name="decimal_btn"
                                     class="form-check-input mr-0 ml-3">
                             </div>
 
-                            <div id="decimal_section" style="display: none;margin-top: 20px;">
-                                <div class="row ">
-                                    <!-- BOX barcode -->
-                                    <div class="column px-2">
-                                        <div class="input-form col-span-3">
-                                            <label for="price_1" class="form-label w-full flex flex-col sm:flex-row">
-                                                Price&nbsp;&nbsp;&nbsp;&nbsp;1
-                                            </label>
-                                            <input id="price_1" type="number" name="price_1"
-                                                class="form-control field-new">
-                                        </div>
+                            <div id="decimal_section" style="display: none; margin-top: 20px;">
+                                <!-- Auto Variants in Weight -->
+                                <div class="row mt-2">
+                                    <div class="column">
+                                        <label class="form-label">Auto Variants in Weight</label>
                                     </div>
-                                    <div class="column px-2">
-                                        <div class="input-form col-span-3">
-                                            <label for="price_2" class="form-label w-full flex flex-col sm:flex-row">
-                                                Price&nbsp;&nbsp;&nbsp;&nbsp;2
-                                            </label>
-                                            <input id="price_2" type="number" name="price_2"
-                                                class="form-control field-new">
-                                        </div>
-                                    </div>
-                                    <div class="column px-2">
-                                        <div class="input-form col-span-3">
-                                            <label for="price_3" class="form-label w-full flex flex-col sm:flex-row">
-                                                Price&nbsp;&nbsp;&nbsp;&nbsp;3
-                                            </label>
-                                            <input id="price_3" type="number" name="price_3"
-                                                class="form-control field-new">
-                                        </div>
-                                    </div>
-                                    <div class="column px-2">
-                                        <div class="input-form col-span-3">
-                                            <label for="price_4" class="form-label w-full flex flex-col sm:flex-row">
-                                                Price&nbsp;&nbsp;&nbsp;&nbsp;4
-                                            </label>
-                                            <input id="price_4" type="number" name="price_4"
-                                                class="form-control field-new">
-                                        </div>
-                                    </div>
-                                    <div class="column px-2">
-                                        <div class="input-form col-span-3">
-                                            <label for="price_5" class="form-label w-full flex flex-col sm:flex-row">
-                                                Price&nbsp;&nbsp;&nbsp;&nbsp;5
-                                            </label>
-                                            <input id="price_5" type="number" name="price_5"
-                                                class="form-control field-new">
+                                    <div class="column">
+                                        <div class="flex gap-2 items-center">
+                                            <input type="checkbox" id="auto_variants_in_weight_btn"
+                                                name="auto_variants_in_weight_btn" class="form-check-input mr-2">
+                                            <input type="number" name="auto_variants_in_weight[]" value=".25" step="0.01"
+                                                class="form-control w-20 field-new">
+                                            <input type="number" name="auto_variants_in_weight[]" value=".50" step="0.01"
+                                                class="form-control w-20 field-new">
+                                            <input type="number" name="auto_variants_in_weight[]" value=".75" step="0.01"
+                                                class="form-control w-20 field-new">
+                                            <input type="number" name="auto_variants_in_weight[]" value="1" step="0.01"
+                                                class="form-control w-20 field-new">
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="row">
-                                    <!-- BOX barcode -->
-                                    <div class="column px-2">
-                                        <div class="input-form col-span-3">
-                                            <label for="kg_1" class="form-label w-full flex flex-col sm:flex-row">
-                                                Weight&nbsp;1
-                                            </label>
-                                            <input id="kg_1" type="number" name="kg_1"
-                                                class="form-control field-new">
-                                        </div>
+                                <!-- Auto Variants in Amount -->
+                                <div class="row mt-2">
+                                    <div class="column">
+                                        <label class="form-label">Auto Variants in Amount</label>
                                     </div>
-                                    <div class="column px-2">
-                                        <div class="input-form col-span-3">
-                                            <label for="kg_2" class="form-label w-full flex flex-col sm:flex-row">
-                                                Weight&nbsp;2
-                                            </label>
-                                            <input id="kg_2" type="number" name="kg_2"
-                                                class="form-control field-new">
-                                        </div>
-                                    </div>
-                                    <div class="column px-2">
-                                        <div class="input-form col-span-3">
-                                            <label for="kg_3" class="form-label w-full flex flex-col sm:flex-row">
-                                                Weight&nbsp;3
-                                            </label>
-                                            <input id="kg_3" type="number" name="kg_3"
-                                                class="form-control field-new">
-                                        </div>
-                                    </div>
-                                    <div class="column px-2">
-                                        <div class="input-form col-span-3">
-                                            <label for="kg_4" class="form-label w-full flex flex-col sm:flex-row">
-                                                Weight&nbsp;4
-                                            </label>
-                                            <input id="kg_4" type="number" name="kg_4"
-                                                class="form-control field-new">
-                                        </div>
-                                    </div>
-                                    <div class="column px-2">
-                                        <div class="input-form col-span-3">
-                                            <label for="kg_5" class="form-label w-full flex flex-col sm:flex-row">
-                                                Weight&nbsp;5
-                                            </label>
-                                            <input id="kg_5" type="number" name="kg_5"
-                                                class="form-control field-new">
+                                    <div class="column">
+                                        <div class="flex gap-2 items-center">
+                                            <input type="checkbox" id="auto_variants_in_amount_btn"
+                                                name="auto_variants_in_amount_btn" class="form-check-input mr-2">
+                                            <input type="number" name="auto_variants_in_amount[]" value="250"
+                                                class="form-control w-20 field-new">
+                                            <input type="number" name="auto_variants_in_amount[]" value="500"
+                                                class="form-control w-20 field-new">
+                                            <input type="number" name="auto_variants_in_amount[]" value="750"
+                                                class="form-control w-20 field-new">
+                                            <input type="number" name="auto_variants_in_amount[]" value="1000"
+                                                class="form-control w-20 field-new">
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Packaging Item Toggle -->
+                                <div class="row mt-3">
+                                    <div class="column">
+                                        <label class="form-label">Select Packaging Item</label>
+                                    </div>
+                                    <div class="column">
+                                        <div class="flex gap-2 items-center">
+                                            <input type="checkbox" id="packaging_btn" class="form-check-input mr-2">
+                                            <div class="search-dropdown">
+                                                <input id="packaging" type="text" name="packaging"
+                                                    class="form-control field-new search-input" placeholder="Search or type packaging name"
+                                                    autocomplete="off">
+                                                <div class="dropdown-list" id="packagingDropdown"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span id="error_packaging" class="error-message text-red-500 text-sm"></span>
+
+                                <!-- Custom Price -->
+                                <div class="row mt-3">
+                                    <label class="form-label">Custom Price</label>
+                                    <div class="d-flex align-items-center gap-2" id="custom_price_container">
+                                        <input type="checkbox" id="custom_price_btn" class="form-check-input mr-2">
+                                        <input type="text" name="custom_price[0][weight]" placeholder="Ex. 249"
+                                            class="form-control" style="width: 100px;">
+                                        <select class="form-control" name="custom_price[0][condition]"
+                                            style="width: 100px;">
+                                            <option value="<">&lt;</option>
+                                            <option value=">">&gt;</option>
+                                        </select>
+                                        <input type="number" name="custom_price[0][price]" placeholder="Price"
+                                            class="form-control" style="width: 100px;">
+                                        <button type="button" id="add_custom_price_btn"
+                                            class="btn btn-primary">+</button>
+                                    </div>
+                                </div>
+                                <div id="custom_price_error" class="text-red-500 text-sm mt-1 mb-2"
+                                    style="display: none;"></div>
+
+                                <!-- Custom Packing Variants -->
+                                <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
+                                    <label for="custom_variant_btn"
+                                        class="form-label w-full flex flex-col sm:flex-row">Custom Packing Variants</label>
+                                    <input id="custom_variant_btn" type="checkbox" name="custom_variant_btn"
+                                        class="form-check-input mr-0 ml-3">
+                                </div>
+
+                                <!-- Variant Table -->
+                                <div id="custom_variant_section" style="display: none; margin-top: 20px;">
+                                    <div id="variant_row_container">
+                                        <div class="row variant-row mt-2 d-flex gap-3">
+                                            <input type="text" name="variant_name[]" placeholder="Variant Name"
+                                                class="form-control" style="width: 200px;">
+                                            <input type="text" name="variant_barcode[]" placeholder="Barcode"
+                                                class="form-control" style="width: 200px;">
+                                            <input type="number" name="variant_price[]" placeholder="Sale Price"
+                                                class="form-control" style="width: 200px;">
+                                            <button type="button" class="btn btn-danger remove-btn">Remove</button>
+                                        </div>
+                                    </div>
+                                    <button type="button" id="add_variant_btn" class="btn btn-primary mt-2">Add
+                                        Variant</button>
+                                </div>
                             </div>
+                        </div>
+
+                        <div class="column col-span-12">
                             {{-- <div class="column mt-3">
                                 <div class="input-form col-span-3 form-check form-switch">
                                     <label for="sale_online" class="form-label w-full flex flex-col sm:flex-row">
@@ -560,7 +608,13 @@
                                     <div id="uploadMessage" style="color: #666; font-size: 16px; pointer-events: none;">
                                         Drop Product image file here or click to upload.
                                     </div>
-                                    <div id="imagePreview" style="display: none; max-width: 300px; margin: 0 auto;">
+                                    <div id="imagePreview"
+                                        style="display: none; max-width: 300px; margin: 0 auto;  position: relative;">
+                                        <!-- Cancel Button -->
+                                        <button type="button" onclick="removeImage()"
+                                            style="position: absolute; top: 0; right: 0; background: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; line-height: 24px; text-align: center; cursor: pointer; font-weight: bold; z-index: 5;">
+                                            ×
+                                        </button>
                                         <img id="previewImg"
                                             style="width: 100%; height: auto; border-radius: 8px; margin-top: 10px;" />
                                         <div style="margin-top: 10px; font-size: 14px; color: #666;">
@@ -580,7 +634,7 @@
 
                             <!-- Product Image -->
 
-                            {{-- </form> --}}
+
                         </div>
                         <!-- Sale online toggle -->
 
@@ -627,13 +681,14 @@
                     <!-- BEGIN: Modal Body -->
                     <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
                         <div class="col-span-12">
-                            <label for="modal-hsn-code" class="form-label">HSN Code<span style="color: red;margin-left: 3px;"> *</span></label>
+                            <label for="modal-hsn-code" class="form-label">HSN Code<span
+                                    style="color: red;margin-left: 3px;"> *</span></label>
                             <input id="modal-hsn-code" name="hsn_code" type="text" class="form-control bg-gray-100">
                         </div>
                         <div class="col-span-12">
                             <label for="modal-gst" class="form-label">GST (%)</label>
                             <input id="modal-gst" name="gst" type="number" step="0.01" class="form-control"
-                                placeholder="Enter GST percentage" required>
+                                placeholder="Enter GST percentage">
                         </div>
                         <div class="col-span-12">
                             <label for="modal-short-name" class="form-label">Short Name</label>
@@ -667,6 +722,107 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('productForm');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            let isValid = true;
+
+            const clearErrors = () => {
+                document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+                document.querySelectorAll('.form-control').forEach(el => el.classList.remove(
+                    'border-red-500', 'border-green-500'));
+            };
+
+            const validateField = (fieldId, errorId, condition, message) => {
+                const field = document.getElementById(fieldId);
+                const error = document.getElementById(errorId);
+                if (!condition) {
+                    if (error) error.textContent = message;
+                    field.classList.add('border-red-500');
+                    isValid = false;
+                } else {
+                    field.classList.add('border-green-500');
+                }
+            };
+
+            clearErrors();
+
+            const nameVal = product_name.value.trim();
+            validateField('product_name', 'error_product_name', nameVal !== '',
+                'Product name is required.');
+
+
+            validateField('unit_type', 'error_unit_type', unit_type.value,
+                'Please select a unit type.');
+
+            const discountVal = parseFloat(max_discount.value);
+            if (max_discount.value)
+                validateField('max_discount', 'error_max_discount', !isNaN(discountVal) &&
+                    discountVal >= 0 && discountVal <= 100, 'Discount must be between 0 and 100%.');
+
+            validateField('product_type', 'error_product_type', product_type.value,
+                'Product type is required.');
+
+            //if (product_type.value === 'packaging') {
+            //     validateField('weight_from', 'error_weight_from', weight_from.value.trim(),
+            //         'Weight from is required.');
+            //     validateField('weight_to', 'error_weight_to', weight_to.value.trim(),
+            //         'Weight to is required.');
+            // }
+            const isDecimalChecked = document.getElementById('decimal_btn').checked;
+            const isPackagingChecked = document.getElementById('packaging_btn').checked;
+            const packagingSelect = document.getElementById('packaging');
+            const packagingError = document.getElementById('error_packaging');
+
+            if (isDecimalChecked && isPackagingChecked) {
+                validateField('packaging', 'error_packaging', packagingSelect.value,
+                    'Packaging is required.');
+            }
+            const isCustomPriceChecked = document.getElementById('custom_price_btn').checked;
+
+            if (isCustomPriceChecked) {
+                const weightInputs = document.querySelectorAll(
+                    'input[name^="custom_price"][name*="[weight]"]');
+                const priceInputs = document.querySelectorAll(
+                    'input[name^="custom_price"][name*="[price]"]');
+                const customPriceErrorBox = document.getElementById('custom_price_error');
+
+                // Reset state
+                customPriceErrorBox.style.display = 'none';
+                customPriceErrorBox.textContent = '';
+                weightInputs.forEach(input => input.classList.remove('border-red-500'));
+                priceInputs.forEach(input => input.classList.remove('border-red-500'));
+
+                let hasError = false;
+
+                weightInputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        input.classList.add('border-red-500');
+                        hasError = true;
+                    }
+                });
+
+                priceInputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        input.classList.add('border-red-500');
+                        hasError = true;
+                    }
+                });
+
+                if (hasError) {
+                    customPriceErrorBox.style.display = 'block';
+                    customPriceErrorBox.textContent =
+                        'All weight and price fields are required.';
+                    isValid = false;
+                }
+
+            }
+
+            if (isValid) form.submit();
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function() {
         const modal = document.getElementById('company-modal');
         const openModalBtn = document.getElementById('open-company-modal'); // You need this
         const cancelBtn = document.getElementById('cancel-company-modal');
@@ -686,31 +842,120 @@
                 modal.style.display = 'none'; // hide it
             });
         }
-    });
-    document.addEventListener("DOMContentLoaded", function() {
-        const decimalCheckbox = document.getElementById("decimal_btn");
-        const decimalSection = document.getElementById("decimal_section");
 
-        function toggleDecimalSection() {
-            if (decimalCheckbox.checked) {
-                decimalSection.style.display = "block";
+        const container = document.getElementById("variant_row_container");
+        const addBtn = document.getElementById("add_variant_btn");
+
+        addBtn.addEventListener("click", function() {
+            const firstRow = container.querySelector(".variant-row");
+            const newRow = firstRow.cloneNode(true);
+
+            // Clear values in cloned row
+            newRow.querySelectorAll("input").forEach(input => input.value = "");
+            newRow.querySelectorAll("select").forEach(select => select.value = "box");
+
+            container.appendChild(newRow);
+        });
+
+        container.addEventListener("click", function(e) {
+            if (e.target && e.target.classList.contains("remove-btn")) {
+                const row = e.target.closest(".variant-row");
+                const totalRows = container.querySelectorAll(".variant-row").length;
+
+                if (totalRows > 1) {
+                    row.remove();
+                } else {
+                    alert("At least one variant row must remain.");
+                }
+            }
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const productTypeSelect = document.getElementById('product_type');
+        const weightFieldsContainer = document.querySelector('.weight_to_from');
+
+        function toggleWeightFields() {
+            if (productTypeSelect.value === 'packaging') {
+                weightFieldsContainer.style.display = 'flex';
             } else {
-                decimalSection.style.display = "none";
+                weightFieldsContainer.style.display = 'none';
             }
         }
 
-        // Listen for multiple events to ensure all interactions work
-        decimalCheckbox.addEventListener("change", toggleDecimalSection);
-        decimalCheckbox.addEventListener("click", toggleDecimalSection);
-        decimalCheckbox.addEventListener("keyup", function(event) {
-            if (event.key === " " || event.key === "Enter") {
-                toggleDecimalSection();
+        // Initial toggle on page load
+        toggleWeightFields();
+
+        // Listen for changes
+        productTypeSelect.addEventListener('change', toggleWeightFields);
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.getElementById("custom_price_container");
+        const addBtn = document.getElementById("add_custom_price_btn");
+
+        addBtn.addEventListener("click", function() {
+            const index = container.querySelectorAll('input[type="text"], input[type="number"]')
+                .length - 1;
+            const newRow = document.createElement('div');
+            newRow.classList.add('d-flex', 'align-items-center', 'gap-2', 'flex-wrap', 'mt-2', 'ml-6',
+                'pl-1');
+
+            newRow.innerHTML = `
+                <input type="number" name="custom_price[${index}][weight]" placeholder="249" class="form-control" style="width: 100px;">
+                <select class="form-control" name="custom_price[${index}][condition]" style="width: 100px;">
+                    <option value="<">&lt;</option>
+                    <option value=">">&gt;</option>
+                </select>
+                <input type="number" name="custom_price[${index}][price]" placeholder="Price" class="form-control" style="width: 100px;">
+                <button type="button" class="btn btn-danger remove_custom_price_btn">-</button>
+            `;
+
+            container.appendChild(newRow);
+        });
+
+        container.addEventListener("click", function(e) {
+            if (e.target && e.target.classList.contains("remove_custom_price_btn")) {
+                const rows = container.querySelectorAll(
+                    'div.d-flex.align-items-center.gap-2.flex-wrap.mt-2');
+                if (rows.length > 0) {
+                    e.target.parentElement.remove();
+                } else {
+                    alert("At least one custom price row must remain.");
+                }
             }
         });
+    });
+
+    function toggleSection(checkboxId, sectionId) {
+        const checkbox = document.getElementById(checkboxId);
+        const section = document.getElementById(sectionId);
+        section.style.display = checkbox.checked ? "block" : "none";
+    }
+
+    function attachToggleEvents(checkboxId, sectionId) {
+        const checkbox = document.getElementById(checkboxId);
+        if (!checkbox) return;
+
+        const toggle = () => toggleSection(checkboxId, sectionId);
+
+        checkbox.addEventListener("change", toggle);
+        checkbox.addEventListener("click", toggle);
+        checkbox.addEventListener("keyup", (event) => {
+            if (event.key === " " || event.key === "Enter") toggle();
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Attach toggle logic to all sections
+        attachToggleEvents("decimal_btn", "decimal_section");
+        attachToggleEvents("custom_variant_btn", "custom_variant_section");
+        attachToggleEvents("loose_btn", "loose_section");
     });
     document.addEventListener('DOMContentLoaded', function() {
         // Company dropdown (existing)
         initSearchDropdown('product_company', 'companyDropdown', '{{ route('companies.search') }}', 'company');
+        initSearchDropdown('packaging', 'packagingDropdown', '{{ route('packagings.search') }}', 'packaging');
         // Category dropdown
         initSearchDropdown('product_category', 'categoryDropdown', '{{ route('categories.search') }}',
             'category');
@@ -719,8 +964,8 @@
         // HSN Code dropdown with GST auto-fill
         initHsnDropdown();
         initHsnModal();
-        initCategoryModal();
-        initCompanyModal();
+        // initCategoryModal();
+        // initCompanyModal();
     });
 
     // START: setup enter navigation
@@ -764,10 +1009,10 @@
                 selector: '#product_mrp',
                 type: 'input'
             },
-            // {
-            //     selector: '#product_purchase_rate',
-            //     type: 'input'
-            // },
+            {
+                selector: '#product_purchase_rate',
+                type: 'input'
+            },
             {
                 selector: '#product_sale_rate_a',
                 type: 'input'
@@ -776,10 +1021,10 @@
                 selector: '#product_sale_rate_b',
                 type: 'input'
             },
-            // {
-            //     selector: '#product_sale_rate_c',
-            //     type: 'input'
-            // },
+            {
+                selector: '#product_sale_rate_c',
+                type: 'input'
+            },
             {
                 selector: '#converse_carton',
                 type: 'input'
@@ -825,47 +1070,39 @@
                 type: 'select'
             },
             {
+                selector: '#product_type',
+                type: 'select'
+            },
+            {
                 selector: '#decimal_btn',
                 type: 'checkbox'
             },
             {
-                selector: '#price_1',
+                selector: '#auto_generate_variants',
+                type: 'checkbox'
+            },
+            {
+                selector: '#packaging_btn',
+                type: 'checkbox'
+            },
+            {
+                selector: '#packaging',
+                type: 'select'
+            },
+            {
+                selector: '#custom_variant_btn',
+                type: 'checkbox'
+            },
+            {
+                selector: '#loose_btn',
                 type: 'input'
             },
             {
-                selector: '#price_2',
+                selector: '#loose_weight',
                 type: 'input'
             },
             {
-                selector: '#price_3',
-                type: 'input'
-            },
-            {
-                selector: '#price_4',
-                type: 'input'
-            },
-            {
-                selector: '#price_5',
-                type: 'input'
-            },
-            {
-                selector: '#kg_1',
-                type: 'input'
-            },
-            {
-                selector: '#kg_2',
-                type: 'input'
-            },
-            {
-                selector: '#kg_3',
-                type: 'input'
-            },
-            {
-                selector: '#kg_4',
-                type: 'input'
-            },
-            {
-                selector: '#kg_5',
+                selector: '#loose_price',
                 type: 'input'
             },
             // {
@@ -926,7 +1163,7 @@
                 }
 
                 // Handle dropdown selections in search fields
-                if (target.matches('#product_company, #product_category, #hsn_code')) {
+                if (target.matches('#product_company, #product_category, #hsn_code', '#packaging')) {
                     const dropdown = target.nextElementSibling;
                     if (dropdown && dropdown.classList.contains('dropdown-list') && dropdown.classList.contains(
                             'show')) {
@@ -961,6 +1198,21 @@
                         currentIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
                         updateDropdownHighlight(items, currentIndex);
                     }
+                }
+            }
+
+            if (target.matches('#loose_btn')) {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    target.checked = !target.checked;
+                    toggleLooseSection();
+                }
+            }
+            if (target.matches('#custom_variant_btn')) {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    target.checked = !target.checked;
+                    toggleCustomeVariantSection();
                 }
             }
 
@@ -1017,24 +1269,47 @@
                     }
                 });
 
+
                 // Special handling for checkboxes
                 if (field.type === 'checkbox') {
                     element.addEventListener('keydown', (e) => {
-                        if (e.key === ' ') {
+                        console.log(e.key);
+                        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                             // Space key toggles checkbox
                             e.preventDefault();
                             element.checked = !element.checked;
-                        }else if (e.key === 'Enter') {
+                            if (field.selector == '#decimal_btn') {
+                                toggleDecimalSection();
+                            }
+                            if (field.selector == '#custom_variant_btn') {
+                                toggleCustomeVariantSection();
+                            }
+                        } else if (e.key === 'Enter') {
                             // Enter key moves to next field
                             if (field.selector === '#decimal_btn' && !element.checked) {
                                 const skipSelectors = [
-                                    '#price_1', '#price_2', '#price_3', '#price_4', '#price_5',
-                                    '#kg_1', '#kg_2', '#kg_3', '#kg_4', '#kg_5'
+                                    '#packaging',
+                                    '#loose_btn',
+                                    '#loose_price', '#loose_weight',
                                 ];
 
-                                const nextField = formFields.slice(index + 1).find(f => !skipSelectors.includes(f.selector));
-                                const nextElement = nextField && document.querySelector(nextField.selector);
-                                
+                                const nextField = formFields.slice(index + 1).find(f => !skipSelectors
+                                    .includes(f.selector));
+                                const nextElement = nextField && document.querySelector(nextField
+                                    .selector);
+
+                                nextElement?.focus();
+                            }
+                            if (field.selector === '#loose_btn' && !element.checked) {
+                                const skipSelectors = [
+                                    '#loose_price', '#loose_weight',
+                                ];
+
+                                const nextField = formFields.slice(index + 1).find(f => !skipSelectors
+                                    .includes(f.selector));
+                                const nextElement = nextField && document.querySelector(nextField
+                                    .selector);
+
                                 nextElement?.focus();
                             }
                         }
@@ -1486,6 +1761,30 @@
             hiddenFieldValue: hiddenCompanyIdField.value
         });
     }
+    function selectPackaging(packagingName, packagingId = null) {
+        const input = document.getElementById('packaging');
+        const dropdown = document.getElementById('packagingDropdown');
+
+        dropdown.classList.remove('show');
+        input.value = packagingName;
+
+        // Store packaging ID in hidden field
+        let hiddenPackagingIdField = document.getElementById('hidden_packaging_id');
+        if (!hiddenPackagingIdField) {
+            hiddenPackagingIdField = document.createElement('input');
+            hiddenPackagingIdField.type = 'hidden';
+            hiddenPackagingIdField.id = 'hidden_packaging_id';
+            hiddenPackagingIdField.name = 'packaging_id';
+            input.parentNode.appendChild(hiddenPackagingIdField);
+        }
+        hiddenPackagingIdField.value = packagingId || '';
+
+        console.log('Packaging selected:', {
+            packagingName: packagingName,
+            packagingId: packagingId,
+            hiddenFieldValue: hiddenPackagingIdField.value
+        });
+    }
 
     // Functions to open modals
     // function openCategoryModal(categoryName) {
@@ -1820,7 +2119,15 @@
 
                     const data = await response.json();
                     console.log(`${type} Data Response:`, data);
-                    currentData = (type === 'category' ? data.categories : data.companies) || [];
+                    if(type == 'category'){
+                        currentData =  data.categories;
+                    } else if (type == 'company'){
+                        currentData =  data.companies;
+                    } else if (type == 'packaging'){
+                        currentData =  data.packagings;
+                    } else{
+                        currentData =  [];
+                    }
 
                     let html = '';
 
@@ -1909,6 +2216,8 @@
                     selectCategory(newValue, null); // null ID for new items
                 } else if (type === 'company') {
                     selectCompany(newValue, null); // null ID for new items
+                } else if (type === 'packaging') {
+                    selectPackaging(newValue, null); // null ID for new items
                 }
             } else if (item.dataset.index !== undefined) {
                 // Handle existing item selection
@@ -1919,6 +2228,8 @@
                     selectCategory(selectedItem.name, selectedItem.id);
                 } else if (type === 'company') {
                     selectCompany(selectedItem.name, selectedItem.id);
+                } else if (type === 'packaging') {
+                    selectPackaging(selectedItem.name, selectedItem.id);
                 }
             }
         }
@@ -1981,6 +2292,10 @@
             selectedCompanyId = null;
             let hiddenField = document.getElementById('hidden_company_id');
             if (hiddenField) hiddenField.value = '';
+        } else if (inputId === 'packaging') {
+            selectedPackagingId = null;
+            let hiddenField = document.getElementById('hidden_packaging_id');
+            if (hiddenField) hiddenField.value = '';
         }
     }
 
@@ -2004,6 +2319,23 @@
 
             reader.readAsDataURL(file);
         }
+    }
+
+    function removeImage() {
+        const fileInput = document.getElementById('fileInput');
+        const previewBox = document.getElementById('imagePreview');
+        const preview = document.getElementById('previewImg');
+        const fileName = document.getElementById('fileName');
+        const uploadMessage = document.getElementById('uploadMessage');
+
+        // Clear file input
+        fileInput.value = "";
+
+        // Hide preview
+        previewBox.style.display = 'none';
+        preview.src = "";
+        fileName.textContent = "";
+        uploadMessage.style.display = 'block';
     }
 
     // Handle drag and drop

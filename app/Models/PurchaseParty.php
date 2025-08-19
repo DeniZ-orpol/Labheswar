@@ -27,6 +27,7 @@ class PurchaseParty extends Model
         'balancing_method',
         'mail_to',
         'contact_person',
+        'contact_person_no',
         'designation',
         'note',
         'ledger_category',

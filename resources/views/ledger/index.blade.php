@@ -39,193 +39,58 @@
                 </select>
             </div>
         </div>
+        <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
+            <a href="{{ route('purchase.party.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Create New
+                Ledger</a>
+            <div class="input-form ml-auto">
+                <form method="GET" action="{{ route('ledger.index') }}" class="flex gap-2">
+                    <input type="text" name="search" id="search" placeholder="Search by name" value=""
+                        class="form-control flex-1">
+                    <button type="submit" class="btn btn-primary shadow-md btn-hover">Search</button>
+                </form>
+            </div>
+        </div>
 
-        <div class="intro-y box p-5 mt-2">
+        @if (session('success'))
+            <div id="success-alert" class="alert alert-success"
+                style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px;">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div id="error-alert" class="alert alert-danger"
+                style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 10px;">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        <div class="intro-y box p-5 mt-4">
             <div class="overflow-x-auto">
-                <table class="table table-bordered table-striped">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Phone No</th>
-                            <th>GST No</th>
-                            <th>State</th>
-                            <th>Balancing Method</th>
-                            <th>Ledger Group</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($ledgers as $index => $ledger)
+                <div id="scrollable-table"
+                    style="max-height: calc(100vh - 200px); overflow-y: auto; border: 1px solid #ddd;">
+                    <table id="DataTable" class="display table table-bordered intro-y col-span-12">
+                        <thead style="position: sticky; top: 0; z-index: 10;" class="font-bold text-white bg-primary">
                             <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>{{ $ledger->party_name }}</td>
-                                <td>{{ $ledger->mobile_no }}</td>
-                                <td>{{ $ledger->gst_number }}</td>
-                                <td>{{ $ledger->state }}</td>
-                                <td>{{ $ledger->balancing_method }}</td>
-                                <td>{{ $ledger->ledger_group }}</td>
-                                <td>
-                                    <div class="flex gap-2">
-                                        {{-- <a href="#" class="btn btn-primary">View</a> --}}
-                                        <a href="{{ route('purchase.party.edit', $ledger->id) }}"
-                                            class="btn btn-primary">Edit</a>
-                                    </div>
-                                </td>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Phone No</th>
+                                <th>GST No</th>
+                                <th>State</th>
+                                <th>Balancing Method</th>
+                                <th>Ledger Group</th>
+                                <th>Action</th>
                             </tr>
-                        @empty
-                            <tr>
-                                <td class="text-center" colspan="8">No Ledger Found</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
 
-                <!-- Show pagination only for branch users (when data is paginated) -->
-                @if ($isPaginated)
-                    <div class="pagination-wrapper">
-                        <div class="pagination-info">
-                            Showing {{ $ledgers->firstItem() }} to {{ $ledgers->lastItem() }} of
-                            {{ $ledgers->total() }} entries
-                        </div>
-                        <div class="pagination-nav">
-                            <nav role="navigation" aria-label="Pagination Navigation">
-                                <ul class="pagination">
-                                    {{-- Previous Page Link --}}
-                                    @if ($ledgers->onFirstPage())
-                                        <li class="page-item disabled" aria-disabled="true">
-                                            <span class="page-link">‹</span>
-                                        </li>
-                                    @else
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ $ledgers->previousPageUrl() }}"
-                                                rel="prev">‹</a>
-                                        </li>
-                                    @endif
-
-                                    {{-- Page Numbers with Compact Logic --}}
-                                    @php
-                                        $currentPage = $ledgers->currentPage();
-                                        $lastPage = $ledgers->lastPage();
-                                        $showEllipsis = $lastPage > 7; // Show ellipsis if more than 7 pages
-                                    @endphp
-
-                                    @if (!$showEllipsis)
-                                        {{-- Show all pages if 7 or fewer --}}
-                                        @for ($i = 1; $i <= $lastPage; $i++)
-                                            @if ($i == $currentPage)
-                                                <li class="page-item active">
-                                                    <span class="page-link">{{ $i }}</span>
-                                                </li>
-                                            @else
-                                                <li class="page-item">
-                                                    <a class="page-link"
-                                                        href="{{ $ledgers->url($i) }}">{{ $i }}</a>
-                                                </li>
-                                            @endif
-                                        @endfor
-                                    @else
-                                        {{-- Compact pagination with ellipsis --}}
-
-                                        {{-- Always show first page --}}
-                                        @if ($currentPage != 1)
-                                            <li class="page-item">
-                                                <a class="page-link" href="{{ $ledgers->url(1) }}">1</a>
-                                            </li>
-                                        @else
-                                            <li class="page-item active">
-                                                <span class="page-link">1</span>
-                                            </li>
-                                        @endif
-
-                                        {{-- Show second page if current page is not near the beginning --}}
-                                        @if ($currentPage > 4)
-                                            <li class="page-item">
-                                                <a class="page-link" href="{{ $ledgers->url(2) }}">2</a>
-                                            </li>
-                                        @endif
-
-                                        {{-- Left ellipsis --}}
-                                        @if ($currentPage > 4)
-                                            <li class="page-item disabled">
-                                                <span class="page-link">...</span>
-                                            </li>
-                                        @endif
-
-                                        {{-- Pages around current page --}}
-                                        @php
-                                            $start = max(2, $currentPage - 1);
-                                            $end = min($lastPage - 1, $currentPage + 1);
-
-                                            // Adjust range if we're near the beginning
-                                            if ($currentPage <= 3) {
-                                                $start = 2;
-                                                $end = min($lastPage - 1, 4);
-                                            }
-
-                                            // Adjust range if we're near the end
-                                            if ($currentPage >= $lastPage - 2) {
-                                                $start = max(2, $lastPage - 3);
-                                                $end = $lastPage - 1;
-                                            }
-                                        @endphp
-
-                                        @for ($i = $start; $i <= $end; $i++)
-                                            @if ($i == $currentPage)
-                                                <li class="page-item active">
-                                                    <span class="page-link">{{ $i }}</span>
-                                                </li>
-                                            @else
-                                                <li class="page-item">
-                                                    <a class="page-link"
-                                                        href="{{ $ledgers->url($i) }}">{{ $i }}</a>
-                                                </li>
-                                            @endif
-                                        @endfor
-
-                                        {{-- Right ellipsis --}}
-                                        @if ($currentPage < $lastPage - 3)
-                                            <li class="page-item disabled">
-                                                <span class="page-link">...</span>
-                                            </li>
-                                        @endif
-
-                                        {{-- Show second-to-last page if current page is not near the end --}}
-                                        @if ($currentPage < $lastPage - 3)
-                                            <li class="page-item">
-                                                <a class="page-link"
-                                                    href="{{ $ledgers->url($lastPage - 1) }}">{{ $lastPage - 1 }}</a>
-                                            </li>
-                                        @endif
-
-                                        {{-- Always show last page --}}
-                                        @if ($currentPage != $lastPage)
-                                            <li class="page-item">
-                                                <a class="page-link"
-                                                    href="{{ $ledgers->url($lastPage) }}">{{ $lastPage }}</a>
-                                            </li>
-                                        @else
-                                            <li class="page-item active">
-                                                <span class="page-link">{{ $lastPage }}</span>
-                                            </li>
-                                        @endif
-                                    @endif
-
-                                    {{-- Next Page Link --}}
-                                    @if ($ledgers->hasMorePages())
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ $ledgers->nextPageUrl() }}" rel="next">›</a>
-                                        </li>
-                                    @else
-                                        <li class="page-item disabled" aria-disabled="true">
-                                            <span class="page-link">›</span>
-                                        </li>
-                                    @endif
-                                </ul>
-                            </nav>
-                        </div>
-                    </div>
-                @endif
+                        <tbody id="data">
+                            @include('ledger.rows', ['page' => 1])
+                        </tbody>
+                    </table>
+                </div>
+                <div id="loading" style="display: none; text-align: center; padding: 10px;">
+                    <p>Loading more Ledgers...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -368,16 +233,81 @@
 
 @push('scripts')
     <script>
-        document.getElementById('ledger_group').addEventListener('change', function() {
-            const selectedValue = this.value;
-            const baseUrl = "{{ url()->current() }}"; // current route without query params
+document.addEventListener('DOMContentLoaded', function () {
+    const loadingIndicator = document.getElementById('loading');
+    const searchInput = document.getElementById('search');
+    const scrollContainer = document.getElementById('scrollable-table');
+    const dataContainer = document.getElementById('data');
 
-            // Build URL with query param
-            const newUrl = selectedValue ?
-                `${baseUrl}?ledger_group=${encodeURIComponent(selectedValue)}` :
-                baseUrl;
+    let page = 1;
+    let loading = false;
+    let currentSearch = '';
 
-            window.location.href = newUrl; // Redirect
+    // Search input with debounce
+    if (searchInput) {
+        let searchTimer;
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                currentSearch = this.value.trim();
+                page = 1;
+                loadMoreData(page, false);
+            }, 500);
         });
-    </script>
+    }
+
+    // Ledger group change
+    document.getElementById('ledger_group')?.addEventListener('change', function () {
+        const selectedValue = this.value;
+        const baseUrl = "{{ url()->current() }}";
+        const newUrl = selectedValue
+            ? `${baseUrl}?ledger_group=${encodeURIComponent(selectedValue)}`
+            : baseUrl;
+        window.location.href = newUrl;
+    });
+
+    // Infinite scroll
+    scrollContainer.addEventListener('scroll', function () {
+        const scrollBottom = scrollContainer.scrollTop + scrollContainer.clientHeight;
+        const scrollHeight = scrollContainer.scrollHeight;
+        if (scrollBottom >= scrollHeight - 100 && !loading) {
+            page++;
+            loadMoreData(page, true);
+        }
+    });
+
+    // Load data function
+    function loadMoreData(page, append = true) {
+        loading = true;
+        loadingIndicator.style.display = 'block';
+
+        let url = `?page=${page}`;
+        if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(response => response.text())
+            .then(data => {
+                if (data.trim().length === 0) {
+                    loadingIndicator.style.display = 'none';
+                    return;
+                }
+                if (append) {
+                    dataContainer.insertAdjacentHTML('beforeend', data);
+                } else {
+                    dataContainer.innerHTML = data;
+                }
+                loadingIndicator.style.display = 'none';
+                loading = false;
+            })
+            .catch(error => {
+                console.error("Error fetching more data:", error);
+                loading = false;
+            });
+    }
+
+    // Initial load
+    loadMoreData(page, false);
+});
+</script>
+
 @endpush

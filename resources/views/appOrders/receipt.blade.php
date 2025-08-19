@@ -96,7 +96,7 @@
     <div class="receipt-container center">
         <div class="logo">
             <img src="https://via.placeholder.com/80x80?text=Logo" alt="Logo"><br>
-            Labheshwer<br>
+            Sweetler<br>
             <hr>
         </div>
         <div class="price-box">₹{{ $order->total }} </div>
@@ -106,7 +106,7 @@
     <div class="receipt-container">
         <div class="center">
             <img src="https://via.placeholder.com/80x80?text=Logo" alt="Logo"><br>
-            <strong>Labheshwer</strong><br>
+            <strong>Sweetler</strong><br>
         </div>
         <hr>
         <div class="small-text">
@@ -135,30 +135,90 @@
             <tbody>
                 @foreach ($orderItems as $index => $item)
                     <tr>
+                        @php
+                            $gst = $item->product->hsnCode->gst ?? 0;
+                            $cgst = $gst / 2;
+                            $sgst = $gst / 2;
+                        @endphp
                         {{-- {{dd($item->product)}} --}}
                         <td style="font-size: 9px">
-                            <strong>{{ $index + 1 }} ) CGST @ {{ rtrim(rtrim($item->product->cgst1, '0'), '.') }}%,
-                                SGST @ {{ rtrim(rtrim($item->product->sgst, '0'), '.') }}%</strong><br>
-                            <span style="font-weight: bold">{{ $item->product->barcode }}</span>
-                            {{ strtoupper($item->product->product_name) }}
+                            <strong>{{ $index + 1 }} ) CGST @ {{ rtrim(rtrim($cgst, '0'), '.') }}%,
+                                SGST @ {{ rtrim(rtrim($sgst, '0'), '.') }}%</strong><br>
+                            <span style="font-weight: bold">{{ $item->product->barcode ?? '' }}</span>
+                            {{ strtoupper($item->product->product_name ?? '') }}
                         </td>
                         <td>{{ $item->product_price }}</td>
                         <td>{{ $item->product_weight ? $item->product_weight : $item->product_quantity }}</td>
                         <td>{{ $item->total_amount }}</td>
                     </tr>
                 @endforeach
+                @php
+                    $generalItems = is_string($order->genral_item)
+                        ? json_decode($order->genral_item, true)
+                        : $order->genral_item;
+                @endphp
+
+                @if (!empty($generalItems) && is_array($generalItems))
+                    @foreach ($generalItems as $index => $general)
+                        @php
+                            $gst = isset($general['hsn']) ? (float) preg_replace('/[^0-9.]/', '', $general['hsn']) : 0;
+                            $cgst = $gst / 2;
+                            $sgst = $gst / 2;
+                        @endphp
+                        <tr>
+                            
+                            <td style="font-size: 9px">
+                                <strong>{{ $loop->iteration }}) CGST @
+                                    {{ rtrim(rtrim(number_format($cgst, 2), '0'), '.') }}%,
+                                    SGST @ {{ rtrim(rtrim(number_format($sgst, 2), '0'), '.') }}%</strong><br>
+                                <span style="font-weight: bold">GENERAL ITEM</span><br>
+                                {{ strtoupper($general['name'] ?? '') }}
+                            </td>
+
+                            <td>{{ $general['price'] ?? '' }}</td>
+                            <td>{{ $general['qty'] ?? 1 }}</td>
+                            <td>{{ isset($general['price'], $general['qty']) ? $general['price'] * $general['qty'] : '' }}
+                            </td>
+                        </tr>
+                    @endforeach
+                @endif
+
             </tbody>
         </table>
         <hr class="divider">
 
+        @php
+            // Decode general items if stored as JSON string
+            $generalItems = is_string($order->genral_item)
+                ? json_decode($order->genral_item, true)
+                : $order->genral_item;
+
+            $genItemQty = 0;
+         
+
+            if (is_array($generalItems)) {
+                foreach ($generalItems as $item) {
+                    $qty = isset($item['qty']) ? (int) $item['qty'] : 0;
+                    $price = isset($item['price']) ? (float) $item['price'] : 0;
+                    $genItemQty += $qty;
+                   ;
+                }
+            }
+
+            $finalItemCount = $totalItems + $genItemQty;
+            $finalTotalAmount = $order->total;
+        @endphp
+
         <table>
             <tr class="totals">
-                <td>ITEM: {{ $totalItems }}</td>
+                <td>ITEM: {{ $finalItemCount }}</td>
                 <td></td>
-                <td colspan="3" style="text-align: right; padding: 0px;">&nbsp;Qty:{{ $totalItems }}</td>
-                <td colspan="3" style="text-align: center; padding: 0px;">₹{{ $order->total }}</td>
+                <td colspan="3" style="text-align: right; padding: 0px;">&nbsp;Qty: {{ $finalItemCount }}</td>
+                <td colspan="3" style="text-align: center; padding: 0px;">₹{{ number_format($finalTotalAmount, 2) }}
+                </td>
             </tr>
         </table>
+
         <hr class="divider1">
         <table>
             <thead>
@@ -174,38 +234,70 @@
             <tbody>
                 @foreach ($orderItems as $index => $item)
                     <tr>
+                        @php
+                            $gst = $item->product->hsnCode->gst ?? 0;
+                            $cgst = $gst / 2;
+                            $sgst = $gst / 2;
+                        @endphp
                         {{-- {{dd($item)}} --}}
                         <td style="font-size: 8px;font-weight:400">{{ $loop->iteration }}</td>
                         {{-- <td style="font-size: 9px">
-                            <strong>{{ $index + 1 }} ) CGST @ {{ $item->gst }} %, SGST @ {{ $item->sgst }}
+                            <strong>{{ $index + 1 }} ) CGST @ {{ $cgst }} %, SGST @ {{ $sgst }}
                                 %</strong><br>
                             <span style="font-weight: bold">{{ $item->product->barcode }}</span>
                             {{ strtoupper($item->product->product_name) }}
                         </td> --}}
                         {{-- {{dd($item->product_price *$item->product_quantity)}} --}}
-                        <td style="font-size: 8px;font-weight:600">₹{{ number_format($item->product_price * $item->product_quantity,2)   }}
+                        <td style="font-size: 8px;font-weight:600">
+                            ₹{{ number_format($item->product_price * $item->product_quantity, 2) }}
                         </td>
                         <td style="font-size: 8px;font-weight:600">
-                            ₹{{ number_format(($item->product_price * $item->product_quantity * $item->product->cgst1) / 100, 2) }}
+                            ₹{{ number_format(($item->product_price * $item->product_quantity * $cgst) / 100, 2) }}
                         </td>
                         <td style="font-size: 8px;font-weight:600">
-                            ₹{{ number_format(($item->product_price * $item->product_quantity * $item->product->sgst) / 100, 2) }}
+                            ₹{{ number_format(($item->product_price * $item->product_quantity * $sgst) / 100, 2) }}
                         </td>
                         <td style="font-size: 8px;font-weight:600">
-                            ₹{{ number_format(($item->product_price * $item->product_quantity * $item->product->cess) / 100, 2) }}
+                            ₹{{ number_format(($item->product_price * $item->product_quantity * ($item->product->cess ?? 0)) / 100, 2) }}
                         </td>
                         <td style="font-size: 8px; font-weight:600">
                             ₹{{ number_format(
                                 $item->product_price * $item->product_quantity +
-                                    ($item->product_price * $item->product_quantity * $item->product->cgst1) / 100 +
-                                    ($item->product_price * $item->product_quantity * $item->product->sgst) / 100 +
-                                    ($item->product_price * $item->product_quantity * $item->product->cess) / 100,
+                                    ($item->product_price * $item->product_quantity * $cgst) / 100 +
+                                    ($item->product_price * $item->product_quantity * $sgst) / 100 +
+                                    ($item->product_price * $item->product_quantity * ($item->product->cess ?? 0)) / 100,
                                 2,
                             ) }}
                         </td>
 
                     </tr>
                 @endforeach
+                @php
+                    $generalItems = is_string($order->genral_item)
+                        ? json_decode($order->genral_item, true)
+                        : $order->genral_item;
+                @endphp
+
+                @if (!empty($generalItems) && is_array($generalItems))
+                    @foreach ($generalItems as $index => $general)
+                        @php
+                            $qty = isset($general['qty']) ? (float) $general['qty'] : 0;
+                            $price = isset($general['price']) ? (float) $general['price'] : 0;
+                            $amount = $price * $qty;
+                            $cess = 0;
+                        @endphp
+                        <tr>
+                            <td style="font-size: 8px;font-weight:400">{{ $loop->iteration + count($orderItems) }}</td>
+                            <td style="font-size: 8px;font-weight:600">₹{{ number_format($amount, 2) }}</td>
+                            <td style="font-size: 8px;font-weight:600">₹0.00</td>
+                            <td style="font-size: 8px;font-weight:600">₹0.00</td>
+                            <td style="font-size: 8px;font-weight:600">₹0.00</td>
+                            <td style="font-size: 8px;font-weight:600">
+                                ₹{{ number_format($amount, 2) }}</td>
+                        </tr>
+                    @endforeach
+                @endif
+
             </tbody>
         </table>
         <div class="small-text">Saved Rs. -1 /- on MRP</div>

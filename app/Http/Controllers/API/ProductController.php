@@ -9,10 +9,12 @@ use App\Models\Company;
 use App\Models\HsnCode;
 use App\Models\Inventory;
 use App\Models\PopularProducts;
+use App\Models\FavoriteProducts;
 use App\Models\Product;
 use App\Traits\BranchAuthTrait;
 use Carbon\Exceptions\Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
@@ -405,12 +407,22 @@ class ProductController extends Controller
                 configureBranchConnection($userBranch);
 
                 // Fetch products from branch database
-                $products = Product::on($userBranch->connection_name)->get();
+                $products = Product::on($userBranch->connection_name)->whereNot('product_type','general')->orWhere('product_type',null)->get();
+                $general = Product::on($userBranch->connection_name)->where('product_type','general')->get();
+
+                // for inventory add same name but diffrent product 
+                $referenceGroups = $products->whereNotNull('reference_id')->groupBy('reference_id');
+                $mainProducts = $products->whereNull('reference_id')->values();
+                $products = $mainProducts->map(function ($product) use ($referenceGroups) {
+                    $product->sub_products = $referenceGroups[$product->id] ?? collect();
+                    return $product;
+                });
 
                 $allProducts[] = [
                     'branch' => $userBranch->name,
                     'connection' => $userBranch->connection_name,
-                    'products' => $products
+                    'products' => $products,
+                    'general' => $general
                 ];
             } catch (\Exception $e) {
                 $allProducts[] = [
@@ -483,7 +495,9 @@ class ProductController extends Controller
                 configureBranchConnection($userBranch);
 
                 // Fetch products from branch database
-                $categories = Category::on($userBranch->connection_name)->get();
+                $categories = Category::on($userBranch->connection_name)
+                ->where('type','product')->orWhere('type',null)
+                ->orderBy('position')->get();
 
                 $allCategories[] = [
                     'branch' => $userBranch->name,
@@ -702,6 +716,26 @@ class ProductController extends Controller
 
             $products = $query->get();
 
+            $allProducts = Product::on($branch->connection_name)->get();
+
+            // Filter using acronym logic
+            $acronymMatches = $allProducts->filter(function ($prod) use ($searchKeyword) {
+                $words = preg_split('/\s+/', strtolower($prod->product_name));
+                $initials = implode('', array_map(function ($word) {
+                    return $word[0] ?? '';
+                }, $words));
+
+                // Also include numeric values (e.g. 10RS → 10)
+                preg_match_all('/\d+/', $prod->product_name, $numbers);
+                $numberPart = implode('', $numbers[0] ?? []);
+                $fullAcronym = strtoupper($initials . $numberPart);
+
+                return stripos($fullAcronym, strtoupper($searchKeyword)) !== false;
+            });
+
+            // Merge and remove duplicates
+            $finalResults = $acronymMatches->merge($products)->unique('id')->values();
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -709,8 +743,8 @@ class ProductController extends Controller
                     'branch_code' => $branch->code,
                     'search_query' => $searchKeyword,
                     'search_type' => $searchType,
-                    'total_found' => $products->count(),
-                    'products' => $products
+                    'total_found' => $finalResults->count(),
+                    'products' => $finalResults
                 ]
             ]);
         } catch (Exception $ex) {
@@ -728,13 +762,13 @@ class ProductController extends Controller
             $auth = $this->authenticateAndConfigureBranch();
             $user = $auth['user'];
             $branch = $auth['branch'];
+            $data = [];
 
             // Use Eloquent on dynamic connection
             $popularSelections = PopularProducts::on($branch->connection_name)
                 ->where('user_id', $user->id)
                 ->with('product') // eager load product
                 ->orderByDesc('count')
-                ->take(10)
                 ->get();
 
             if ($popularSelections->isEmpty()) {
@@ -745,22 +779,134 @@ class ProductController extends Controller
             }
 
             // Prepare data: attach selection count to product
-            $popularProducts = $popularSelections->map(function ($selection) {
+            $data['popularProducts'] = $popularSelections->map(function ($selection) {
                 $product = $selection->product;
-                $product->selection_count = $selection->count;
+                if($product){
+                    $product->selection_count = $selection->count;
+                }
                 return $product;
-            });
+            })->filter()->values();
+            
+            $favoriteProducts = FavoriteProducts::on($branch->connection_name)->with(['product'])
+                ->where('user_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+            $data['favoriteProducts'] = $favoriteProducts->map(function ($favorite) {
+                $product = $favorite->product;
+                return $product;
+            })->filter()->values();
 
             return response()->json([
                 'success' => true,
                 'branch' => $branch->name,
-                'data' => $popularProducts
+                'data' => $data
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Error while fetching popular products.',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function addFavorite(Request $request)
+    {
+        try {
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $branch = $auth['branch'];
+
+            // Validate request
+            $validator = Validator::make($request->all(), [
+                'product_id' => 'required',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' =>  $validator->errors()
+                ], 400);
+            }
+
+            // Check if already favorited
+            $existingFavorite = FavoriteProducts::on($branch->connection_name)->where('user_id', $user->id)
+                ->where('product_id', $request->product_id)
+                ->first();
+
+            if ($existingFavorite) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product already in favorites'
+                ], 400);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No carts available for new cart request'
+                ], 400);
+            }
+
+            // Add to favorites
+            $favorite = FavoriteProducts::on($branch->connection_name)->create([
+                'user_id' => $user->id,
+                'product_id' => $request->product_id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Product added to favorites successfully',
+                'data' => $favorite
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function removeFavorite(Request $request)
+    {
+        try {
+            $auth = $this->authenticateAndConfigureBranch();
+            $user = $auth['user'];
+            $branch = $auth['branch'];
+
+            // Validate request
+            $validator = Validator::make($request->all(), [
+                'product_id' => 'required',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $validator->errors()
+                ], 400);
+            }
+
+            // Find and delete the favorite
+            $favorite = FavoriteProducts::on($branch->connection_name)->where('user_id', $user->id)
+                ->where('product_id', $request->product_id)
+                ->first();
+
+            if (!$favorite) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found in favorites'
+                ], 400);
+            }
+
+            $favorite->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Product removed from favorites successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
             ], 500);
         }
     }

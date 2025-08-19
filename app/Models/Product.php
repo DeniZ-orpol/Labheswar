@@ -12,6 +12,7 @@ class Product extends Model
     protected $table = 'products';
 
     protected $fillable = [
+        'reference_id',
         'product_name',
         'barcode',
         'image',
@@ -44,6 +45,9 @@ class Product extends Model
         'max_discount',
         'discount_scheme',
         'bonus_use',
+        'product_type',
+        'weight_to',
+        'weight_from',
         'price_1',
         'price_2',
         'price_3',
@@ -54,7 +58,30 @@ class Product extends Model
         'kg_3',
         'kg_4',
         'kg_5',
+        'use_static_variant',
+        'packaging',
+        'packaging_btn',
+        'custom_variant',
+        'use_custom_variant',
+        'loose_below_weight',
+        'loose_below_price',
+        'auto_variants_in_weight_btn',
+        'auto_variants_in_weight',
+        'auto_variants_in_amount_btn',
+        'auto_variants_in_amount',
+        'custom_variant_btn',
+        'is_variant',
+        'custom_price_btn',
+        'custom_price'
     ];
+
+    protected $casts = [
+        'auto_variants_in_weight' => 'array',
+        'auto_variants_in_amount' => 'array',
+        'custom_price' => 'array',
+    ];
+
+    public $timestamps = true;
 
     public function pCompany()
     {
@@ -69,5 +96,19 @@ class Product extends Model
     public function hsnCode()
     {
         return $this->belongsTo(HsnCode::class, 'hsn_code_id');
+    }
+
+    public function inventories()
+    {
+        return $this->hasMany(Inventory::class, 'product_id', 'id');
+    }
+
+    public function variants()
+    {
+        return $this->hasMany(Product::class, 'reference_id');
+    }
+    public function decimalPackaging()
+    {
+        return $this->belongsTo(Packaging::class, 'packaging', 'group_id');
     }
 }

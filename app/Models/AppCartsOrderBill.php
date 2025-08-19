@@ -10,6 +10,7 @@ class AppCartsOrderBill extends Model
 
     protected $fillable = [
         'cart_id',
+        'genral_item',
         'total_texes',
         'sub_total',
         'total',
@@ -36,4 +37,7 @@ class AppCartsOrderBill extends Model
     public function user(){
         return $this->belongsTo(User::class, 'cart_id');
     }
+    protected $casts = [
+    'genral_item' => 'array',
+];
 }

@@ -11,6 +11,11 @@
             width: 50%;
             box-sizing: border-box;
         }
+        .error-text {
+            color: red;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
     </style>
 @endpush
 @section('content')
@@ -29,7 +34,7 @@
                         <label for="ledger_group" class="form-label w-full flex flex-col sm:flex-row">Ledger Group<span
                                 style="color: red;margin-left: 3px;">
                                 *</span></label>
-                        <select id="ledger_group" name="ledger_group" class="form-control field-new">
+                        <select id="ledger_group" name="ledger_group" class="form-control field-new @error('ledger_group') is-invalid @enderror">
                             <option value="" {{ !$party->ledger_group ?? 'selected' }}>Select Ledger Group...</option>
                             <option value="SUNDRY DEBTORS" {{ $party->ledger_group == 'SUNDRY DEBTORS' ? 'selected' : '' }}>SUNDRY DEBTORS</option>
                             <option value="SUNDRY DEBTORS (E-COMMERCE)" {{ $party->ledger_group == 'SUNDRY DEBTORS (E-COMMERCE)' ? 'selected' : '' }}>SUNDRY DEBTORS (E-COMMERCE)</option>
@@ -41,27 +46,42 @@
                             <option value="SUNDRY CREDITORS (MANUFACTURERS)" {{ $party->ledger_group == 'SUNDRY CREDITORS (MANUFACTURERS)' ? 'selected' : '' }}>SUNDRY CREDITORS (MANUFACTURERS)</option>
                             <option value="SUNDRY CREDITORS (SUPPLIERS)" {{ $party->ledger_group == 'SUNDRY CREDITORS (SUPPLIERS)' ? 'selected' : '' }}>SUNDRY CREDITORS (SUPPLIERS)</option>
                         </select>
+                        @error('ledger_group')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
                     <!-- GST No -->
                     <div class="input-form col-span-3 mt-3">
                         <label for="gst_number" class="form-label w-full flex flex-col sm:flex-row">GST NO.</label>
-                        <input id="gst_number" type="text" name="gst_number" class="form-control field-new" value="{{ old('gst_number', $party->gst_number) }}">
+                        <input id="gst_number" type="text" name="gst_number" class="form-control field-new @error('gst_number') is-invalid @enderror" value="{{ old('gst_number', $party->gst_number) }}">
+                        @error('gst_number')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="input-form col-span-3 mt-3">
                         <label class="form-label">Party Name<span style="color: red;margin-left: 3px;">
                                 *</span></label>
-                        <input type="text" name="party_name" class="form-control field-new" value="{{ old('party_name', $party->party_name) }}" required>
+                        <input type="text" name="party_name" class="form-control field-new @error('party_name') is-invalid @enderror" value="{{ old('party_name', $party->party_name) }}">
+                        @error('party_name')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <!-- State -->
                     <div class="input-form col-span-3 mt-3">
                         <label for="state" class="form-label w-full flex flex-col sm:flex-row">State</label>
-                        <input id="state" type="text" name="state" class="form-control field-new" value="{{ old('state', $party->state) }}">
+                        <input id="state" type="text" name="state" class="form-control field-new @error('state') is-invalid @enderror" value="{{ old('state', $party->state) }}">
+                        @error('state')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
                     <!-- Pan No -->
                     <div class="input-form col-span-3 mt-3">
                         <label for="pan_no" class="form-label w-full flex flex-col sm:flex-row">Pan No</label>
-                        <input id="pan_no" type="text" name="pan_no" class="form-control field-new" value="{{ old('pan_no', $party->pan_no) }}">
+                        <input id="pan_no" type="text" name="pan_no" class="form-control field-new @error('pan_no') is-invalid @enderror" value="{{ old('pan_no', $party->pan_no) }}">
+                        @error('pan_no')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
                     {{-- <div class="input-form col-span-3 mt-3">
                             <label class="form-label">Company Name</label>
@@ -70,19 +90,33 @@
                     {{-- <div class="input-form col-span-3 mt-3">
                         <label class="form-label">Gst NO.</label>
                         <input type="text" name="gst_number" class="form-control field-new">
-                    </div> --}}                    
-                    {{-- <div class="input-form col-span-3 mt-3">
+                    </div> --}}
+                    <!-- <div class="input-form col-span-3 mt-3">
                         <label class="form-label">Station</label>
                         <input type="text" name="station" class="form-control field-new" value="{{ old('station', $party->station) }}">
-                    </div> --}}
+                    </div> -->
                     <div class="input-form col-span-3 mt-3">
                         <label class="form-label">Pin Code</label>
-                        <input type="text" name="pincode" class="form-control field-new" value="{{ old('pincode', $party->pincode) }}"
+                        <input type="text" name="pincode" class="form-control field-new @error('pincode') is-invalid @enderror" value="{{ old('pincode', $party->pincode) }}"
                             oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')">
+                        @error('pincode')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="input-form col-span-3 mt-3">
                         <label class="form-label">Address</label>
-                        <textarea name="address" id="address" class="form-control field-new">{{ old('address', $party->address) }}</textarea>
+                        <textarea name="address" id="address" class="form-control field-new @error('address') is-invalid @enderror">{{ old('address', $party->address) }}</textarea>
+                        @error('address')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <!-- Country -->
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="country" class="form-label w-full flex flex-col sm:flex-row">Country</label>
+                        <input id="country" type="text" name="country" class="form-control field-new @error('country') is-invalid @enderror" value="{{ old('country', $party->country) }}">
+                        @error('country')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
                 <div class="column p-5">
@@ -90,26 +124,38 @@
                     <div class="input-form col-span-3 mt-3">
                         <label for="balancing_method" class="form-label w-full flex flex-col sm:flex-row">Balancing
                             Method</label>
-                        <select id="balancing_method" name="balancing_method" class="form-control field-new">
+                        <select id="balancing_method" name="balancing_method" class="form-control field-new @error('balancing_method') is-invalid @enderror">
                             {{-- <option value="" {{ !$party->balancing_method ?? 'selected'}}>Select Balancing Method...</option> --}}
                             <option value="Bill By Bill" {{ $party->balancing_method == 'Bill By Bill' ? 'selected' : '' }}>Bill By Bill</option>
                             <option value="Fifo Base" {{ $party->balancing_method == 'Fifo Base' ? 'selected' : '' }}>Fifo Base</option>
                             <option value="On Account" {{ $party->balancing_method == 'On Account' ? 'selected' : '' }}>On Account</option>
                         </select>
+                        @error('balancing_method')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="input-form col-span-3 mt-3">
                         <label class="form-label">Bank Account Number</label>
-                        <input type="text" name="acc_no" class="form-control field-new" value="{{ old('acc_no', $party->acc_no) }}">
+                        <input type="text" name="acc_no" class="form-control field-new @error('acc_no') is-invalid @enderror" value="{{ old('acc_no', $party->acc_no) }}">
+                        @error('acc_no')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="input-form col-span-3 mt-3">
                         <label class="form-label">IFSC Code</label>
-                        <input type="text" name="ifsc_code" class="form-control field-new" value="{{ old('ifsc_code', $party->ifsc_code) }}">
+                        <input type="text" name="ifsc_code" class="form-control field-new @error('ifsc_code') is-invalid @enderror" value="{{ old('ifsc_code', $party->ifsc_code) }}">
+                        @error('ifsc_code')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="input-form col-span-3 mt-3">
                         <label class="form-label">Mobile NO.</label>
                         <input type="text" name="mobile_no" value="{{ old('mobile_no', $party->mobile_no) }}"
-                            class="form-control field-new"oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')">
+                            class="form-control field-new @error('mobile_no') is-invalid @enderror" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')">
+                        @error('mobile_no')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
                     
                     <!-- GST Heading -->
@@ -118,19 +164,33 @@
                         <input id="gst_heading" type="text" name="gst_heading" class="form-control field-new">
                     </div> --}}
                     <!-- Mail To -->
-                    {{-- <div class="input-form col-span-3 mt-3">
+                    <!-- <div class="input-form col-span-3 mt-3">
                         <label for="mail_to" class="form-label w-full flex flex-col sm:flex-row">Mail To</label>
                         <input id="mail_to" type="text" name="mail_to" class="form-control field-new" value="{{ old('mail_to', $party->mail_to) }}">
-                    </div> --}}
+                    </div> -->
                     <div class="input-form col-span-3 mt-3">
                         <label class="form-label">Email</label>
-                        <input type="email" name="email" class="form-control field-new" value="{{ old('email', $party->email) }}">
+                        <input type="email" name="email" class="form-control field-new @error('email') is-invalid @enderror" value="{{ old('email', $party->email) }}">
+                        @error('email')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
                     <!-- Contact person -->
                     <div class="input-form col-span-3 mt-3">
                         <label for="contact_person" class="form-label w-full flex flex-col sm:flex-row">Contact
                             Person</label>
-                        <input id="contact_person" type="text" name="contact_person" class="form-control field-new" value="{{ old('contact_person', $party->contact_person) }}">
+                        <input id="contact_person" type="text" name="contact_person" class="form-control field-new @error('contact_person') is-invalid @enderror" value="{{ old('contact_person', $party->contact_person) }}">
+                        @error('contact_person')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="input-form col-span-3 mt-3">
+                        <label for="contact_person_no" class="form-label w-full flex flex-col sm:flex-row">S. Contact
+                            No</label>
+                        <input id="contact_person_no" type="text" name="contact_person_no" class="form-control field-new @error('contact_person_no') is-invalid @enderror" value="{{ old('contact_person_no', $party->contact_person_no) }}">
+                        @error('contact_person_no')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
                     <!-- Designation -->
                     {{-- <div class="input-form col-span-3 mt-3">
@@ -145,20 +205,25 @@
                     <!-- Ledger Category -->
                     <div class="input-form col-span-3 mt-3">
                         <label for="ledger_category" class="form-label w-full flex flex-col sm:flex-row">
-                            Ledger Category
+                            Ledger Type
                         </label>
-                        <select id="ledger_category" name="ledger_category" class="form-control field-new">
-                            <option value="" {{ !$party->ledger_category ?? 'selected' }}>Select Ledger Category...</option>
-                            <option value="Retailer" {{ $party->ledger_category == 'Retailer' ? 'selected' : '' }}>Retailer</option>
-                            <option value="Stock List" {{ $party->ledger_category == 'Stock List' ? 'selected' : '' }}>Stock List</option>
-                            <option value="Distributor" {{ $party->ledger_category == 'Distributor' ? 'selected' : '' }}>Distributor</option>
-                            <option value="Other" {{ $party->ledger_category == 'Other' ? 'selected' : '' }}>Other</option>
+                        <select id="ledger_category" name="ledger_category" class="form-control field-new @error('ledger_category') is-invalid @enderror">
+                            <option value="" {{ !$party->ledger_category ?? 'selected' }}>Select Ledger Type...</option>
+                            <option value="registered" {{ $party->ledger_category == 'registered' ? 'selected' : '' }}>Registered</option>
+                            <option value="composition" {{ $party->ledger_category == 'composition' ? 'selected' : '' }}>Composition</option>
+                            <option value="unregistered" {{ $party->ledger_category == 'unregistered' ? 'selected' : '' }}>Unregistered</option>
+                            <option value="sez" {{ $party->ledger_category == 'sez' ? 'selected' : '' }}>Sez</option>
+                            <option value="rcm_compulsory" {{ $party->ledger_category == 'rcm_compulsory' ? 'selected' : '' }}>Rcm Compulsory</option>
+                            <option value="gst_reversal" {{ $party->ledger_category == 'gst_reversal' ? 'selected' : '' }}>GST Reversal </option>
+                            <option value="related" {{ $party->ledger_category == 'related' ? 'selected' : '' }}>Releted</option>
+                            <option value="uin_holder" {{ $party->ledger_category == 'uin_holder' ? 'selected' : '' }}>UIN Holder</option>
+                            <option value="prohibited" {{ $party->ledger_category == 'prohibited' ? 'selected' : '' }}>Prohibited</option>
+                            <option value="production_house" {{ $party->ledger_category == 'production_house' ? 'selected' : '' }}>Production House</option>
+                            <option value="store_transfer" {{ $party->ledger_category == 'store_transfer' ? 'selected' : '' }}>Store Transfer</option>
                         </select>
-                    </div>
-                    <!-- Country -->
-                    <div class="input-form col-span-3 mt-3">
-                        <label for="country" class="form-label w-full flex flex-col sm:flex-row">Country</label>
-                        <input id="country" type="text" name="country" class="form-control field-new" value="{{ old('country', $party->country) }}">
+                        @error('ledger_category')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
             </div>
@@ -239,22 +304,23 @@
 
             const formFields = [
                 { selector: '#ledger_group', type: 'select' },
-                { selector: 'input[name="party_name"]', type: 'input' },
                 { selector: '#gst_number', type: 'input' },
+                { selector: 'input[name="party_name"]', type: 'input' },
                 { selector: '#state', type: 'input' },
                 { selector: '#pan_no', type: 'input' },
-                { selector: 'input[name="email"]', type: 'input' },
                 // { selector: 'input[name="station"]', type: 'input' },
                 { selector: 'input[name="pincode"]', type: 'input' },
                 { selector: '#address', type: 'textarea' },
+                { selector: '#country', type: 'input' },
                 { selector: '#balancing_method', type: 'select' },
                 { selector: 'input[name="acc_no"]', type: 'input' },
                 { selector: 'input[name="ifsc_code"]', type: 'input' },
                 { selector: 'input[name="mobile_no"]', type: 'input' },
-                { selector: '#mail_to', type: 'input' },
+                // { selector: '#mail_to', type: 'input' },
+                { selector: 'input[name="email"]', type: 'input' },
                 { selector: '#contact_person', type: 'input' },
-                { selector: '#ledger_category', type: 'select' },
-                { selector: '#country', type: 'input' }
+                { selector: '#contact_person_no', type: 'input' },
+                { selector: '#ledger_category', type: 'select' }
             ];
 
             function focusField(selector) {

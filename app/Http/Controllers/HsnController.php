@@ -13,17 +13,29 @@ class HsnController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
         $role = $auth['role'];
 
-        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            $hsns = HsnCode::orderBy('id', 'desc')->paginate(10);
-        } else {
-            $hsns = HsnCode::on($branch->connection_name)->orderBy('id', 'desc')->paginate(10);
+        $query = strtoupper($role->role_name) === 'SUPER ADMIN'
+            ? HsnCode::query()
+            : HsnCode::on($branch->connection_name);
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('hsn_code', 'like', "%$search%")
+                ->orWhere('short_name', 'like', "%$search%");
+            });
+        }
+
+        $hsns = $query->orderBy('id', 'desc')->paginate(20);
+
+        if ($request->ajax()) {
+            return view('hsn.rows', compact('hsns'))->render();
         }
 
         return view('hsn.index', compact('hsns'));
@@ -53,7 +65,7 @@ class HsnController extends Controller
         $validate = $request->validate([
             'hsn_code' => 'required|string|max:255',
             'gst' => 'required|string|max:255',
-            'short_name' => 'required|string|max:255',
+            'short_name' => 'nullable|string|max:255',
         ]);
         $data = [
             'hsn_code' => $validate['hsn_code'],
@@ -61,13 +73,18 @@ class HsnController extends Controller
             'short_name' => $validate['short_name']
         ];
 
-        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            HsnCode::create($data);
-        } else {
-            HsnCode::on($branch->connection_name)->create($data);
+        try{
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                HsnCode::create($data);
+            } else {
+                HsnCode::on($branch->connection_name)->create($data);
+            }    
+            return redirect()->route('hsn_codes.index')->with('success', 'Hsn Code Created Successfully!');
+
+        }catch (Exception $ex) {
+             return redirect()->route('hsn_codes.index')->with('error', 'Failed to create Hsn Code. Please try again.');
         }
 
-        return redirect()->route('hsn_codes.index')->with('success', 'Hsn Code Created Successfully!');
     }
 
     /**
@@ -81,9 +98,9 @@ class HsnController extends Controller
         $branch = $auth['branch'];
 
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            $hsn = HsnCode::where('id', $id)->first();
+            $hsn = HsnCode::with('products')->where('id', $id)->first();
         } else {
-            $hsn = HsnCode::on($branch->connection_name)->where('id', $id)->first();
+            $hsn = HsnCode::on($branch->connection_name)->with('products')->where('id', $id)->first();
         }
 
         if (!$hsn) {
@@ -129,7 +146,7 @@ class HsnController extends Controller
         $validate = $request->validate([
             'hsn_code' => 'required|string|max:255',
             'gst' => 'required|string|max:255',
-            'short_name' => 'required|string|max:255',
+            'short_name' => 'nullable|string|max:255',
         ]);
         $data = [
             'hsn_code' => $validate['hsn_code'],
@@ -137,15 +154,18 @@ class HsnController extends Controller
             'short_name' => $validate['short_name']
         ];
 
-        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            $hsnCode = HsnCode::where('id', $id)->first();
-        } else {
-            $hsnCode = HsnCode::on($branch->connection_name)->where('id', $id)->first();
+        try{
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                $hsnCode = HsnCode::where('id', $id)->first();
+            } else {
+                $hsnCode = HsnCode::on($branch->connection_name)->where('id', $id)->first();
+            }
+            $hsnCode->update($data);
+            return redirect()->route('hsn_codes.index')->with('success', 'Hsn Code Updated Successfully!');
+
+        }catch (Exception $ex) {
+             return redirect()->route('hsn_codes.index')->with('error', 'Failed to update Hsn Code. Please try again.');
         }
-
-        $hsnCode->update($data);
-
-        return redirect()->route('hsn_codes.index')->with('success', 'Hsn Code Updated Successfully!');
     }
 
     /**

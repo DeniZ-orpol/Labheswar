@@ -5,110 +5,56 @@
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             Hsn Codes
         </h2>
+
+        @if (session('success'))
+            <div id="success-alert" class="alert alert-success" style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px;">
+                {{ session('success') }}
+            </div>
+        @endif
+    
+        @if (session('error'))
+            <div id="error-alert" class="alert alert-danger" style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 10px;">
+                {{ session('error') }}
+            </div>
+        @endif
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
                 <a href="{{ Route('hsn_codes.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add New Hsn
                     Code</a>
+                <div class="input-form ml-auto">
+                    <form method="GET" action="{{ route('hsn_codes.index') }}" class="flex gap-2">
+                        <input type="text" name="search" id="search-hsn" placeholder="Search by name"
+                            value="{{ request('search') }}" class="form-control flex-1">
+                        <button type="submit" class="btn btn-primary shadow-md btn-hover">Search</button>
+                    </form>
+                </div>
             </div>
 
             <!-- BEGIN: Users Layout -->
             <!-- DataTable: Add class 'datatable' to your table -->
-            <table id="DataTable" class="display table table-bordered intro-y col-span-12">
-                <thead>
-                    <tr class="bg-primary font-bold text-white">
-                        <th>#</th>
-                        <th>Hsn Code</th>
-                        <th>Cgst</th>
-                        <th>Sgst</th>
-                        <th>Igst</th>
-                        <th>Short Name</th>
-                        <th style="TEXT-ALIGN: left;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($hsns as $hsn)
-                        <tr>
-                            {{-- {{dd($hsn->gst)}} --}}
-                            <td>{{ $loop->iteration + $hsns->firstItem() - 1 }}</td>
-                            <td>{{ $hsn->hsn_code }}</td>
-                            <td>{{ number_format((float) $hsn->gst / 2, 2) }}%</td>
-                            <td>{{ number_format((float) $hsn->gst / 2, 2) }}%</td>
-                            <td>{{ number_format((float) $hsn->gst, 2) }}%</td>
-                            <td>{{ $hsn->short_name }}</td>
-                            <td>
-                                <!-- Add buttons for actions like 'View', 'Edit' etc. -->
-                                <!-- <button class="btn btn-primary">Message</button> -->
-                                <div class="flex gap-2 justify-content-left">
-                                    <a href="{{ route('hsn_codes.show', $hsn->id) }}" class="btn btn-primary mr-1 mb-2">
-                                        View
-                                        {{-- {{ dd($hsn->id) }} --}}
-                                    </a>
-                                    <form action="{{ route('hsn_codes.destroy', $hsn->id) }}" method="POST"
-                                        onsubmit="return confirm('Are you sure you want to delete this hsn?');"
-                                        style="display: inline-block;">
-                                        @csrf
-                                        @method('DELETE') <!-- Add this line -->
-                                        <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
-                                    </form>
-                                    <a href="{{ route('hsn_codes.edit', $hsn->id) }}" class="btn btn-primary mr-1 mb-2">
-                                        Edit
-                                        {{-- {{ dd($hsn->id) }} --}}
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-            @if ($hsns instanceof \Illuminate\Pagination\LengthAwarePaginator && $hsns->hasPages())
-                {{-- Pagination --}}
-                <div class="pagination-wrapper">
-                    <div class="pagination-info">
-                        Showing {{ $hsns->firstItem() }} to {{ $hsns->lastItem() }} of
-                        {{ $hsns->total() }} entries
-                    </div>
-                    <div class="pagination-nav">
-                        <nav role="navigation" aria-label="Pagination Navigation">
-                            <ul class="pagination">
-                                {{-- Previous Page Link --}}
-                                @if ($hsns->onFirstPage())
-                                    <li class="page-item disabled" aria-disabled="true">
-                                        <span class="page-link">‹</span>
-                                    </li>
-                                @else
-                                    <li class="page-item">
-                                        <a class="page-link" href="{{ $hsns->previousPageUrl() }}" rel="prev">‹</a>
-                                    </li>
-                                @endif
-
-                                {{-- Page Numbers --}}
-                                @for ($i = 1; $i <= $hsns->lastPage(); $i++)
-                                    @if ($i == $hsns->currentPage())
-                                        <li class="page-item active">
-                                            <span class="page-link">{{ $i }}</span>
-                                        </li>
-                                    @else
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ $hsns->url($i) }}">{{ $i }}</a>
-                                        </li>
-                                    @endif
-                                @endfor
-
-                                {{-- Next Page Link --}}
-                                @if ($hsns->hasMorePages())
-                                    <li class="page-item">
-                                        <a class="page-link" href="{{ $hsns->nextPageUrl() }}" rel="next">›</a>
-                                    </li>
-                                @else
-                                    <li class="page-item disabled" aria-disabled="true">
-                                        <span class="page-link">›</span>
-                                    </li>
-                                @endif
-                            </ul>
-                        </nav>
-                    </div>
+            <div class="intro-y col-span-12 mt-5">
+                <div id="scrollable-table" style="max-height: calc(100vh - 200px); overflow-y: auto; border: 1px solid #ddd;">
+                    <table id="DataTable" class="display table table-bordered intro-y col-span-12">
+                        <thead style="position: sticky; top: 0; z-index: 10;">
+                            <tr class="bg-primary font-bold text-white">
+                                <th>#</th>
+                                <th>Hsn Code</th>
+                                <th>Cgst</th>
+                                <th>Sgst</th>
+                                <th>Igst</th>
+                                <th>Short Name</th>
+                                <th style="TEXT-ALIGN: left;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hsn-data">
+                            @include('hsn.rows', ['page' => 1])
+                        </tbody>
+                    </table>
                 </div>
-            @endif
+                <div id="loading" style="display: none; text-align: center; padding: 10px;">
+                    <p>Loading more hsns...</p>
+                </div>
+            </div>
 
 
 
@@ -273,6 +219,78 @@
 
             // Redirect to new URL
             window.location.href = currentUrl.toString();
+        }
+
+        let page = 1;
+        let loading = false;
+        let currentSearch = '';
+        let noMoreData = false;
+
+        const scrollContainer = document.getElementById('scrollable-table');
+        const tableBody = document.getElementById('hsn-data');
+        const loadingIndicator = document.getElementById('loading');
+        const searchInput = document.getElementById('search-hsn'); // Make sure you have this input
+        let searchTimer;
+
+        function loadData(pageToLoad, append = false) {
+            if (loading || noMoreData) return;
+            loading = true;
+            loadingIndicator.style.display = 'block';
+
+            let url = new URL(window.location.href);
+            url.searchParams.set('page', pageToLoad);
+            if (currentSearch) {
+                url.searchParams.set('search', currentSearch);
+            }
+
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                loading = false;
+                loadingIndicator.style.display = 'none';
+
+                if (!html.trim()) {
+                    noMoreData = true;
+                    return;
+                }
+
+                if (append) {
+                    tableBody.insertAdjacentHTML('beforeend', html);
+                } else {
+                    tableBody.innerHTML = html;
+                }
+            })
+            .catch(error => {
+                console.error("Error loading data:", error);
+                loading = false;
+                loadingIndicator.style.display = 'none';
+            });
+        }
+
+        scrollContainer.addEventListener('scroll', function () {
+            const scrollBottom = scrollContainer.scrollTop + scrollContainer.clientHeight;
+            const scrollHeight = scrollContainer.scrollHeight;
+
+            if (scrollBottom >= scrollHeight - 100 && !loading && !noMoreData) {
+                page++;
+                loadData(page, true);
+            }
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(() => {
+                    currentSearch = searchInput.value.trim();
+                    page = 1;
+                    noMoreData = false;
+                    loadData(page, false); // reset results
+                }, 300);
+            });
         }
     </script>
 @endpush

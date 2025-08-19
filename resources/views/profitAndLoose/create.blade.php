@@ -12,6 +12,11 @@
             padding: 10px;
             box-sizing: border-box;
         }
+        .error-text {
+            color: red;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
     </style>
 @endpush
 @section('content')
@@ -28,11 +33,14 @@
                         <label for="profit_loose" class="form-label w-full flex flex-col sm:flex-row">
                             Select Profit/Loose<span style="color: red;margin-left: 3px;"> *</span>
                         </label>
-                        <select id="profit_loose" name="profit_loose" class="form-control field-new" required>
+                        <select id="profit_loose" name="profit_loose" class="form-control field-new @error('profit_loose') is-invalid @enderror" >
                             <option value="" selected>Select Profit/Loose...</option>
-                            <option value="Profit">Profit</option>
-                            <option value="Loose">Loose</option>
+                            <option value="Profit" {{ old('profit_loose') == 'Profit' ? 'selected' : '' }}>Profit</option>
+                            <option value="Loose" {{ old('profit_loose') == 'Loose' ? 'selected' : '' }}>Loose</option>
                         </select>
+                        @error('profit_loose')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <!-- Amount -->
@@ -40,7 +48,10 @@
                         <label for="amount" class="form-label w-full flex flex-col sm:flex-row">
                             Amount
                         </label>
-                        <input id="amount" type="text" name="amount" class="form-control field-new" maxlength="255">
+                        <input id="amount" type="text" name="amount" class="form-control field-new @error('amount') is-invalid @enderror" maxlength="255" value="{{ old('amount') }}">
+                        @error('amount')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <!-- Description -->
@@ -48,7 +59,10 @@
                         <label for="description" class="form-label w-full flex flex-col sm:flex-row">
                             Description
                         </label>
-                        <input id="description" type="text" name="description" class="form-control field-new" maxlength="255">
+                        <input id="description" type="text" name="description" class="form-control field-new @error('description') is-invalid @enderror" maxlength="255" value="{{ old('description') }}">
+                        @error('description')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
             </div>

@@ -2,8 +2,19 @@
 @section('content')
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
-            Hsn Code
+            Company
         </h2>
+        @if (session('success'))
+            <div id="success-alert" class="alert alert-success" style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px;">
+                {{ session('success') }}
+            </div>
+        @endif
+    
+        @if (session('error'))
+            <div id="error-alert" class="alert alert-danger" style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 10px;">
+                {{ session('error') }}
+            </div>
+        @endif
         <form action="{{ route('company.update', $companies->id) }}" method="POST" class="form-updated">
             @csrf
             @method('PUT')
@@ -11,8 +22,11 @@
                 <div class="col-span-3 mt-3">
                     <label for="name" class="form-label">Comapny Name<span style="color: red;margin-left: 3px;">
                             *</span></label>
-                    <input type="text" name="name" id="name" class="form-control field-new" required
+                    <input type="text" name="name" id="name" class="form-control field-new" 
                         value="{{ $companies->name }}">
+                    @error('name')
+                        <div class="text-danger mt-2">{{ $message }}</div>
+                    @enderror
                 </div>
             </div>
             <a onclick="goBack()" class="btn btn-outline-primary shadow-md mr-2">Back </a>

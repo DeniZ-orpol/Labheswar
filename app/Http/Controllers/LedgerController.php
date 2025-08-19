@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ledger;
 use App\Models\PurchaseParty;
+use App\Models\PurchaseReceipt;
 use App\Traits\BranchAuthTrait;
 use Exception;
 use Illuminate\Http\Request;
@@ -40,7 +41,16 @@ class LedgerController extends Controller
                 $query->where('ledger_group', $ledgerGroup);
             }
 
+            $search = $request->input('search');
+            if ($search) {
+                $query->where('party_name', 'like', '%' . $search . '%');
+            }
+
             $ledgers = $query->paginate(10);
+
+            if ($request->ajax()) {
+                return view('ledger.rows', compact('ledgers'))->render();
+            }
 
             return view('ledger.index', [
                 'ledgers' => $ledgers,
@@ -142,7 +152,31 @@ class LedgerController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $branch = $auth['branch'];
+        $role = $auth['role'];
+
+        try {
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                $ledger = PurchaseParty::findOrFail($id);
+                $purchaseReceipts = PurchaseReceipt::where('purchase_party_id', $id)->pluck('id');
+                $purchases = \App\Models\Purchase::whereIn('purchase_receipt_id', $purchaseReceipts)->get();
+            } else {
+                $ledger = PurchaseParty::on($branch->connection_name)->findOrFail($id);
+                $purchaseReceipts = PurchaseReceipt::on($branch->connection_name)
+                    ->where('purchase_party_id', $id)
+                    ->pluck('id');
+                $purchases = \App\Models\Purchase::on($branch->connection_name)
+                    ->whereIn('purchase_receipt_id', $purchaseReceipts)
+                    ->get();
+            }
+
+            return view('ledger.purchase', compact('ledger', 'purchases'));
+
+        } catch (\Exception $e) {
+            dd('Error fetching ledger purchase records: ' . $e->getMessage());
+        }
     }
 
     /**

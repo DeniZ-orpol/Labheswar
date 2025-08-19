@@ -25,13 +25,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/search-product', [ProductController::class, 'searchProduct']);
     Route::get('/product-by-barcode/{barcode}', [ProductController::class, 'findProductByBarcode']);
     Route::get('/user/popular-product', [ProductController::class, 'getUserPopularProducts']); // Get list of popular products of auth user
+    Route::post('/add-favorite', [ProductController::class, 'addFavorite']);
+    Route::post('/remove-favorite', [ProductController::class, 'removeFavorite']);
 
     // Cart API
     Route::post('/add-to-cart', [AppCartOrderController::class, 'addProductToCart']);
     Route::post('/get-cart-items', [AppCartOrderController::class, 'getCartItems']);
-    Route::post('/create-order-receipt', action: [AppCartOrderController::class, 'createCartOrderReceipt']);
+    Route::post('/create-order-receipt', [AppCartOrderController::class, 'createCartOrderReceipt']);
     Route::get('/get-cart-list', [AppCartOrderController::class, 'getCartList']);
-    Route::post('/cart/add', [AppCartOrderController::class, 'addToCart']);
+    Route::post('/cart/add', [AppCartOrderController::class, 'addToCart']); // Add product to cart useing  search barcord
     Route::put('/cart/update-quantity', [AppCartOrderController::class, 'updateQuantity']);
     Route::post('/cart/remove-product', [AppCartOrderController::class, 'removeProductFromCart']);
 

@@ -12,22 +12,37 @@ class CompanyContoller extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    
+    public function index(Request $request)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
         $branch = $auth['branch'];
         $role = $auth['role'];
 
+        $perPage = 20;
+
+        // Base query based on role and branch
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            $companies = Company::orderBy('id', 'desc')->paginate(10);
+            $query = Company::orderBy('id', 'desc');
         } else {
-            $companies = Company::on($branch->connection_name)->orderBy('id', 'desc')->paginate(10);
+            $query = Company::on($branch->connection_name)->orderBy('id', 'desc');
+        }
+
+        // Apply search if present
+        if ($request->filled('search')) {
+            $searchTerm = $request->input('search');
+            $query->where('name', 'like', "%{$searchTerm}%");
+        }
+
+        $companies = $query->paginate($perPage);
+
+        if ($request->ajax()) {
+            return view('company.rows', compact('companies'))->render();
         }
 
         return view('company.index', compact('companies'));
     }
-
     /**
      * Show the form for creating a new resource.
      */
@@ -50,26 +65,45 @@ class CompanyContoller extends Controller
         $validate = $request->validate([
             'name' => 'required|string|max:255',
         ]);
-        // dd($request->all());
+        
         $data = [
             'name' => $validate['name'],
         ];
         
-        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            Company::create($data);
-        } else {
-            Company::on($branch->connection_name)->create($data);
-        }
+        try {
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                Company::create($data);
+            } else {
+                Company::on($branch->connection_name)->create($data);
+            }
 
-        return redirect()->route('company.index')->with('success', 'company Created Successfully!');
+            return redirect()->route('company.index')->with('success', 'Company Created Successfully!');
+        } catch (\Exception $e) {
+            return redirect()->route('company.index')->with('error', 'Failed to create company. Please try again.');
+        }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
-        //
+        $auth = $this->authenticateAndConfigureBranch();
+        $user = $auth['user'];
+        $role = $auth['role'];
+        $branch = $auth['branch'];
+
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $company = Company::with('products')->where('id', $id)->first();
+        } else {
+            $company = Company::on($branch->connection_name)->with('products')->where('id', $id)->first();
+        }
+
+        if (!$company) {
+            return redirect()->route('company.index')->with('error', 'Company not found.');
+        }
+
+        return view('company.show', compact('company'));
     }
 
     /**
@@ -112,16 +146,18 @@ class CompanyContoller extends Controller
         $data = [
             'name' => $validate['name'],
         ];
-        
-        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            $company = Company::where('id', $id)->first();
-        } else {
-            $company = Company::on($branch->connection_name)->where('id', $id)->first();
+        try {
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                $company = Company::where('id', $id)->first();
+            } else {
+                $company = Company::on($branch->connection_name)->where('id', $id)->first();
+            }
+            $company->update($data);
+            return redirect()->route('company.index')->with('success', 'Company Updated Successfully!');
+        } catch (\Exception $e) {
+            return redirect()->route('company.index')->with('error', 'Failed to update company. Please try again.');
         }
 
-        $company->update($data);
-
-        return redirect()->route('company.index')->with('success', 'Company Updated Successfully!');
     }
 
     /**

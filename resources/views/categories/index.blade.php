@@ -1,117 +1,64 @@
 @extends('app')
 
 @section('content')
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
     @php
         $isPaginated = method_exists($categories, 'links');
     @endphp
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
-            Category
+            Category List
         </h2>
+        @if (session('success'))
+            <div id="success-alert" class="alert alert-success" style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px;">
+                {{ session('success') }}
+            </div>
+        @endif
+    
+        @if (session('error'))
+            <div id="error-alert" class="alert alert-danger" style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 10px;">
+                {{ session('error') }}
+            </div>
+        @endif
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
-                <a href="{{ Route('categories.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add Category</a>
+                <a href="{{ Route('categories.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add New Category</a>
+                <div class="input-form ml-auto">
+                    <form method="GET" action="{{ route('categories.index') }}" class="flex gap-2">
+                        <input type="text" name="search" id="search-category" placeholder="Search by name"
+                            value="{{ request('search') }}" class="form-control flex-1">
+                        <button type="submit" class="btn btn-primary shadow-md btn-hover">Search</button>
+                    </form>
+                </div>
             </div>
 
-            <div class="intro-y col-span-12 overflow-auto">
-                <table id="DataTable" class="display table table-bordered w-full">
-                    <thead>
-                        <tr class="bg-primary text-white">
-                            <th class="px-4 py-2">#</th>
-                            <th class="px-4 py-2">Name</th>
-                            <th class="px-4 py-2">Image</th>
-                            <th class="px-4 py-2">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($categories as $index => $category)
-                            <tr class="border-b">
-                                <td class="px-4 py-2">{{ $loop->iteration }}</td>
-                                <td class="px-4 py-2">{{ $category->name }}</td>
-                                <td class="px-4 py-2">
-                                    @if ($category->image)
-                                        <img src="{{ asset($category->image) }}" alt="Category Image"
-                                            class="h-12 w-12 object-cover rounded">
-                                    @else
-                                        <span class="text-gray-500 italic">No Image</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <div class="flex gap-2">
-                                        <a href="{{ route('categories.show', $category->id) }}"
-                                            class="btn btn-primary">View</a>
-                                        <a href="{{ route('categories.edit', $category->id) }}"
-                                            class="btn btn-primary">Edit</a>
-                                        <form action="{{ route('categories.destroy', $category->id) }}" method="POST"
-                                            onsubmit="return confirm('Are you sure?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger">Delete</button>
-                                        </form>
-                                    </div>
-                                </td>
+            <!-- BEGIN: Categories Layout -->
+            <!-- DataTable: Add class 'datatable' to your table -->
+             <div class="intro-y col-span-12 ">
+                <div id="scrollable-table" style="max-height: calc(100vh - 200px); overflow-y: auto; border: 1px solid #ddd;">
+                    <table  class="table table-bordered w-full" style="border-collapse: collapse;">
+                        <thead style="position: sticky; top: 0; z-index: 10;">
+                            <tr class="bg-primary font-bold text-white">
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Image</th>
+                                <th style="TEXT-ALIGN: left;">Actions</th>
                             </tr>
-                        @empty
-                            <tr>
-                                <td class="text-center text-gray-500 py-4">No categories found.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-
-                <!-- Show pagination when data is paginated -->
-                @if ($isPaginated && $categories->count() > 0)
-                    <div class="pagination-wrapper">
-                        <div class="pagination-info">
-                            Showing {{ $categories->firstItem() }} to {{ $categories->lastItem() }} of
-                            {{ $categories->total() }} entries
-                        </div>
-                        <div class="pagination-nav">
-                            <nav role="navigation" aria-label="Pagination Navigation">
-                                <ul class="pagination">
-                                    {{-- Previous Page Link --}}
-                                    @if ($categories->onFirstPage())
-                                        <li class="page-item disabled" aria-disabled="true">
-                                            <span class="page-link">‹</span>
-                                        </li>
-                                    @else
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ $categories->previousPageUrl() }}"
-                                                rel="prev">‹</a>
-                                        </li>
-                                    @endif
-
-                                    {{-- Page Numbers --}}
-                                    @for ($i = 1; $i <= $categories->lastPage(); $i++)
-                                        @if ($i == $categories->currentPage())
-                                            <li class="page-item active">
-                                                <span class="page-link">{{ $i }}</span>
-                                            </li>
-                                        @else
-                                            <li class="page-item">
-                                                <a class="page-link"
-                                                    href="{{ $categories->url($i) }}">{{ $i }}</a>
-                                            </li>
-                                        @endif
-                                    @endfor
-
-                                    {{-- Next Page Link --}}
-                                    @if ($categories->hasMorePages())
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ $categories->nextPageUrl() }}"
-                                                rel="next">›</a>
-                                        </li>
-                                    @else
-                                        <li class="page-item disabled" aria-disabled="true">
-                                            <span class="page-link">›</span>
-                                        </li>
-                                    @endif
-                                </ul>
-                            </nav>
-                        </div>
-                    </div>
-                @endif
+                        </thead>
+                        <tbody id="category-data">
+                            @include('categories.rows', ['page' => 1])
+                        </tbody>
+                    </table>
+                </div>
+                <!-- END: Categories Layout -->
+                <div id="loading" style="display: none; text-align: center; padding: 10px;">
+                    <p>Loading more categories...</p>
+                </div>
             </div>
+
+            <!-- END: Categories Layout -->
         </div>
     </div>
 @endsection
@@ -251,29 +198,117 @@
     </style>
 @endpush
 
-{{-- @push('scripts')
-    <script>
-        function changeBranch() {
-            const branchSelect = document.getElementById('branch_select');
-            const selectedBranchId = branchSelect.value;
+@push('scripts')
+<script>
+    let page = 1;
+    let loading = false;
+    let currentSearch = '';
+    const categoryTableBody = document.getElementById('category-data');
+    const loadingIndicator = document.getElementById('loading');
+    const scrollContainer = document.getElementById('scrollable-table');
+    const searchInput = document.getElementById('search-category');
+    let searchTimer;
 
-            // Build URL with branch_id parameter
-            const currentUrl = new URL(window.location.href);
+    // Initialize Sortable once and keep reusing
+    let sortableInstance;
+    function initSortable() {
+        if (sortableInstance) sortableInstance.destroy();
 
-            if (selectedBranchId) {
-                currentUrl.searchParams.set('branch_id', selectedBranchId);
-            } else {
-                currentUrl.searchParams.delete('branch_id');
+        sortableInstance = new Sortable(categoryTableBody, {
+            animation: 150,
+            onEnd: function () {
+                let order = [];
+                categoryTableBody.querySelectorAll('tr').forEach((row, index) => {
+                    order.push({
+                        id: row.getAttribute('data-id'),
+                        position: index + 1
+                    });
+                });
+
+                fetch("{{ route('categories.reorder') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ order: order })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    console.log(data.message);
+                })
+                .catch(console.error);
+            }
+        });
+    }
+
+    // Load data for given page and append or replace
+    function loadData(pageToLoad, append = false) {
+        if (loading) return;
+        loading = true;
+        loadingIndicator.style.display = 'block';
+
+        // Build URL with page and search
+        let url = `?page=${pageToLoad}`;
+        if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+
+        fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.text())
+        .then(data => {
+            if (!data.trim()) {
+                // No more data
+                loadingIndicator.innerHTML = '';
+                return;
             }
 
-            // Remove page parameter when switching branches
-            currentUrl.searchParams.delete('page');
+            if (append) {
+                categoryTableBody.insertAdjacentHTML('beforeend', data);
+            } else {
+                categoryTableBody.innerHTML = data;
+            }
 
-            // Redirect to new URL
-            window.location.href = currentUrl.toString();
+            loadingIndicator.style.display = 'none';
+            loading = false;
+
+            initSortable();
+        })
+        .catch(err => {
+            console.error("Error loading categories:", err);
+            loadingIndicator.style.display = 'none';
+            loading = false;
+        });
+    }
+
+    // Search input keyup event with debounce
+    searchInput.addEventListener('keyup', function () {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            currentSearch = searchInput.value.trim();
+            page = 1;
+            loadData(page, false); // replace results with filtered data
+        }, 300);
+    });
+
+    // Infinite scroll event
+    scrollContainer.addEventListener('scroll', () => {
+        const scrollBottom = scrollContainer.scrollTop + scrollContainer.clientHeight;
+        const scrollHeight = scrollContainer.scrollHeight;
+
+        if (scrollBottom >= scrollHeight - 100 && !loading) {
+            page++;
+            loadData(page, true); // append more results
         }
-    </script>
-@endpush --}}
+    });
+
+    // Initial call to load sortable on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        initSortable();
+    });
+</script>
+@endpush
+
 
 {{-- @push('styles')
     <!-- TailwindCSS-Compatible DataTables CSS -->

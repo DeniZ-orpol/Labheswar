@@ -8,7 +8,19 @@
         padding: 2px !important;
     }
 
-    .product-table [type='text'],
+    .side-nav {
+        width: 105px !important;
+    }
+
+    .side-nav .side-menu .side-menu__title .side-menu__sub-icon {
+        display: none !important;
+    }
+
+    .side-nav .side-menu .side-menu__title {
+        display: none !important;
+    }
+
+    [type='text'],
     [type='email'],
     [type='url'],
     [type='password'],
@@ -73,6 +85,13 @@
     .product-dropdown .dropdown-item:last-child {
         border-bottom: none;
     }
+
+    .no-results {
+        padding: 15px;
+        text-align: center;
+        color: #666;
+        font-style: italic;
+    }
 </style>
 @section('content')
     <div class="content">
@@ -80,7 +99,7 @@
             New Purchase
         </h2>
         <form action="{{ route('purchase.store') }}" method="POST"
-            class="form-updated validate-form box rounded-md mt-5 p-5">
+            class="form-updated validate-form box rounded-md mt-5 p-5" id="purchase-form">
             @csrf <!-- CSRF token for security -->
             <div class="grid grid-cols-12 gap-2 grid-updated">
                 <!-- Name -->
@@ -101,7 +120,7 @@
                     </label>
                     <div class="search-dropdown">
                         <input id="party_name" type="text" name="party_name_display" class="form-control search-input"
-                            placeholder="Search or type party name" autocomplete="off" required>
+                            placeholder="Search or type party name" autocomplete="off">
                         <div class="dropdown-list" id="partyDropdown"></div>
                     </div>
                 </div>
@@ -177,7 +196,8 @@
                                 </div>
 
                                 <!-- Hidden select to maintain existing functionality -->
-                                <select name="product[]" class="form-select text-sm w-full rounded-md hidden-product-select"
+                                <select name="product[]"
+                                    class="form-select text-sm w-full rounded-md hidden-product-select"
                                     style="display: none;" onchange="loadProductDetails(this)">
                                     <option value="">Please Select product</option>
                                     @foreach ($products as $product)
@@ -201,7 +221,8 @@
 
                             <!-- Expiry Date -->
                             <td>
-                                <input type="date" name="expiry_date[]" placeholder="DD-MM-YYYY" class="form-control field-new" maxlength="255">
+                                <input type="date" name="expiry_date[]" placeholder="DD-MM-YYYY"
+                                    class="form-control field-new" maxlength="255">
                             </td>
 
                             <!-- Box -->
@@ -230,25 +251,25 @@
                             <!-- Purchase Rate -->
                             <td>
                                 <input type="number" name="purchase_rate[]" class="form-control field-new"
-                                    maxlength="255" onchange="calculateRowAmount(this)" step="0.01">
+                                    maxlength="255" onchange="calculateRowAmount(this)" step="0.001">
                             </td>
 
                             <!-- Discount (%) -->
                             <td>
                                 <input type="number" name="discount_percent[]" class="form-control field-new text-end"
-                                    maxlength="255" onchange="calculateRowAmount(this)" step="0.01">
+                                    maxlength="255" onchange="calculateRowAmount(this)" step="0.001">
                             </td>
 
                             <!-- Discount (Lumpsum) -->
                             <td>
                                 <input type="number" name="discount_lumpsum[]" class="form-control field-new text-end"
-                                    maxlength="255" onchange="calculateRowAmount(this)" step="0.01">
+                                    maxlength="255" onchange="calculateRowAmount(this)" step="0.001">
                             </td>
 
                             <!-- Amount -->
                             <td>
                                 <input type="number" name="amount[]" class="form-control field-new text-end"
-                                    maxlength="255" readonly step="0.01">
+                                    maxlength="255" readonly step="0.001">
                                 <!-- Hidden fields for calculated data -->
                                 <input type="hidden" name="total_pcs[]" class="total-pcs-hidden">
                                 <input type="hidden" name="base_amount[]" class="base-amount-hidden">
@@ -419,35 +440,32 @@
                                 placeholder="Enter Email address">
                         </div>
                         <!-- <div class="col-span-6">
-                            <label for="modal-company-name" class="form-label">Company Name<span
-                                    style="color: red;margin-left: 3px;">*</span></label>
-                            <input id="modal-company-name" name="company_name" type="text" class="form-control"
-                                placeholder="Enter company name" required>
-                        </div> -->
+                                                    <label for="modal-company-name" class="form-label">Company Name<span
+                                                            style="color: red;margin-left: 3px;">*</span></label>
+                                                    <input id="modal-company-name" name="company_name" type="text" class="form-control"
+                                                        placeholder="Enter company name" required>
+                                                </div> -->
                         <div class="col-span-12">
-                            <label for="modal-gst-number" class="form-label">Gst No.<span
-                                    style="color: red;margin-left: 3px;">*</span></label>
+                            <label for="modal-gst-number" class="form-label">Gst No.</label>
                             <input id="modal-gst-number" name="gst_number" type="text" class="form-control"
-                                placeholder="Enter GST Number" required>
+                                placeholder="Enter GST Number">
                         </div>
                         <div class="col-span-6">
-                            <label for="modal-acc-no" class="form-label">Bank Account Number<span
-                                    style="color: red;margin-left: 3px;">*</span></label>
+                            <label for="modal-acc-no" class="form-label">Bank Account Number</label>
                             <input id="modal-acc-no" name="acc_no" type="text" class="form-control"
-                                placeholder="Enter Bank Account Number" required>
+                                placeholder="Enter Bank Account Number">
                         </div>
                         <div class="col-span-6">
-                            <label for="modal-ifsc-code" class="form-label">IFSC Code<span
-                                    style="color: red;margin-left: 3px;">*</span></label>
+                            <label for="modal-ifsc-code" class="form-label">IFSC Code</label>
                             <input id="modal-ifsc-code" name="ifsc_code" type="text" class="form-control"
-                                placeholder="Enter IFSC Code" required>
+                                placeholder="Enter IFSC Code">
                         </div>
                         <!-- <div class="col-span-6">
-                            <label for="modal-station" class="form-label">Station<span
-                                    style="color: red;margin-left: 3px;">*</span></label>
-                            <input id="modal-station" name="station" type="text" class="form-control"
-                                placeholder="Enter station" required>
-                        </div> -->
+                                        <label for="modal-station" class="form-label">Station<span
+                                                style="color: red;margin-left: 3px;">*</span></label>
+                                        <input id="modal-station" name="station" type="text" class="form-control"
+                                            placeholder="Enter station" required>
+                                    </div> -->
                         <div class="col-span-6">
                             <label for="modal-pincode" class="form-label">Pin Code</label>
                             <input id="modal-pincode" name="pincode" type="text" class="form-control"
@@ -477,9 +495,376 @@
             </div>
         </div>
     </div>
+
+    <!-- Add Product Modal -->
+    <div id="product-modal" class="modal" aria-hidden="true" style="z-index: 50">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <!-- BEGIN: Modal Header -->
+                <div class="modal-header">
+                    <h2 class="font-medium text-base mr-auto">Create New Product</h2>
+                </div>
+                <!-- END: Modal Header -->
+
+                <form action="{{ route('products.modalstore') }}" id="product-form" method="POST"
+                    enctype="multipart/form-data">
+                    @csrf
+                    <!-- BEGIN: Modal Body -->
+                    <div class="modal-body grid grid-cols-12 gap-4 gap-y-3">
+                        <div class="col-span-4">
+                            <label for="modal-product-name" class="form-label">Product Name<span
+                                    style="color: red;margin-left: 3px;">*</span></label>
+                            <input id="modal-product-name" name="product_name" type="text" class="form-control"
+                                placeholder="Enter product name" required>
+                        </div>
+                        <div class="col-span-4">
+                            <label for="modal-product-barcode" class="form-label">Barcode</label>
+                            <input id="modal-product-barcode" name="product_barcode" type="text" class="form-control"
+                                placeholder="Enter barcode">
+                        </div>
+                        <div class="col-span-4">
+                            <label for="unit_type" class="form-label w-full flex flex-col sm:flex-row">
+                                Unit Type<p style="color: red;margin-left: 3px;"> *</p>
+                            </label>
+                            <select id="unit_type" name="unit_type" class="form-control field-new" required>
+                                <option value="" selected>Choose...</option>
+                                <option value="PCS">PCS</option>
+                                <option value="KG">KG</option>
+                                <option value="LITER">LITER</option>
+                                <option value="BOX">BOX</option>
+                            </select>
+                        </div>
+                        <div class="col-span-4">
+                            <label for="modal-product-hsn" class="form-label">HSN Code</label>
+                            <div class="search-dropdown">
+                                <input id="modal-product-hsn" type="text" name="hsn"
+                                    class="form-control field-new search-input" placeholder="Search or type HSN code"
+                                    autocomplete="off">
+                                <div class="dropdown-list" id="hsnDropdown"></div>
+                            </div>
+                        </div>
+                        <div class="col-span-4">
+                            <label for="modal-product-mrp" class="form-label">MRP</label>
+                            <input id="modal-product-mrp" name="mrp" type="number" step="0.01"
+                                class="form-control" placeholder="Enter MRP">
+                        </div>
+                        <div class="col-span-4">
+                            <label for="modal-product-purchase-rate" class="form-label">Purchase Rate</label>
+                            <input id="modal-product-purchase-rate" name="purchase_rate" type="number" step="0.01"
+                                class="form-control" placeholder="Enter purchase rate">
+                        </div>
+                        <div class="col-span-4">
+                            <label for="modal-product-sale-rate-a" class="form-label">Sale Rate A</label>
+                            <input id="modal-product-sale-rate-a" name="sale_rate_a" type="number" step="0.01"
+                                class="form-control" placeholder="Enter sale rate A">
+                        </div>
+                        <div class="col-span-4">
+                            <label for="modal-product-sale-rate-b" class="form-label">Sale Rate B</label>
+                            <input id="modal-product-sale-rate-b" name="sale_rate_b" type="number" step="0.01"
+                                class="form-control" placeholder="Enter sale rate B">
+                        </div>
+                        <div class="col-span-4">
+                            <label for="modal-product-sale-rate-c" class="form-label">Sale Rate C</label>
+                            <input id="modal-product-sale-rate-c" name="sale_rate_c" type="number" step="0.01"
+                                class="form-control" placeholder="Enter sale rate C">
+                        </div>
+                        <div class="col-span-3">
+                            <label for="modal-product-converse-carton" class="form-label">Converse Carton</label>
+                            <input id="modal-product-converse-carton" name="converse_carton" type="number"
+                                class="form-control">
+                        </div>
+                        <div class="col-span-3">
+                            <label for="modal-product-carton-barcode" class="form-label">Carton Barcode</label>
+                            <input id="modal-product-carton-barcode" name="carton_barcode" type="number"
+                                class="form-control">
+                        </div>
+                        <div class="col-span-3">
+                            <label for="modal-product-converse-box" class="form-label">Converse Box</label>
+                            <input id="modal-product-converse-box" name="converse_box" type="number"
+                                class="form-control">
+                        </div>
+                        <div class="col-span-3">
+                            <label for="modal-product-box-barcode" class="form-label">Box Barcode</label>
+                            <input id="modal-product-box-barcode" name="box_barcode" type="number"
+                                class="form-control">
+                        </div>
+                        {{-- <div class="col-span-6">
+                            <label for="modal-product-unit-type" class="form-label">Unit Type</label>
+                            <input id="modal-product-unit-type" name="unit_type" type="text" class="form-control"
+                                placeholder="Enter unit type">
+                        </div> --}}
+                        <div class="col-span-4">
+                            <label for="modal-product-negative-billing" class="form-label">Negative Billing</label>
+                            <select id="modal-product-negative-billing" name="negative_billing" class="form-select">
+                                <option value="NO" selected>No</option>
+                                <option value="YES">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- END: Modal Body -->
+
+                    <!-- BEGIN: Modal Footer -->
+                    <div class="modal-footer">
+                        <button type="button" id="cancel-product-modal"
+                            class="btn btn-outline-secondary w-20 mr-1">Cancel</button>
+                        <button type="button" id="save-product-btn" class="btn btn-primary w-20">Save</button>
+                    </div>
+                    <!-- END: Modal Footer -->
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Product Modal JS
+        function openProductModal(productName) {
+            const modal = document.getElementById('product-modal');
+            const modalProductInput = document.getElementById('modal-product-name');
+            const dropdown = document.querySelector('.product-dropdown');
+
+            dropdown.classList.remove('show');
+
+            // Mark the active input as creating a product
+            const activeInput = document.activeElement;
+            if (activeInput && activeInput.classList.contains('product-search-input')) {
+                activeInput.dataset.creatingProduct = 'true';
+            }
+
+            modalProductInput.value = productName;
+
+            // Show modal
+            modal.style.visibility = 'visible';
+            modal.style.opacity = '1';
+            modal.style.marginTop = '40';
+            modal.style.marginLeft = '0';
+            modal.classList.add('show');
+            modal.classList.remove('hidden');
+            modal.setAttribute('aria-hidden', 'false');
+
+            // Focus on party name input
+            setTimeout(() => {
+                modalProductInput.focus();
+            }, 100);
+        }
+
+        function closeProductModal() {
+            const modal = document.getElementById('product-modal');
+            modal.classList.remove('show');
+            modal.classList.add('hide');
+            // modal.style.display = 'none';
+            modal.style.visibility = 'hidden';
+            modal.style.opacity = '0';
+        }
+
+        document.getElementById('cancel-product-modal').addEventListener('click', closeProductModal);
+
+        document.getElementById('save-product-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Trigger the form submission event
+            const form = document.getElementById('product-form');
+            const submitEvent = new Event('submit');
+            form.dispatchEvent(submitEvent);
+        });
+
+        // Optional: AJAX form submission for product modal
+        document.getElementById('product-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const form = this;
+            const formData = new FormData(form);
+
+            fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // alert('Product created successfully!');
+                        closeProductModal();
+                        console.log(data.data);
+
+                        // Get the newly created product data
+                        const newProduct = data.data;
+
+                        // Find the active product input (the one that triggered the modal)
+                        const activeInput = document.querySelector('.product-search-input:focus') ||
+                            document.querySelector('.product-search-input[data-creating-product="true"]');
+
+                        if (activeInput) {
+                            const row = activeInput.closest('tr');
+                            const hiddenSelect = row.querySelector('.hidden-product-select');
+
+                            // Add the new product to the hidden select with all required data attributes
+                            const newOption = document.createElement('option');
+                            newOption.value = newProduct.id;
+                            newOption.textContent = newProduct.product_name;
+                            newOption.selected = true;
+
+                            // Set all data attributes from the new product
+                            newOption.setAttribute('data-mrp', newProduct.mrp || 0);
+                            newOption.setAttribute('data-name', newProduct.product_name);
+                            newOption.setAttribute('data-box-pcs', newProduct.converse_box || 1);
+                            newOption.setAttribute('data-purchase-rate', newProduct.purchase_rate || 0);
+                            newOption.setAttribute('data-sale-rate-a', newProduct.sale_rate_a || 0);
+                            newOption.setAttribute('data-sale-rate-b', newProduct.sale_rate_b || 0);
+                            newOption.setAttribute('data-sale-rate-c', newProduct.sale_rate_c || 0);
+                            newOption.setAttribute('data-barcode', newProduct.barcode || '');
+                            newOption.setAttribute('data-category', newProduct.category_id || '');
+                            newOption.setAttribute('data-unit-type', newProduct.unit_types || '');
+
+                            // Set GST rates if HSN code data is available
+                            if (newProduct.hsn_code && newProduct.hsn_code.gst) {
+                                const gstRate = newProduct.hsn_code.gst;
+                                newOption.setAttribute('data-sgst', gstRate / 2 || 0);
+                                newOption.setAttribute('data-cgst', gstRate / 2 || 0);
+                            } else {
+                                newOption.setAttribute('data-sgst', 0);
+                                newOption.setAttribute('data-cgst', 0);
+                            }
+
+                            // Clear existing options and add the new one
+                            hiddenSelect.innerHTML = '';
+                            hiddenSelect.appendChild(newOption);
+
+                            // Update the search input with product name
+                            activeInput.value = newProduct.product_name;
+
+                            // Remove the creating product flag
+                            delete activeInput.dataset.creatingProduct;
+
+                            // Trigger loadProductDetails to populate the row
+                            loadProductDetails(hiddenSelect);
+
+                            // Move focus to the next field (expiry date)
+                            setTimeout(() => {
+                                const expiryField = row.querySelector('input[name="expiry_date[]"]');
+                                if (expiryField) {
+                                    expiryField.focus();
+                                }
+                            }, 100);
+
+                            console.log('New product created and selected:', newProduct);
+                        }
+
+                        // Clear form values
+                        form.reset();
+
+                        // Optionally, update product dropdown or reload page
+                        // location.reload();
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to create product'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error creating product: ' + error.message);
+                });
+        });
+
+        // Close modal on clicking outside
+        document.getElementById('product-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeProductModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('product-modal');
+            if (e.key === 'Escape' && modal.classList.contains('show')) {
+                closeProductModal();
+            }
+        });
+    </script>
 @endsection
 
 <script>
+    // Validation Form JS
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('purchase-form');
+
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            let isValid = true;
+            const partyName = document.getElementById('party_name');
+            const billNo = document.getElementById('bill_no');
+            const existingError = partyName.nextElementSibling;
+
+            // Remove previous error
+            partyName.classList.remove('border-red-500', 'border-green-500');
+            if (existingError && existingError.classList.contains('purchase-error')) {
+                existingError.remove();
+            }
+            if (!partyName.value.trim()) {
+                partyName.classList.add('border-red-500');
+                partyName.insertAdjacentHTML('afterend',
+                    `<span class="text-red-500 text-sm purchase-error">Party name is required.</span>`
+                );
+                isValid = false;
+            }
+
+            // Remove previous error
+            billNo.classList.remove('border-red-500', 'border-green-500');
+            if (existingError && existingError.classList.contains('purchase-error')) {
+                existingError.remove();
+            }
+            if (!billNo.value.trim()) {
+                billNo.classList.add('border-red-500');
+                billNo.insertAdjacentHTML('afterend',
+                    `<span class="text-red-500 text-sm purchase-error">Bill No is required.</span>`
+                );
+                isValid = false;
+            }
+
+            const productInputs = document.querySelectorAll('input[name="product_search[]"]');
+            const rateInputs = document.querySelectorAll('input[name="purchase_rate[]"]');
+
+            // Only clear and validate existing visible inputs
+            [...productInputs].forEach(input => {
+                const errorEl = input.nextElementSibling;
+                input.classList.remove('border-red-500', 'border-green-500');
+                if (errorEl && errorEl.classList.contains('purchase-error')) errorEl.remove();
+
+                if (!input.value.trim()) {
+                    input.classList.add('border-red-500');
+                    input.insertAdjacentHTML('afterend',
+                        `<span class="text-red-500 text-sm purchase-error">Product is required.</span>`
+                    );
+                    isValid = false;
+                } else {
+                    input.classList.add('border-green-500');
+                }
+            });
+
+            [...rateInputs].forEach(input => {
+                const errorEl = input.nextElementSibling;
+                input.classList.remove('border-red-500', 'border-green-500');
+                if (errorEl && errorEl.classList.contains('purchase-error')) errorEl.remove();
+
+                const val = parseFloat(input.value);
+                if (isNaN(val) || val <= 0) {
+                    input.classList.add('border-red-500');
+                    input.insertAdjacentHTML('afterend',
+                        `<span class="text-red-500 text-sm purchase-error">Purchase rate is required.</span>`
+                    );
+                    isValid = false;
+                } else {
+                    input.classList.add('border-green-500');
+                }
+            });
+
+
+            if (isValid) form.submit();
+        });
+    });
+
+
     // START: Set up Enter navigation
     function setupEnterNavigation() {
         let currentFieldIndex = 0;
@@ -574,9 +959,9 @@
 
                     // Don't navigate if barcode is being processed or product details are loading
                     if (productInput && (
-                        productInput.dataset.processingBarcode === 'true' ||
-                        productInput.dataset.loadingProductDetails === 'true'
-                    )) {
+                            productInput.dataset.processingBarcode === 'true' ||
+                            productInput.dataset.loadingProductDetails === 'true'
+                        )) {
                         console.log('Blocking navigation - barcode processing or details loading');
                         return;
                     }
@@ -586,7 +971,8 @@
                     if (hiddenSelect && hiddenSelect.value) {
                         // Product is selected, check if product name is loaded in the display
                         const currentItemElement = document.getElementById('current-item');
-                        const productNameLoaded = currentItemElement && currentItemElement.textContent && currentItemElement.textContent !== '-';
+                        const productNameLoaded = currentItemElement && currentItemElement.textContent &&
+                            currentItemElement.textContent !== '-';
 
                         if (productNameLoaded) {
                             // Product details are loaded, proceed to next field
@@ -596,7 +982,8 @@
                             console.log('Product selected but name not displayed, waiting...');
                             setTimeout(() => {
                                 // Try again after a delay
-                                const nameStillLoading = currentItemElement && currentItemElement.textContent && currentItemElement.textContent !== '-';
+                                const nameStillLoading = currentItemElement && currentItemElement.textContent &&
+                                    currentItemElement.textContent !== '-';
                                 if (nameStillLoading) {
                                     focusField(productFields[fieldIndex + 1], row);
                                 } else {
@@ -622,6 +1009,7 @@
                     setTimeout(() => {
                         focusField(productFields[0], newRow);
                     }, 100);
+
                 }
             } else if (e.key === 'Escape' && fieldIndex === productFields.length - 1) {
                 e.preventDefault();
@@ -743,6 +1131,216 @@
         });
     }
 
+    // HSN code dropdown
+    function initHsnDropdown() {
+        const input = document.getElementById('modal-product-hsn');
+        const dropdown = document.getElementById('hsnDropdown');
+        const searchUrl = '{{ route('hsn.search') }}';
+        let timeout;
+        let selectedIndex = -1;
+        let currentHsnData = []; // Store current search results
+
+        input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const value = this.value.trim();
+            selectedIndex = -1;
+
+            if (value.length < 1) {
+                dropdown.classList.remove('show');
+                currentHsnData = [];
+                return;
+            }
+
+            timeout = setTimeout(async () => {
+                try {
+                    let url = `${searchUrl}?search=${value}`;
+
+                    const branchSelect = document.getElementById('branch');
+                    if (branchSelect && branchSelect.value) {
+                        url += `&branch_id=${branchSelect.value}`;
+                    }
+
+                    const response = await fetch(url, {
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector(
+                                'meta[name="csrf-token"]').content
+                        }
+                    });
+
+                    const data = await response.json();
+                    currentHsnData = data.hsn_codes || [];
+
+                    let html = '';
+
+                    // Show existing HSN codes first
+                    currentHsnData.forEach((item, index) => {
+                        // Show HSN code with GST info for better identification
+                        const gstInfo = item.gst ?
+                            // ` (GST: ${typeof item.gst === 'string' ? JSON.parse(item.gst).gst || 'N/A' : item.gst.gst || 'N/A'}%)` :
+                            ` (GST: ${item.gst}%)` :
+                            '';
+                        html +=
+                            `<div class="dropdown-item" data-index="${index}">${item.hsn_code}${gstInfo}</div>`;
+                    });
+
+                    // ALWAYS add "Create new" option - regardless of existing entries
+                    if (value && currentHsnData.length ==
+                        0) { // Only show if user has typed something
+                        html +=
+                            `<div class="no-results">HSN Code not found</div>`;
+                    }
+
+                    dropdown.innerHTML = html;
+                    dropdown.classList.add('show');
+                    selectedIndex = -1;
+
+                    // Add click listeners to dropdown items
+                    dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                        item.addEventListener('mousedown', function(e) {
+                            e.preventDefault();
+                            if (this.dataset.newValue) {
+                                // Creating new HSN code
+                                openHsnModal(this.dataset.newValue);
+                            } else if (this.dataset.index !== undefined) {
+                                // Selecting existing HSN code
+                                const index = parseInt(this.dataset.index);
+                                selectHsnCode(currentHsnData[index].hsn_code,
+                                    currentHsnData[index].gst, currentHsnData[
+                                        index].id);
+                            }
+                        });
+                    });
+
+                } catch (error) {
+                    console.error('HSN search error:', error);
+                    dropdown.classList.remove('show');
+                    currentHsnData = [];
+                }
+            }, 200);
+        });
+
+        // Arrow key navigation
+        input.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.dropdown-item');
+
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = selectedIndex < items.length - 1 ? selectedIndex + 1 : 0;
+                updateHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : items.length - 1;
+                updateHighlight(dropdown, items, selectedIndex);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    handleHsnDropdownItemClick(items[selectedIndex]);
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
+
+        // Handle dropdown item selection
+        function handleHsnDropdownItemClick(item) {
+            dropdown.classList.remove('show');
+
+            if (item.dataset.newValue) {
+                openHsnModal(item.dataset.newValue);
+            } else if (item.dataset.index !== undefined) {
+                const index = parseInt(item.dataset.index);
+                selectHsnCode(currentHsnData[index].hsn_code, currentHsnData[index].gst, currentHsnData[index].id);
+            }
+        }
+
+        function updateHighlight(dropdown, items, selectedIndex) {
+            items.forEach((item, index) => {
+                item.style.backgroundColor = index === selectedIndex ? '#e9ecef' : '';
+            });
+
+            // Auto-scroll within dropdown only
+            if (selectedIndex >= 0 && items[selectedIndex]) {
+                const selectedItem = items[selectedIndex];
+                const dropdownScrollTop = dropdown.scrollTop;
+                const dropdownHeight = dropdown.clientHeight;
+                const itemTop = selectedItem.offsetTop;
+                const itemHeight = selectedItem.offsetHeight;
+
+                if (itemTop < dropdownScrollTop) {
+                    dropdown.scrollTop = itemTop;
+                } else if (itemTop + itemHeight > dropdownScrollTop + dropdownHeight) {
+                    dropdown.scrollTop = itemTop + itemHeight - dropdownHeight;
+                }
+            }
+        }
+    }
+
+    function selectHsnCode(hsnCode, gstData, hsnId = null) {
+        const input = document.getElementById('modal-product-hsn');
+        const dropdown = document.getElementById('hsnDropdown');
+
+        dropdown.classList.remove('show');
+
+        let displayText = hsnCode;
+
+        if (gstData) {
+            try {
+                const gst = typeof gstData === 'string' ? JSON.parse(gstData) : gstData;
+
+                const sgst = gst / 2 || 0;
+                const cgst = gst / 2 || 0;
+                const igst = gst || 0;
+
+                displayText += ` (SGST: ${sgst}%, CGST: ${cgst}%, IGST: ${igst}%)`;
+
+            } catch (e) {
+                console.error('Error parsing GST data:', e);
+                clearGstFields();
+            }
+        } else {
+            clearGstFields();
+        }
+
+        // Set display value to input field
+        input.value = displayText;
+
+        // Store hidden actual HSN code for form submission
+        let hiddenHsnField = document.getElementById('hidden_hsn_code');
+        if (!hiddenHsnField) {
+            hiddenHsnField = document.createElement('input');
+            hiddenHsnField.type = 'hidden';
+            hiddenHsnField.id = 'hidden_hsn_code';
+            hiddenHsnField.name = 'hsn_code';
+            input.parentNode.appendChild(hiddenHsnField);
+
+            // Prevent visible field from being submitted
+            input.name = 'hsn_code_display';
+        }
+        hiddenHsnField.value = hsnCode;
+
+        // Store HSN ID for backend submission
+        let hiddenHsnIdField = document.getElementById('hidden_hsn_id');
+        if (!hiddenHsnIdField) {
+            hiddenHsnIdField = document.createElement('input');
+            hiddenHsnIdField.type = 'hidden';
+            hiddenHsnIdField.id = 'hidden_hsn_id';
+            hiddenHsnIdField.name = 'hsn_code_id';
+            input.parentNode.appendChild(hiddenHsnIdField);
+        }
+        hiddenHsnIdField.value = hsnId || '';
+    }
+
     // Setup individual product input (like party dropdown)
     function setupProductInput(input) {
         const dropdown = input.nextElementSibling;
@@ -760,7 +1358,7 @@
             if (value.length < 1) {
                 dropdown.classList.remove('show');
                 const scroll_container = document.querySelector('.custome_scroll');
-                    if (scroll_container) scroll_container.style.overflowX = 'auto';
+                if (scroll_container) scroll_container.style.overflowX = 'auto';
                 currentData = [];
                 return;
             }
@@ -778,17 +1376,18 @@
                         url += `&branch_id=${encodeURIComponent(branchSelect.value)}`;
                     }
 
-                    console.log('Fetching products from:', url);
+                    // console.log('Fetching products from:', url);
 
                     const response = await fetch(url, {
                         headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'X-CSRF-TOKEN': document.querySelector(
+                                'meta[name="csrf-token"]').content,
                             'X-Requested-With': 'XMLHttpRequest'
                         }
                     });
 
                     const data = await response.json();
-                    console.log('Product search response:', data);
+                    // console.log('Product search response:', data);
 
                     currentData = data.products || [];
                     window.currentProductData = currentData;
@@ -803,7 +1402,7 @@
                         // Mark this input as processing barcode
                         input.dataset.processingBarcode = 'true';
 
-                        console.log('Auto-selecting product for barcode scan:', product);
+                        // console.log('Auto-selecting product for barcode scan:', product);
 
                         // Auto-select the product for barcode scan
                         setTimeout(() => {
@@ -827,6 +1426,11 @@
                             `<div class="dropdown-item" data-index="${index}" data-product-id="${product.id}">${product.product_name}${productInfo}</div>`;
                     });
 
+                    if (value) {
+                        html +=
+                            `<div class="dropdown-item create-new" data-new-value="${value}">+ Create new Product: "${value}"</div>`;
+                    }
+
                     dropdown.innerHTML = html;
                     dropdown.classList.add('show');
                     const scroll_container = document.querySelector('.custome_scroll');
@@ -838,8 +1442,13 @@
                     dropdown.querySelectorAll('.dropdown-item').forEach(item => {
                         item.addEventListener('mousedown', function(e) {
                             e.preventDefault();
-                            const index = parseInt(this.dataset.index);
-                            selectProduct(currentData[index].product_name, currentData[index].id);
+                            if (this.dataset.newValue) {
+                                openProductModal(this.dataset.newValue);
+                            } else if (this.dataset.index !== undefined) {
+                                const index = parseInt(this.dataset.index);
+                                selectProduct(currentData[index].product_name,
+                                    currentData[index].id);
+                            }
                         });
                     });
 
@@ -889,14 +1498,16 @@
                 updateProductHighlight(dropdown, items, selectedIndex);
             } else if (e.key === 'Enter') {
                 e.preventDefault();
-                if (selectedIndex >= 0 && items[selectedIndex]) {
+                if (items[selectedIndex].dataset.newValue) {
+                    openProductModal(items[selectedIndex].dataset.newValue);
+                } else if (items[selectedIndex].dataset.index !== undefined) {
                     const index = parseInt(items[selectedIndex].dataset.index);
                     selectProduct(currentData[index].product_name, currentData[index].id);
                 }
             } else if (e.key === 'Escape') {
                 dropdown.classList.remove('show');
                 const scroll_container = document.querySelector('.custome_scroll');
-                    if (scroll_container) scroll_container.style.overflowX = 'auto';
+                if (scroll_container) scroll_container.style.overflowX = 'auto';
                 selectedIndex = -1;
             }
         });
@@ -906,7 +1517,7 @@
             if (!input.contains(e.target) && !dropdown.contains(e.target)) {
                 dropdown.classList.remove('show');
                 const scroll_container = document.querySelector('.custome_scroll');
-                    if (scroll_container) scroll_container.style.overflowX = 'auto';
+                if (scroll_container) scroll_container.style.overflowX = 'auto';
                 selectedIndex = -1;
             }
         });
@@ -952,6 +1563,10 @@
         const activeInput = document.activeElement;
         let input, dropdown;
 
+        console.log('productName', productName);
+        console.log('productId', productId);
+        console.log('activeInput', activeInput);
+
         if (!activeInput || !activeInput.classList.contains('product-search-input')) {
             const visibleDropdown = document.querySelector('.product-dropdown.show');
             if (visibleDropdown) {
@@ -972,7 +1587,7 @@
         // Close dropdown
         dropdown.classList.remove('show');
         const scroll_container = document.querySelector('.custome_scroll');
-                    if (scroll_container) scroll_container.style.overflowX = 'auto';
+        if (scroll_container) scroll_container.style.overflowX = 'auto';
 
         // Update search input
         input.value = productName;
@@ -990,7 +1605,7 @@
 
         // Check if we have valid product data
         if (!productData || !productId) {
-            console.log('No valid product data found');
+            // console.log('No valid product data found');
             input.value = '';
             delete input.dataset.processingBarcode;
             setTimeout(() => {
@@ -1022,7 +1637,8 @@
 
         hiddenSelect.appendChild(newOption);
 
-        const detectedBarcodeScan = isBarcodeScan || (productData.barcode && input.value.trim() === productData.barcode);
+        const detectedBarcodeScan = isBarcodeScan || (productData.barcode && input.value.trim() === productData
+            .barcode);
 
         console.log('Product selected:', {
             productName: productName,
@@ -1043,13 +1659,15 @@
                 // Verify that product details were loaded by checking if product name is set and hidden select has value
                 const productNameSet = hiddenSelect.value && hiddenSelect.options[hiddenSelect.selectedIndex];
                 const currentItemElement = document.getElementById('current-item');
-                const productNameDisplayed = currentItemElement && currentItemElement.textContent && currentItemElement.textContent !== '-';
+                const productNameDisplayed = currentItemElement && currentItemElement.textContent &&
+                    currentItemElement.textContent !== '-';
 
                 const productDetailsLoaded = productNameSet && productNameDisplayed;
 
                 console.log('Product details loading check:', {
                     hiddenSelectValue: hiddenSelect.value,
-                    productNameDisplayed: currentItemElement ? currentItemElement.textContent : 'no current-item element',
+                    productNameDisplayed: currentItemElement ? currentItemElement.textContent :
+                        'no current-item element',
                     productDetailsLoaded: productDetailsLoaded
                 });
 
@@ -1074,6 +1692,8 @@
                             setTimeout(() => {
                                 expiryField.focus();
                                 expiryField.select();
+                                setDefaultExpiryDate(expiryField);
+
                             }, 100);
                         }
                     } else {
@@ -1082,6 +1702,7 @@
                         if (nextField) {
                             setTimeout(() => {
                                 nextField.focus();
+                                setDefaultExpiryDate(nextField);
                             }, 100);
                         }
                     }
@@ -1144,6 +1765,7 @@
         initPartyModal();
 
         initProductDropdown();
+        initHsnDropdown();
 
     });
 
@@ -1178,7 +1800,7 @@
 
     // Function to open party modal
     function openPartyModal(partyName) {
-        console.log('Opening party modal with name:', partyName);
+        // console.log('Opening party modal with name:', partyName);
         const modal = document.getElementById('party-modal');
         const modalPartyInput = document.getElementById('modal-party-name');
         const dropdown = document.getElementById('partyDropdown');
@@ -1194,6 +1816,7 @@
         modal.style.opacity = '1';
         modal.style.marginTop = '0';
         modal.style.marginLeft = '0';
+        modal.style.zIndex = '50';
         modal.classList.add('show');
         modal.classList.remove('hidden');
         modal.setAttribute('aria-hidden', 'false');
@@ -1208,7 +1831,8 @@
     function closePartyModal() {
         const modal = document.getElementById('party-modal');
         modal.classList.remove('show');
-        modal.style.display = 'none';
+        modal.classList.add('hide');
+        // modal.style.display = 'none';
         modal.style.visibility = 'hidden';
         modal.style.opacity = '0';
     }
@@ -1272,7 +1896,7 @@
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Party creation response:', data);
+                    // console.log('Party creation response:', data);
 
                     if (data.success) {
                         // Close modal first
@@ -1431,7 +2055,7 @@
             } else if (e.key === 'Escape') {
                 dropdown.classList.remove('show');
                 const scroll_container = document.querySelector('.custome_scroll');
-                    if (scroll_container) scroll_container.style.overflowX = 'auto';
+                if (scroll_container) scroll_container.style.overflowX = 'auto';
                 selectedIndex = -1;
             }
         });
@@ -1490,11 +2114,19 @@
         newRow.querySelectorAll('input').forEach(input => input.value = '');
         newRow.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
 
+        // Remove validation classes
+        newRow.querySelectorAll('input, select').forEach(el => {
+            el.classList.remove('border-red-500', 'border-green-500');
+        });
+
+        // Remove error messages
+        newRow.querySelectorAll('.purchase-error').forEach(el => el.remove());
+
         // Update event handlers for new row
         const productSearchInput = newRow.querySelector('.product-search-input');
         if (productSearchInput) {
-            // productSearchInput.setAttribute('onkeyup', 'searchProducts(this)');
-            productSearchInput.setAttribute('onfocus', 'showProductDropdown(this)');
+            productSearchInput.setAttribute('onkeyup', 'searchProducts(this)');
+            // productSearchInput.setAttribute('onfocus', 'showProductDropdown(this)');
         }
 
         const hiddenSelect = newRow.querySelector('.hidden-product-select');
@@ -1521,6 +2153,16 @@
 
         // Update delete button states
         updateDeleteButtons();
+        // const expiryInput = newRow.querySelector('input[name="expiry_date[]"]');
+        // setDefaultExpiryDate(expiryInput);
+    }
+
+    function setDefaultExpiryDate(input) {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+        const defaultDate = `${yyyy}-${mm}-01`; // e.g., "2025-08-01"
+        input.value = defaultDate;
     }
 
     function removeRow(button) {

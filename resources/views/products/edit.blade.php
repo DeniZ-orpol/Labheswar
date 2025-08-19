@@ -65,7 +65,6 @@
             border: 1px solid #ddd;
             max-height: 200px;
             overflow-y: auto;
-            z-index: 1000;
             display: none;
         }
 
@@ -106,7 +105,7 @@
             Edit Product
         </h2>
         <form action="{{ route('products.update', $product->id) }}" method="POST" enctype="multipart/form-data"
-            class="form-updated validate-form">
+            class="form-updated validate-form" id="EditproductForm">
             @csrf
             @method('PUT')
             <div class="row">
@@ -122,10 +121,10 @@
                         <!-- barcode -->
                         <div class="input-form col-span-3 mt-3">
                             <label for="barcode" class="form-label w-full flex flex-col sm:flex-row">
-                                Barcode<span style="color: red;margin-left: 3px;"> *</span>
+                                Barcode
                             </label>
                             <input id="barcode" type="text" name="product_barcode" class="form-control field-new"
-                                value="{{ $product->barcode }}" required>
+                                value="{{ $product->barcode }}" >
 
                         </div>
 
@@ -135,14 +134,16 @@
                                 Name<span style="color: red;margin-left: 3px;"> *</span>
                             </label>
                             <input id="product_name" type="text" name="product_name" class="form-control field-new"
-                                placeholder="Enter Product name" required maxlength="255"
+                                placeholder="Enter Product name" maxlength="255"
                                 value="{{ $product->product_name }}">
+
+                            <div class="error-message text-red-500 text-sm mt-1" id="error_product_name"></div>
                         </div>
 
                         <!-- search option -->
                         <div class="input-form col-span-3 mt-3">
                             <label for="search_option" class="form-label w-full flex flex-col sm:flex-row">
-                                Alias
+                                Search Alias
                             </label>
                             <input id="search_option" type="text" name="search_option" class="form-control field-new"
                                 value="{{ $product->search_option }}">
@@ -153,7 +154,7 @@
                             <label for="unit_type" class="form-label w-full flex flex-col sm:flex-row">
                                 Unit Type <p style="color: red; margin-left: 3px;">*</p>
                             </label>
-                            <select id="unit_type" name="unit_type" class="form-control field-new" required>
+                            <select id="unit_type" name="unit_type" class="form-control field-new">
                                 <option value="" disabled
                                     {{ old('unit_type', $product->unit_types ?? '') == '' ? 'selected' : '' }}>
                                     Choose...
@@ -175,16 +176,17 @@
                                     BOX
                                 </option>
                             </select>
+                             <div class="error-message text-red-500 text-sm mt-1" id="error_unit_type"></div>
                         </div>
 
-                        <!-- Company -->
+                         <!-- Company -->
                         {{-- <div class="input-form col-span-3 mt-3">
-                        <label for="product_company" class="form-label w-full flex flex-col sm:flex-row">
-                            Company
-                        </label>
-                        <input id="product_company" type="text" name="product_company" class="form-control field-new"
-                            value="{{ $product->pCompany->name ?? '' }}">
-                    </div> --}}
+                                <label for="product_company" class="form-label w-full flex flex-col sm:flex-row">
+                                    Company
+                                </label>
+                                <input id="product_company" type="text" name="product_company" class="form-control field-new"
+                                    value="{{ $product->pCompany->name ?? '' }}">
+                            </div> --}}
                         <!-- Company with Searchable Dropdown -->
                         <div class="input-form col-span-3 mt-3">
                             <label for="product_company" class="form-label w-full flex flex-col sm:flex-row">
@@ -204,12 +206,12 @@
 
                         <!-- category -->
                         {{-- <div class="input-form col-span-3 mt-3">
-                        <label for="product_category" class="form-label w-full flex flex-col sm:flex-row">
-                            category
-                        </label>
-                        <input id="product_category" type="text" name="product_category" class="form-control field-new"
-                            value="{{ $product->category->name ?? '' }}">
-                    </div> --}}
+                                <label for="product_category" class="form-label w-full flex flex-col sm:flex-row">
+                                    category
+                                </label>
+                                <input id="product_category" type="text" name="product_category" class="form-control field-new"
+                                    value="{{ $product->category->name ?? '' }}">
+                            </div> --}}
                         <!-- Category with Searchable Dropdown -->
                         <div class="input-form col-span-3 mt-3">
                             <label for="product_category" class="form-label w-full flex flex-col sm:flex-row">
@@ -226,15 +228,15 @@
                                     value="{{ $product->category_id ?? '' }}">
                             </div>
                         </div>
-
-                        <!-- HSN code -->
+                        
+                         <!-- HSN code -->
                         {{-- <div class="input-form col-span-3 mt-3">
-                        <label for="hsn_code" class="form-label w-full flex flex-col sm:flex-row">
-                            HSN Code
-                        </label>
-                        <input id="hsn_code" type="text" name="hsn_code" class="form-control field-new"
-                            value="{{ $product->hsnCode->hsn_code ?? '' }}">
-                    </div> --}}
+                            <label for="hsn_code" class="form-label w-full flex flex-col sm:flex-row">
+                                HSN Code
+                            </label>
+                            <input id="hsn_code" type="text" name="hsn_code" class="form-control field-new"
+                                value="{{ $product->hsnCode->hsn_code ?? '' }}">
+                        </div> --}}
                         <!-- HSN Code with Searchable Dropdown -->
                         <div class="input-form col-span-3 mt-3">
                             <label for="hsn_code" class="form-label w-full flex flex-col sm:flex-row">
@@ -275,21 +277,21 @@
 
                         <!-- sgst -->
                         {{-- <div class="input-form col-span-3 mt-3">
-                        <label for="product_sgst" class="form-label w-full flex flex-col sm:flex-row">
-                            SGST
-                        </label>
-                        <input id="product_sgst" type="number" step="0.01" name="sgst" class="form-control field-new"
-                            value="{{ $hsnGst['SGST'] ?? '' }}">
-                    </div> --}}
+                            <label for="product_sgst" class="form-label w-full flex flex-col sm:flex-row">
+                                SGST
+                            </label>
+                            <input id="product_sgst" type="number" step="0.01" name="sgst" class="form-control field-new"
+                                value="{{ $hsnGst['SGST'] ?? '' }}">
+                        </div> --}}
 
                         <!-- CGST -->
                         {{-- <div class="input-form col-span-3 mt-3">
-                        <label for="product_cgst" class="form-label w-full flex flex-col sm:flex-row">
-                            CGST
-                        </label>
-                        <input id="product_cgst" type="number" step="0.01" name="cgst"
+                            <label for="product_cgst" class="form-label w-full flex flex-col sm:flex-row">
+                                CGST
+                            </label>
+                            <input id="product_cgst" type="number" step="0.01" name="cgst"
                             class="form-control field-new" value="{{ $hsnGst['CGST'] ?? '' }}">
-                    </div> --}}
+                    </div> --}}                        
 
                         <!-- IGST -->
                         {{-- <div class="input-form col-span-3 mt-3">
@@ -320,13 +322,13 @@
                         </div>
 
                         <!-- Purchase rate -->
-                        <!-- <div class="input-form col-span-3 mt-3">
+                        <div class="input-form col-span-3 mt-3">
                             <label for="product_purchase_rate" class="form-label w-full flex flex-col sm:flex-row">
                                 Purchase Rate
                             </label>
                             <input id="product_purchase_rate" type="number" step="0.0001" name="purchase_rate"
                                 class="form-control field-new" value="{{ $product->purchase_rate }}">
-                        </div> -->
+                        </div>
 
                         <!-- Sale rate A -->
                         <div class="input-form col-span-3 mt-3">
@@ -347,13 +349,13 @@
                         </div>
 
                         <!-- Sale rate C -->
-                        <!-- <div class="input-form col-span-3 mt-3">
+                        <div class="input-form col-span-3 mt-3">
                             <label for="product_sale_rate_c" class="form-label w-full flex flex-col sm:flex-row">
                                 Sale Rate C
                             </label>
                             <input id="product_sale_rate_c" type="number" step="0.01" name="sale_rate_c"
                                 class="form-control field-new" value="{{ $product->sale_rate_c }}">
-                        </div> -->
+                        </div>
 
                         <!-- Carton -->
                         <div class="row mt-1 col-span-3">
@@ -420,7 +422,7 @@
                         <!-- Negative Billing -->
                         <div class="input-form col-span-3 mt-3">
                             <label for="negative_billing" class="form-label w-full flex flex-col sm:flex-row">
-                                Negative Stock
+                                Negative Billing
                             </label>
                             <select id="negative_billing" name="negative_billing" class="form-control field-new">
                                 <option value="NO"
@@ -508,166 +510,252 @@
                             {{-- <input id="bonus_use" type="text" name="bonus_use" class="form-control field-new"> --}}
                         </div>
 
-                        <!-- Submit Button -->
-                    </div>
-                       <hr class="col-span-12 mt-5">
-                    <div class="column col-span-12">
-                        <!-- Loose quantity decimal button -->
-                        <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
-                            <label for="decimal_btn" class="form-label w-full flex flex-col sm:flex-row">
-                                Decimal
-                            </label>
-                            <input id="decimal_btn" type="checkbox" name="decimal_btn"
-                                class="form-check-input mr-0 ml-3" {{ $product->decimal_btn ? 'checked' : '' }}>
-                        </div>
-
-                        <div id="decimal_section"
-                            style="{{ $product->decimal_btn ? 'display: block;' : 'display: none;' }}">
-                            <div class="row">
-                                <!-- BOX barcode -->
-                                <div class="column">
-                                    <div class="input-form col-span-3">
-                                        <label for="price_1" class="form-label w-full flex flex-col sm:flex-row">
-                                            Price 1
-                                        </label>
-                                        <input id="price_1" type="number" name="price_1"
-                                            class="form-control field-new" value={{ $product->price_1 ?? '' }}>
-                                    </div>
-                                </div>
-                                <div class="column">
-                                    <div class="input-form col-span-3">
-                                        <label for="price_2" class="form-label w-full flex flex-col sm:flex-row">
-                                            Price 2
-                                        </label>
-                                        <input id="price_2" type="number" name="price_2"
-                                            class="form-control field-new" value={{ $product->price_2 ?? '' }}>
-                                    </div>
-                                </div>
-                                <div class="column">
-                                    <div class="input-form col-span-3">
-                                        <label for="price_3" class="form-label w-full flex flex-col sm:flex-row">
-                                            Price 3
-                                        </label>
-                                        <input id="price_3" type="number" name="price_3"
-                                            class="form-control field-new" value={{ $product->price_3 ?? '' }}>
-                                    </div>
-                                </div>
-                                <div class="column">
-                                    <div class="input-form col-span-3">
-                                        <label for="price_4" class="form-label w-full flex flex-col sm:flex-row">
-                                            Price 4
-                                        </label>
-                                        <input id="price_4" type="number" name="price_4"
-                                            class="form-control field-new" value={{ $product->price_4 ?? '' }}>
-                                    </div>
-                                </div>
-                                <div class="column">
-                                    <div class="input-form col-span-3">
-                                        <label for="price_5" class="form-label w-full flex flex-col sm:flex-row">
-                                            Price 5
-                                        </label>
-                                        <input id="price_5" type="number" name="price_5"
-                                            class="form-control field-new" value={{ $product->price_5 ?? '' }}>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <!-- BOX barcode -->
-                                <div class="column">
-                                    <div class="input-form col-span-3">
-                                        <label for="kg_1" class="form-label w-full flex flex-col sm:flex-row">
-                                            Weight 1
-                                        </label>
-                                        <input id="kg_1" type="number" name="kg_1"
-                                            class="form-control field-new" value="{{ $product->Kg_1 }}">
-                                    </div>
-                                </div>
-                                <div class="column">
-                                    <div class="input-form col-span-3">
-                                        <label for="kg_2" class="form-label w-full flex flex-col sm:flex-row">
-                                            Weight 2
-                                        </label>
-                                        <input id="kg_2" type="number" name="kg_2"
-                                            class="form-control field-new" value="{{ $product->Kg_2 }}">
-                                    </div>
-                                </div>
-                                <div class="column">
-                                    <div class="input-form col-span-3">
-                                        <label for="kg_3" class="form-label w-full flex flex-col sm:flex-row">
-                                            Weight 3
-                                        </label>
-                                        <input id="kg_3" type="number" name="kg_3"
-                                            class="form-control field-new" value="{{ $product->Kg_3 }}">
-                                    </div>
-                                </div>
-                                <div class="column">
-                                    <div class="input-form col-span-3">
-                                        <label for="kg_4" class="form-label w-full flex flex-col sm:flex-row">
-                                            Weight 4
-                                        </label>
-                                        <input id="kg_4" type="number" name="kg_4"
-                                            class="form-control field-new" value="{{ $product->Kg_4 }}">
-                                    </div>
-                                </div>
-                                <div class="column">
-                                    <div class="input-form col-span-3">
-                                        <label for="kg_5" class="form-label w-full flex flex-col sm:flex-row">
-                                            Weight 5
-                                        </label>
-                                        <input id="kg_5" type="number" name="kg_5"
-                                            class="form-control field-new" value="{{ $product->Kg_5 }}">
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <!-- Sale online toggle -->
-                        {{-- <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
-                            <label for="sale_online" class="form-label w-full flex flex-col sm:flex-row">
-                                Sale Online
-                            </label>
-                            <input id="sale_online" type="checkbox" name="sale_online"
-                                class="form-check-input mr-0 ml-3" {{ $product->sale_online ? 'checked' : '' }}>
-                        </div> --}}
-
-                        <!-- GST active toggle -->
-                        {{-- <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
-                        <label for="gst_active" class="form-label w-full flex flex-col sm:flex-row">
-                            GST
-                        </label>
-                        <input id="gst_active" type="checkbox" name="gst_active" class="form-check-input mr-0 ml-3"
-                            {{ $product->gst_active ? 'checked' : '' }}>
-                    </div> --}}
-
                         <div class="input-form col-span-3 mt-3">
-                            <label for="fileInput" class="form-label w-full flex flex-col sm:flex-row">
-                                Product Image
+                            <label for="product_type" class="form-label w-full flex flex-col sm:flex-row">
+                                Product Type<p style="color: red;margin-left: 3px;"> *</p>
                             </label>
+                            <select id="product_type" name="product_type" class="form-control field-new">
+                                <option value="product" {{ old('product_type', $product->product_type ?? '') == 'product' ? 'selected' : '' }} >Product</option>
+                                <option value="packaging"  {{ old('product_type', $product->product_type ?? '') == 'packaging' ? 'selected' : '' }}>Packaging</option>
+                                <option value="service"  {{ old('product_type', $product->product_type ?? '') == 'service' ? 'selected' : '' }}>Service</option>
+                                <option value="general"  {{ old('product_type', $product->product_type ?? '') == 'general' ? 'selected' : '' }}>General</option>
+                            </select>
+                        </div>
+                        <div class="row gap-2 col-span-3 weight_to_from" style="{{ $product->product_type == 'packaging' ? 'display: block' : 'display: none' }}">
+                            <!-- Weigth From -->
+                            <div class="column">
+                                <div class="input-form col-span-3">
+                                    <label for="weight_from" class="form-label w-full flex flex-col sm:flex-row">
+                                        Weigth From
+                                    </label>
+                                    <input id="weight_from" type="number" name="weight_from"
+                                        class="form-control field-new" value="{{ $product->weight_from }}">
+                                    <span id="error_weight_from" class="error-message text-red-500 text-sm"></span> 
+                                </div>
+                            </div>
+                            <!-- Weigth To -->
+                            <div class="column">
+                                <div class="input-form col-span-6">
+                                    <label for="weight_to" class="form-label w-full flex flex-col sm:flex-row">
+                                        Weigth To
+                                    </label>
+                                    <input id="weight_to" type="number" name="weight_to"
+                                        class="form-control field-new" value="{{ $product->weight_to }}">
+                                         <span id="error_weight_to" class="error-message text-red-500 text-sm"></span>
+                                </div>
+                            </div>
+                        </div>
 
-                            <div
-                                style="position: relative; border: 2px dashed #ccc; border-radius: 8px; padding: 50px 40px; text-align: center; background-color: #f9f9f9; cursor: pointer;">
-                                <input name="product_image" type="file" id="fileInput" accept="image/*"
-                                    style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; z-index: 1;"
-                                    onchange="previewImage(this)" />
+                        <!-- Submit Button -->
+                        <hr class="col-span-12 mt-5">
+                        <div class="column col-span-12 xl:col-span-6">
+                            <!-- Loose quantity decimal button -->
+                            <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
+                                <label for="decimal_btn" class="form-label w-full flex flex-col sm:flex-row">
+                                    Decimal
+                                </label>
+                                <input id="decimal_btn" type="checkbox" name="decimal_btn"
+                                    class="form-check-input mr-0 ml-3" {{ $product->decimal_btn ? 'checked' : '' }}>
+                            </div>
 
-                                <div id="uploadMessage" style="color: #666; font-size: 16px; pointer-events: none;">
-                                    Drop Product image file here or click to upload.
+                            <div id="decimal_section" style="{{ $product->decimal_btn ? 'display: block;' : 'display: none;' }} margin-top: 20px;">
+                                <!-- Auto Variants in Weight -->
+                                <div class="row mt-2">
+                                    <div class="column">
+                                        <label class="form-label">Auto Variants in Weight</label>
+                                    </div>
+                                    <div class="column">
+                                        <div class="flex items-center">
+                                            <input type="checkbox" id="auto_variants_in_weight_btn" name="auto_variants_in_weight_btn"
+                                                class="form-check-input mr-2" {{ $product->auto_variants_in_weight_btn === 'yes' ? 'checked' : '' }}>
+
+                                            @foreach($product->auto_variants_in_weight ?? [.25, .50, .75, 1] as $weight)
+                                                <input type="number" name="auto_variants_in_weight[]" value="{{ $weight }}" step="0.01" class="form-control ml-1 w-20 field-new">
+                                            @endforeach
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <!-- Preview box (shows initially if product has image) -->
-                                <div id="imagePreview"
-                                    style="max-width: 300px; margin: 0 auto; {{ $product->image ? '' : 'display: none;' }}">
-                                    <img id="previewImg" src="{{ $product->image ? asset($product->image) : '' }}"
-                                        style="width: 100%; height: auto; border-radius: 8px; margin-top: 10px;" />
-                                    <div style="margin-top: 10px; font-size: 14px; color: #666;">
-                                        <span id="fileName">{{ $product->image ? basename($product->image) : '' }}</span>
+                                <!-- Auto Variants in Amount -->
+                                <div class="row mt-2">
+                                    <div class="column">
+                                        <label class="form-label">Auto Variants in Amount</label>
+                                    </div>
+                                    <div class="column">
+                                        <div class="flex  items-center">
+                                            <input type="checkbox" id="auto_variants_in_amount_btn" name="auto_variants_in_amount_btn"
+                                                class="form-check-input mr-2" {{ $product->auto_variants_in_amount_btn === 'yes' ? 'checked' : '' }}>
+
+                                            @foreach($product->auto_variants_in_amount ?? [250, 500, 750, 1000] as $amount)
+                                                <input type="number" name="auto_variants_in_amount[]" value="{{ $amount }}" class="form-control ml-1 w-20 field-new">
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Packaging Item Toggle -->
+                                <div class="row mt-2">
+                                    <div class="column">
+                                        <label class="form-label">Select Packaging Item</label>
+                                    </div>
+                                    <div class="column">
+                                        <div class="flex items-center">
+                                            <input type="checkbox" id="packaging_btn" name="packaging_btn" class="form-check-input mr-2" {{ isset($product->packaging_btn) && $product->packaging_btn ? 'checked' : '' }}>
+                                            <!-- <select id="packaging" name="packaging" class="form-control ml-2" style="width: auto;" data-selected="{{ $product->packaging }}">
+                                                <option value="">-- Select Packaging --</option>
+                                            </select> -->
+                                            <div class="search-dropdown">
+                                                <input id="packaging" type="text" name="packaging"
+                                                    class="form-control field-new search-input" value="{{ $product->decimalPackaging->group ?? '' }}" placeholder="Search or type packaging name"
+                                                    autocomplete="off">
+                                                <div class="dropdown-list" id="packagingDropdown"></div>
+                                            </div>
+                                            <input type="hidden" id="hidden_packaging_id" name="packaging_id"
+                                                value="{{ $product->packaging_id ?? '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <span id="error_packaging" class="error-message text-red-500 text-sm"></span>
+                                <!-- Custom Price -->
+                                <div class="row mt-3">
+                                    <label class="form-label">Custom Price</label>
+                                    
+                                    <div id="custom_price_container" class="d-flex flex-column gap-2">
+                                        @php
+                                            $customPrices = $product->custom_price ?? [['weight' => '', 'condition' => '<', 'price' => '']];
+                                        @endphp
+                                        @if($customPrices)
+                                            <input type="checkbox" id="custom_price_btn" name="custom_price_btn" class="form-check-input mr-2 mb-2" {{ $product->custom_price_btn === 'yes' ? 'checked' : '' }}>
+                                        @endif
+                                        @forelse ($customPrices as $index => $custom)
+                                            <div class="d-flex align-items-center gap-2 flex-wrap mt-2 ml-6 pl-1">
+                                                <input type="number" name="custom_price[{{ $index }}][weight]" placeholder="249"
+                                                    class="form-control" style="width: 100px;" value="{{ $custom['weight'] ?? '' }}">
+                                                <select class="form-control" name="custom_price[{{ $index }}][condition]" style="width: 100px;">
+                                                    <option value="<" {{ ($custom['condition'] ?? '') === '<' ? 'selected' : '' }}>&lt;</option>
+                                                    <option value=">" {{ ($custom['condition'] ?? '') === '>' ? 'selected' : '' }}>&gt;</option>
+                                                </select>
+                                                <input type="number" name="custom_price[{{ $index }}][price]" placeholder="Price"
+                                                    class="form-control" style="width: 100px;" value="{{ $custom['price'] ?? '' }}">
+
+                                                @if ($loop->first)
+                                                    <button type="button" id="add_custom_price_btn" class="btn btn-primary">+</button>
+                                                @else
+                                                    <button type="button" class="btn btn-danger remove_custom_price_btn">-</button>
+                                                @endif
+                                            </div>
+                                        @empty
+                                        <div class="d-flex align-items-center gap-2" id="custom_price_container" >
+                                                <input type="checkbox" id="custom_price_btn" name="custom_price_btn" class="form-check-input mr-2 mb-2" {{ $product->custom_price_btn === 'yes' ? 'checked' : '' }}>
+                                                <input type="text" name="custom_price[0][weight]" placeholder="Ex. 249" class="form-control" style="width: 100px;">
+                                                <select class="form-control" name="custom_price[0][condition]" style="width: 100px;">
+                                                    <option value="<">&lt;</option>
+                                                    <option value=">">&gt;</option>
+                                                </select>
+                                                <input type="number" name="custom_price[0][price]" placeholder="Price" class="form-control" style="width: 100px;">
+                                                <button type="button"  id="add_custom_price_btn" class="btn btn-primary">+</button>
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                </div>
+                                <div id="custom_price_error" class="text-red-500 text-sm mt-1 mb-2" style="display: none;"></div>
+                                <!-- Custom Packing Variants -->
+                                <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
+                                    <label for="custom_variant_btn" class="form-label w-full flex flex-col sm:flex-row">Custom Packing Variants</label>
+                                    <input id="custom_variant_btn" type="checkbox" name="custom_variant_btn"
+                                        class="form-check-input mr-0 ml-3" {{ !empty($product->custom_variant_btn) && $product->custom_variant_btn == 'yes' ? 'checked' : '' }}>
+                                </div>
+
+                                <!-- Variant Table -->
+                                <div id="custom_variant_section" style="{{ !empty($product->custom_variant_btn) ? 'display: block;' : 'display: none;' }} margin-top: 20px;">
+                                    <div id="variant_row_container">
+                                        @php
+                                            $variantNames = $customVariants->pluck('product_name')->toArray() ?? [''];
+                                            $variantid = $customVariants->pluck('id')->toArray() ?? [''];
+                                            $variantBarcodes = $customVariants->pluck('barcode')->toArray() ?? [''];
+                                            $variantPrices = $customVariants->pluck('sale_rate_a')->toArray() ?? [''];
+                                        @endphp
+                                        @forelse ($variantNames as $index => $name)
+                                            <div class="row variant-row mt-2 d-flex gap-3">
+                                                <input type="hidden" name="variant_id[]" value="{{ $variantid[$index] ?? '' }}">
+                                                <input type="text" name="variant_name[]" placeholder="Variant Name" class="form-control" style="width: 200px;" value="{{ $name }}">
+                                                <input type="text" name="variant_barcode[]" placeholder="Barcode" class="form-control" style="width: 200px;" value="{{ $variantBarcodes[$index] ?? '' }}">
+                                                <input type="number" name="variant_price[]" placeholder="Sale Price" class="form-control" style="width: 200px;" value="{{ $variantPrices[$index] ?? '' }}">
+                                                <button type="button" class="btn btn-danger remove-btn">Remove</button>
+                                            </div>
+                                        @empty
+                                            <div class="row variant-row mt-2 d-flex gap-3">
+                                                <input type="text" name="variant_name[]" placeholder="Variant Name" class="form-control" style="width: 200px;">
+                                                <input type="text" name="variant_barcode[]" placeholder="Barcode" class="form-control" style="width: 200px;">
+                                                <input type="number" name="variant_price[]" placeholder="Sale Price" class="form-control" style="width: 200px;">
+                                                <button type="button" class="btn btn-danger remove-btn">Remove</button>
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                    <button type="button" id="add_variant_btn" class="btn btn-primary mt-2">Add Variant</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column col-span-12">
+
+
+                            <!-- Sale online toggle -->
+                            {{-- <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
+                                <label for="sale_online" class="form-label w-full flex flex-col sm:flex-row">
+                                    Sale Online
+                                </label>
+                                <input id="sale_online" type="checkbox" name="sale_online"
+                                    class="form-check-input mr-0 ml-3" {{ $product->sale_online ? 'checked' : '' }}>
+                            </div> --}}
+
+                            <!-- GST active toggle -->
+                            {{-- <div class="input-form col-span-3 mt-3 form-check form-switch w-full sm:ml-auto">
+                                    <label for="gst_active" class="form-label w-full flex flex-col sm:flex-row">
+                                        GST
+                                    </label>
+                                    <input id="gst_active" type="checkbox" name="gst_active" class="form-check-input mr-0 ml-3"
+                                        {{ $product->gst_active ? 'checked' : '' }}>
+                                </div> --}}
+
+                            <div class="input-form col-span-3 mt-3">
+                                <label for="fileInput" class="form-label w-full flex flex-col sm:flex-row">
+                                    Product Image
+                                </label>
+
+                                <div
+                                    style="position: relative; border: 2px dashed #ccc; border-radius: 8px; padding: 50px 40px; text-align: center; background-color: #f9f9f9; cursor: pointer;">
+                                    <input name="product_image" type="file" id="fileInput" accept="image/*"
+                                        style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; z-index: 1;"
+                                        onchange="previewImage(this)" />
+
+                                    <!-- Add this hidden input to track image removal -->
+                                    <input type="hidden" name="remove_product_image" id="removeProductImage" value="0" />
+
+                                    <div id="uploadMessage" style="color: #666; font-size: 16px; pointer-events: none;">
+                                        Drop Product image file here or click to upload.
+                                    </div>
+
+                                    <!-- Preview box (shows initially if product has image) -->
+                                    <div id="imagePreview"
+                                        style="max-width: 300px; margin: 0 auto; position: relative; {{ $product->image ? '' : 'display: none;' }}">
+
+                                        <!-- Cancel Button -->
+                                        <button type="button" onclick="removeImage()"
+                                            style="position: absolute; top: 0; right: 0; background: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; line-height: 24px; text-align: center; cursor: pointer; font-weight: bold; z-index: 5;">
+                                            ×
+                                        </button>
+
+                                        <img id="previewImg" src="{{ $product->image ? asset($product->image) : '' }}"
+                                            style="width: 100%; height: auto; border-radius: 8px; margin-top: 10px;" />
+                                        <div style="margin-top: 10px; font-size: 14px; color: #666;">
+                                            <span id="fileName">{{ $product->image ? basename($product->image) : '' }}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
 
                 </div>
             </div>
@@ -817,6 +905,109 @@
 @endsection
 
 <script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('EditproductForm');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            let isValid = true;
+
+            const clearErrors = () => {
+                document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+                document.querySelectorAll('.form-control').forEach(el => el.classList.remove(
+                    'border-red-500', 'border-green-500'));
+            };
+
+            const validateField = (fieldId, errorId, condition, message) => {
+                const field = document.getElementById(fieldId);
+                const error = document.getElementById(errorId);
+                if (!condition) {
+                    if (error) error.textContent = message;
+                    field.classList.add('border-red-500');
+                    isValid = false;
+                } else {
+                    field.classList.add('border-green-500');
+                }
+            };
+
+            clearErrors();
+
+            const nameVal = product_name.value.trim();
+            validateField('product_name', 'error_product_name', nameVal !== '',
+                'Product name is required.');
+
+
+            validateField('unit_type', 'error_unit_type', unit_type.value,
+                'Please select a unit type.');
+
+            const discountVal = parseFloat(max_discount.value);
+            if (max_discount.value)
+                validateField('max_discount', 'error_max_discount', !isNaN(discountVal) &&
+                    discountVal >= 0 && discountVal <= 100, 'Discount must be between 0 and 100%.');
+
+            validateField('product_type', 'error_product_type', product_type.value,
+                'Product type is required.');
+
+            // if (product_type.value === 'packaging') {
+            //     validateField('weight_from', 'error_weight_from', weight_from.value.trim(),
+            //         'Weight from is required.');
+            //     validateField('weight_to', 'error_weight_to', weight_to.value.trim(),
+            //         'Weight to is required.');
+            // }
+            const isDecimalChecked = document.getElementById('decimal_btn').checked;
+            const isPackagingChecked = document.getElementById('packaging_btn').checked;
+            const packagingSelect = document.getElementById('packaging');
+            const packagingError = document.getElementById('error_packaging');
+
+            if (isDecimalChecked && isPackagingChecked) {
+                validateField('packaging', 'error_packaging', packagingSelect.value,
+                    'Packaging is required.');
+            }
+            const isCustomPriceChecked = document.getElementById('custom_price_btn').checked;
+
+            if (isCustomPriceChecked) {
+                const weightInputs = document.querySelectorAll(
+                    'input[name^="custom_price"][name*="[weight]"]');
+                const priceInputs = document.querySelectorAll(
+                    'input[name^="custom_price"][name*="[price]"]');
+                const customPriceErrorBox = document.getElementById('custom_price_error');
+
+                // Reset state
+                customPriceErrorBox.style.display = 'none';
+                customPriceErrorBox.textContent = '';
+                weightInputs.forEach(input => input.classList.remove('border-red-500'));
+                priceInputs.forEach(input => input.classList.remove('border-red-500'));
+
+                let hasError = false;
+
+                weightInputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        input.classList.add('border-red-500');
+                        hasError = true;
+                    }
+                });
+
+                priceInputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        input.classList.add('border-red-500');
+                        hasError = true;
+                    }
+                });
+
+                if (hasError) {
+                    customPriceErrorBox.style.display = 'block';
+                    customPriceErrorBox.textContent =
+                        'All weight and price fields are required.';
+                    isValid = false;
+                }
+
+            }
+
+            if (isValid) form.submit();
+        });
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
         const modal = document.getElementById('company-modal');
         const openModalBtn = document.getElementById('open-company-modal'); // You need this
@@ -839,30 +1030,111 @@
         }
     });
 
-    document.addEventListener("DOMContentLoaded", function() {
-        const decimalCheckbox = document.getElementById("decimal_btn");
-        const decimalSection = document.getElementById("decimal_section");
+    document.addEventListener('DOMContentLoaded', function () {
+        const container = document.getElementById("custom_price_container");
+        const addBtn = document.getElementById("add_custom_price_btn");
 
-        function toggleDecimalSection() {
-            if (decimalCheckbox.checked) {
-                decimalSection.style.display = "block";
-            } else {
-                decimalSection.style.display = "none";
+        addBtn.addEventListener("click", function () {
+            const index = container.querySelectorAll('.d-flex.align-items-center').length;
+            const newRow = document.createElement('div');
+            newRow.classList.add('d-flex', 'align-items-center', 'gap-2', 'flex-wrap', 'mt-2', 'ml-6', 'pl-1');
+
+            newRow.innerHTML = `
+                <input type="number" name="custom_price[${index}][weight]" placeholder="249" class="form-control" style="width: 100px;">
+                <select class="form-control" name="custom_price[${index}][condition]" style="width: 100px;">
+                    <option value="<">&lt;</option>
+                    <option value=">">&gt;</option>
+                </select>
+                <input type="number" name="custom_price[${index}][price]" placeholder="Price" class="form-control" style="width: 100px;">
+                <button type="button" class="btn btn-danger remove_custom_price_btn">-</button>
+            `;
+
+            container.appendChild(newRow);
+        });
+
+        container.addEventListener("click", function (e) {
+            if (e.target && e.target.classList.contains("remove_custom_price_btn")) {
+                const parentRow = e.target.closest('.d-flex');
+                if (container.querySelectorAll('.d-flex.align-items-center').length > 1) {
+                    parentRow.remove();
+                } else {
+                    alert("At least one custom price row must remain.");
+                }
             }
-        }
+        });
 
-        // Listen for multiple events to ensure all interactions work
-        decimalCheckbox.addEventListener("change", toggleDecimalSection);
-        decimalCheckbox.addEventListener("click", toggleDecimalSection);
-        decimalCheckbox.addEventListener("keyup", function(event) {
-            if (event.key === " " || event.key === "Enter") {
-                toggleDecimalSection();
+        const varContainer = document.getElementById("variant_row_container");
+        const addVarBtn = document.getElementById("add_variant_btn");
+
+        addVarBtn.addEventListener("click", function () {
+            const firstRow = varContainer.querySelector(".variant-row");
+            const newRow = firstRow.cloneNode(true);
+
+            // Clear values in cloned row
+            newRow.querySelectorAll("input").forEach(input => input.value = "");
+            newRow.querySelectorAll("select").forEach(select => select.value = "box");
+
+            varContainer.appendChild(newRow);
+        });
+        varContainer.addEventListener("click", function (e) {
+            if (e.target && e.target.classList.contains("remove-btn")) {
+                const row = e.target.closest(".variant-row");
+
+                    row.remove();
             }
         });
     });
+    function toggleSection(checkboxId, sectionId) {
+        const checkbox = document.getElementById(checkboxId);
+        const section = document.getElementById(sectionId);
+        section.style.display = checkbox.checked ? "block" : "none";
+    }
+
+    function attachToggleEvents(checkboxId, sectionId) {
+        const checkbox = document.getElementById(checkboxId);
+        if (!checkbox) return;
+
+        const toggle = () => toggleSection(checkboxId, sectionId);
+
+        checkbox.addEventListener("change", toggle);
+        checkbox.addEventListener("click", toggle);
+        checkbox.addEventListener("keyup", (event) => {
+            if (event.key === " " || event.key === "Enter") toggle();
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Attach toggle logic to all sections
+        attachToggleEvents("decimal_btn", "decimal_section");
+        attachToggleEvents("custom_variant_btn", "custom_variant_section");
+        attachToggleEvents("loose_btn", "loose_section");
+    });
+
+    // document.addEventListener("DOMContentLoaded", function() {
+    //     const decimalCheckbox = document.getElementById("decimal_btn");
+    //     const decimalSection = document.getElementById("decimal_section");
+
+    //     function toggleDecimalSection() {
+    //         if (decimalCheckbox.checked) {
+    //             decimalSection.style.display = "block";
+    //         } else {
+    //             decimalSection.style.display = "none";
+    //         }
+    //     }
+
+    //     // Listen for multiple events to ensure all interactions work
+    //     decimalCheckbox.addEventListener("change", toggleDecimalSection);
+    //     decimalCheckbox.addEventListener("click", toggleDecimalSection);
+    //     decimalCheckbox.addEventListener("keyup", function(event) {
+    //         if (event.key === " " || event.key === "Enter") {
+    //             toggleDecimalSection();
+    //         }
+    //     });
+    // });
     document.addEventListener('DOMContentLoaded', function() {
         // Company dropdown (existing)
         initSearchDropdown('product_company', 'companyDropdown', '{{ route('companies.search') }}', 'company');
+        initSearchDropdown('packaging', 'packagingDropdown', '{{ route('packagings.search') }}', 'packaging');
         // Category dropdown
         initSearchDropdown('product_category', 'categoryDropdown', '{{ route('categories.search') }}',
             'category');
@@ -920,10 +1192,10 @@
                 selector: '#product_mrp',
                 type: 'input'
             },
-            // {
-            //     selector: '#product_purchase_rate',
-            //     type: 'input'
-            // },
+            {
+                selector: '#product_purchase_rate',
+                type: 'input'
+            },
             {
                 selector: '#product_sale_rate_a',
                 type: 'input'
@@ -932,10 +1204,10 @@
                 selector: '#product_sale_rate_b',
                 type: 'input'
             },
-            // {
-            //     selector: '#product_sale_rate_c',
-            //     type: 'input'
-            // },
+            {
+                selector: '#product_sale_rate_c',
+                type: 'input'
+            },
             {
                 selector: '#converse_carton',
                 type: 'input'
@@ -1254,6 +1526,7 @@
         // Debug: Log existing data
         console.log('Initializing existing data:', {
             categoryId: '{{ $product->category_id ?? 'null' }}',
+            packagingId: '{{ $product->packaging ?? 'null' }}',
             companyId: '{{ $product->company_id ?? 'null' }}',
             hsnId: '{{ $product->hsn_code_id ?? 'null' }}'
         });
@@ -1262,6 +1535,13 @@
 
         // Verify category ID field exists and has value
         const categoryIdField = document.getElementById('hidden_category_id');
+        if (categoryIdField) {
+            console.log('Category ID field value:', categoryIdField.value);
+        } else {
+            console.warn('Category ID field not found');
+        }
+
+        const packagingIdField = document.getElementById('hidden_packaging_id');
         if (categoryIdField) {
             console.log('Category ID field value:', categoryIdField.value);
         } else {
@@ -1806,6 +2086,28 @@
         });
     }
 
+    function selectPackaging(packagingName, packagingId = null) {
+        const input = document.getElementById('packaging');
+        const dropdown = document.getElementById('packagingDropdown');
+
+        dropdown.classList.remove('show');
+        input.value = packagingName;
+
+        // Update existing hidden field
+        const hiddenPackagingIdField = document.getElementById('hidden_packaging_id');
+        if (hiddenPackagingIdField) {
+            hiddenPackagingIdField.value = packagingId || '';
+        } else {
+            console.warn('Hidden packaging ID field not found');
+        }
+
+        console.log('Packaging updated:', {
+            packagingName: packagingName,
+            packagingId: packagingId,
+            hiddenFieldValue: hiddenPackagingIdField?.value
+        });
+    }
+
     // Functions to open modals
     function openCategoryModal(categoryName) {
         showModal('category-modal', 'modal-category-name', categoryName, 'modal-category-name');
@@ -1827,7 +2129,7 @@
 
         // Show the modal
         modal.classList.add('modal-open');
-        modal.style.display = 'flex';
+        modal.style.visibility = 'visible';
 
         // Focus input after short delay
         if (focusId) {
@@ -1844,7 +2146,7 @@
         if (cancelBtn && !cancelBtn.hasAttribute('data-close-bound')) {
             cancelBtn.addEventListener('click', function() {
                 modal.classList.remove('modal-open');
-                modal.style.display = 'none';
+                modal.style.visibility = 'hidden';
             });
             cancelBtn.setAttribute('data-close-bound', 'true');
         }
@@ -1854,7 +2156,7 @@
             modal.addEventListener('click', function(e) {
                 if (e.target === modal) {
                     modal.classList.remove('modal-open');
-                    modal.style.display = 'none';
+                    modal.style.visibility = 'hidden';
                 }
             });
             modal.setAttribute('data-overlay-close-bound', 'true');
@@ -1903,7 +2205,7 @@
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         modal.classList.remove('show');
-        modal.style.display = 'none';
+        // modal.style.display = 'none';
         modal.style.visibility = 'hidden';
         modal.style.opacity = '0';
     }
@@ -2148,6 +2450,9 @@
                         currentData = data.companies || [];
                         items = currentData.map(item => typeof item === 'object' ? item
                             .company_name || item.name : item);
+                    } else if (type === 'packaging') {
+                        currentData = data.packagings || [];
+                        items = currentData.map(item => typeof item === 'object' ? item.name : item);
                     } else {
                         items = data.items || data.companies || data.categories || [];
                     }
@@ -2155,7 +2460,7 @@
                     let html = '';
 
                     // Show existing items with IDs
-                    if (type === 'category' || type === 'company') {
+                    if (type === 'category' || type === 'company' || type === 'packaging') {
                         currentData.forEach((item, index) => {
                             const itemName = typeof item === 'object' ?
                                 (item.category_name || item.company_name || item.name) :
@@ -2178,6 +2483,9 @@
                     } else if (type === 'company') {
                         createNewText =
                             `<div class="dropdown-item create-new" data-new-value="${value}">+ Create new company: "${value}"</div>`;
+                    } else if (type === 'packaging') {
+                        createNewText =
+                            '';
                     } else {
                         createNewText =
                             `<div class="dropdown-item create-new" onclick="selectItem('${inputId}', '${dropdownId}', '${value}')">Create new: "${value}"</div>`;
@@ -2190,7 +2498,7 @@
                     selectedIndex = -1;
 
                     // Add click listeners for category and company dropdowns
-                    if (type === 'category' || type === 'company') {
+                    if (type === 'category' || type === 'company' || type === 'packaging') {
                         dropdown.querySelectorAll('.dropdown-item:not(.create-new)').forEach(
                             item => {
                                 item.addEventListener('mousedown', function(e) {
@@ -2220,6 +2528,14 @@
                                         const companyId = typeof selectedItem ===
                                             'object' ? selectedItem.id : null;
                                         selectCompany(companyName, companyId);
+                                    } else if (type === 'packaging') {
+                                        const packagingName = typeof selectedItem ===
+                                            'object' ?
+                                            (selectedItem.packaging_name || selectedItem
+                                                .name) : selectedItem;
+                                        const packagingId = typeof selectedItem ===
+                                            'object' ? selectedItem.id : null;
+                                        selectPackaging(packagingName, packagingId);
                                     }
                                 });
                             });
@@ -2260,7 +2576,11 @@
             } else if (e.key === 'Enter') {
                 e.preventDefault();
                 if (selectedIndex >= 0 && items[selectedIndex]) {
-                    if (type === 'category' || type === 'company') {
+                    if (type === 'category' || type === 'company' || type === 'packaging') {
+                        var value = "";
+                        if(items[selectedIndex].dataset.newValue){
+                            value = items[selectedIndex].dataset.newValue;
+                        }
                         handleDropdownItemClick(items[selectedIndex], type, value);
                     } else {
                         items[selectedIndex].click();
@@ -2300,6 +2620,11 @@
                         (selectedItem.company_name || selectedItem.name) : selectedItem;
                     const companyId = typeof selectedItem === 'object' ? selectedItem.id : null;
                     selectCompany(companyName, companyId);
+                } else if (dropdownType === 'packaging') {
+                    const packagingName = typeof selectedItem === 'object' ?
+                        (selectedItem.name) : selectedItem;
+                    const packagingId = typeof selectedItem === 'object' ? selectedItem.id : null;
+                    selectPackaging(packagingName, packagingId);
                 }
             }
         }
@@ -2338,15 +2663,38 @@
         const preview = document.getElementById('previewImg');
         const previewBox = document.getElementById('imagePreview');
         const fileNameText = document.getElementById('fileName');
+        const uploadMessage = document.getElementById('uploadMessage');
+        const removeFlag = document.getElementById('removeProductImage');
 
         if (input.files && input.files[0]) {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 preview.src = e.target.result;
                 previewBox.style.display = 'block';
                 fileNameText.innerText = input.files[0].name;
+                uploadMessage.style.display = 'none';
+                removeFlag.value = 0;
             };
             reader.readAsDataURL(input.files[0]);
         }
+    }
+
+    function removeImage() {
+        const fileInput = document.getElementById('fileInput');
+        const previewBox = document.getElementById('imagePreview');
+        const preview = document.getElementById('previewImg');
+        const fileName = document.getElementById('fileName');
+        const uploadMessage = document.getElementById('uploadMessage');
+        const removeFlag = document.getElementById('removeProductImage');
+
+        // Clear file input
+        fileInput.value = "";
+
+        // Hide preview
+        previewBox.style.display = 'none';
+        preview.src = "";
+        fileName.textContent = "";
+        uploadMessage.style.display = 'block';
+        removeFlag.value = 1;
     }
 </script>

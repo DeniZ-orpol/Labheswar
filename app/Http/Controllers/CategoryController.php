@@ -21,10 +21,23 @@ class CategoryController extends Controller
         $role = $auth['role'];
         $branch = $auth['branch'];
 
-        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            $categories = Category::orderBy('created_at', 'desc')->paginate(10);
-        } else {
-            $categories = Category::on($branch->connection_name)->orderBy('created_at', 'desc')->paginate(10);
+        $perPage = 20;
+
+        $search = $request->input('search');
+
+        $query = (strtoupper($role->role_name) === 'SUPER ADMIN') 
+            ? Category::query()
+            : Category::on($branch->connection_name);
+
+        if ($search) {
+            $query->where('name', 'like', '%' . $search . '%');
+        }
+
+        $categories = $query->orderBy('position')->paginate($perPage);
+
+        // Return AJAX response for infinite scroll
+        if ($request->ajax()) {
+            return view('categories.rows', compact('categories'))->render();
         }
 
         return view('categories.index', compact('categories'));
@@ -44,9 +57,15 @@ class CategoryController extends Controller
     public function store(Request $request, ?string $branch = null)
     {
         $auth = $this->authenticateAndConfigureBranch();
+
         $user = $auth['user'];
         $branch = $auth['branch'];
         $role = $auth['role'];
+
+        $validate = $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|string|max:255',
+        ]);
 
         $imagePath = null;
         if ($request->hasFile('image')) {
@@ -58,7 +77,7 @@ class CategoryController extends Controller
             if (!file_exists($uploadPath)) {
                 mkdir($uploadPath, 0755, true);
             }
-
+            // dd($request->all(), $branch, $auth, $role, $validate, $uploadPath);
             // Move file to branch-specific folder
             $file->move($uploadPath, $filename);
 
@@ -67,26 +86,23 @@ class CategoryController extends Controller
         }
 
         $data = [
-            'name' => $request->name,
+            'name' => $validate['name'],
+            'type' => $validate['type'],
             'image' => $imagePath,
             'created_at' => now(),
             'updated_at' => now(),
         ];
 
-        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            Category::insert($data);
-        } else {
-            Category::on($branch->connection_name)->insert($data);
+        try {
+            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                Category::insert($data);
+            } else {
+                Category::on($branch->connection_name)->insert($data);
+            }
+            return redirect()->route('categories.index')->with('success', 'Category created successfully!');
+        } catch (\Exception $e) {
+            return redirect()->route('company.index')->with('error', 'Failed to create Category. Please try again.');
         }
-
-        // // Insert into labheswar (master) only if category name not exists
-        // $exists = Category::where('name', $request->name)->exists();
-
-        // if (!$exists) {
-        //     Category::insert($data);
-        // }
-
-        return redirect()->route('categories.index')->with('success', 'Category created successfully!');
     }
 
     /**
@@ -100,9 +116,9 @@ class CategoryController extends Controller
         $role = $auth['role'];
 
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            $category = Category::where('id', $id)->first();
+            $category = Category::with('products')->where('id', $id)->first();
         } else {
-            $category = Category::on($branch->connection_name)->where('id', $id)->first();
+            $category = Category::on($branch->connection_name)->with('products')->where('id', $id)->first();
         }
 
         if (!$category) {
@@ -144,22 +160,23 @@ class CategoryController extends Controller
         $branch = $auth['branch'];
         $role = $auth['role'];
 
-        
+
         $request->validate([
             'name' => 'required|string|max:255',
+            'type' => 'required|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
-        
+
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
             $category = Category::where('id', $id)->first();
         } else {
             $category = Category::on($branch->connection_name)->where('id', $id)->first();
         }
-        
+
         if (!$category) {
             return redirect()->route('categories.index')->with('error', 'Category not found.');
         }
-        
+
         $imagePath = $category->image;
         if ($request->hasFile('image')) {
             // Delete old image if exists
@@ -169,29 +186,30 @@ class CategoryController extends Controller
                     unlink($oldImagePath);
                 }
             }
-            
+
             $file = $request->file('image');
             $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
-            
+
             // Create branch-specific directory
             $uploadPath = public_path('uploads/' . $branch->connection_name . '/category');
             if (!file_exists($uploadPath)) {
                 mkdir($uploadPath, 0755, true);
             }
-            
+
             // Move file to branch-specific folder
             $file->move($uploadPath, $filename);
-            
+
             // Store path as: branch_connection/products/filename.jpg
             $imagePath = 'uploads/' . $branch->connection_name . '/category/' . $filename;
         }
-        
+
         $data = [
             'name' => $request->name,
+            'type' => $request->type,
             'image' => $imagePath,
             'updated_at' => now(),
         ];
-        
+
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
             Category::where('id', $id)->update($data);
         } else {
@@ -228,45 +246,45 @@ class CategoryController extends Controller
         $branch = $auth['branch'];
         $role = $auth['role'];
 
-        
+
         // Check if category already exists (either in branch DB or master)
         $categoryName = trim($request->name);
-        
+
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
             $existsInBranch = Category::where('name', $categoryName)->exists();
         } else {
             $existsInBranch = Category::on($branch->connection_name)->where('name', $categoryName)->exists();
         }
-        
+
         if ($existsInBranch) {
             return response()->json([
                 'success' => false,
                 'message' => 'Category already exists.',
             ], 409);
         }
-        
+
         // Upload image if provided
         $imagePath = null;
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
-            
+
             $uploadPath = public_path('uploads/' . $branch->connection_name . '/category');
             if (!file_exists($uploadPath)) {
                 mkdir($uploadPath, 0755, true);
             }
-            
+
             $file->move($uploadPath, $filename);
             $imagePath = 'uploads/' . $branch->connection_name . '/category/' . $filename;
         }
-        
+
         $data = [
             'name' => $categoryName,
             'image' => $imagePath,
             'created_at' => now(),
             'updated_at' => now(),
         ];
-        
+
         // Insert into selected branch or master
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
             Category::insert($data);
@@ -282,5 +300,25 @@ class CategoryController extends Controller
                 'name' => $categoryName,
             ]
         ]);
+    }
+
+    public function reorder(Request $request)
+    {
+        $auth = $this->authenticateAndConfigureBranch();
+        $branch = $auth['branch'];
+        $role = $auth['role'];
+        // Check if category already exists (either in branch DB or master)
+         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            foreach ($request->order as $item) {
+                Category::where('id', $item['id'])->update(['position' => $item['position']]);
+            }
+         }
+         else{
+            foreach ($request->order as $item) {
+                Category::on($branch->connection_name)->where('id', $item['id'])->update(['position' => $item['position']]);
+            }
+        }
+
+        return response()->json(['message' => 'Order updated successfully.']);
     }
 }

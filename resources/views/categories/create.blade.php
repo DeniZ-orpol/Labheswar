@@ -51,72 +51,98 @@
     </style>
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
-            Create Category
+            Edit Category
         </h2>
-        <form action="{{ route('categories.store') }}" method="POST" enctype="multipart/form-data"
+        @if (session('success'))
+            <div id="success-alert" class="alert alert-success"
+                style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px;">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div id="error-alert" class="alert alert-danger"
+                style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 10px;">
+                {{ session('error') }}
+            </div>
+        @endif
+        <form action="{{ route('categories.update', $category->id) }}" method="POST" enctype="multipart/form-data"
             class="form-updated validate-form">
-            @csrf <!-- CSRF token for security -->
+            @csrf
+            @method('PUT')
+            <div class="row">
+                        <!-- Name -->
+                        <div class="column">
+                            <div class="input-form col-span-3 mt-3">
+                                <label for="name" class="form-label w-full flex flex-col sm:flex-row">
+                                    Name<span style="color: red;margin-left: 3px;"> *</span>
+                                </label>
+                                <input id="name" type="text" name="name" class="form-control field-new"
+                                    placeholder="Enter Category name" maxlength="255" value="{{ $category->name }}">
+                                @error('name')
+                                    <div class="text-danger mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="column">
+                            <!-- Type -->
+                            <div class="input-form col-span-3 mt-3">
+                                <label for="type" class="form-label w-full flex flex-col sm:flex-row">
+                                    Category Type
+                                    <span style="color: red; margin-left: 3px;">*</span>
+                                </label>
+                                <select id="type" name="type"
+                                    class="form-control field-new @error('type') is-invalid @enderror">
+                                    <option value="product"
+                                        {{ old('type', $category->type ?? '') == 'product' ? 'selected' : '' }}>
+                                        Product
+                                    </option>
+                                    <option value="packaging"
+                                        {{ old('type', $category->type ?? '') == 'packaging' ? 'selected' : '' }}>
+                                        Packaging
+                                    </option>
+                                </select>
+                                @error('type')
+                                    <div class="text-danger mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
             <div class="row">
                 <div class="column">
-                    <!-- Name -->
-                    <div class="input-form col-span-3 mt-3">
-                        <label for="name" class="form-label w-full flex flex-col sm:flex-row">
-                            Name<span style="color: red;margin-left: 3px;"> *</span>
-                        </label>
-                        <input id="name" type="text" name="name" class="form-control field-new"
-                            placeholder="Enter Category name" required maxlength="255">
-                    </div>
-
-                    <!-- Product Image -->
+                    <!-- category Image -->
                     <div class="input-form col-span-3 mt-3">
                         <label for="fileInput" class="form-label w-full flex flex-col sm:flex-row">
                             Category Image
                         </label>
-                        <div class="input-form col-span-3 mt-3"
+
+                        <div
                             style="position: relative; border: 2px dashed #ccc; border-radius: 8px; padding: 50px 40px; text-align: center; background-color: #f9f9f9; cursor: pointer;">
-                            <div class="fallback">
-                                <input name="image" type="file" id="fileInput" accept="image/*"
-                                    style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; z-index: 1;"
-                                    onchange="previewImage(this)" />
-                            </div>
+                            <input name="image" type="file" id="fileInput" accept="image/*"
+                                style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; z-index: 1;"
+                                onchange="previewImage(this)" />
+
                             <div id="uploadMessage" style="color: #666; font-size: 16px; pointer-events: none;">
                                 Drop image file here or click to upload.
                             </div>
-                            <div id="imagePreview" style="display: none; max-width: 300px; margin: 0 auto;">
-                                <img id="previewImg"
+
+                            <!-- Preview box (shows initially if category has image) -->
+                            <div id="imagePreview"
+                                style="max-width: 300px; margin: 0 auto; {{ $category->image ? '' : 'display: none;' }}">
+                                <img id="previewImg" src="{{ $category->image ? asset($category->image) : '' }}"
                                     style="width: 100%; height: auto; border-radius: 8px; margin-top: 10px;" />
                                 <div style="margin-top: 10px; font-size: 14px; color: #666;">
-                                    <span id="fileName"></span>
+                                    <span id="fileName">{{ $category->image ? basename($category->image) : '' }}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    {{-- </form> --}}
                 </div>
             </div>
             <a onclick="goBack()" class="btn btn-outline-primary shadow-md mr-2">Back</a>
             <button type="submit" class="btn btn-primary mt-5 btn-hover">Submit</button>
         </form>
-        {{-- </div> --}}
         <!-- END: Validation Form -->
-        <!-- BEGIN: Success Notification Content -->
-        <div id="success-notification-content" class="toastify-content hidden flex">
-            <i class="text-success" data-lucide="check-circle"></i>
-            <div class="ml-4 mr-4">
-                <div class="font-medium">Registration success!</div>
-                <div class="text-slate-500 mt-1"> Please check your e-mail for further info! </div>
-            </div>
-        </div>
-        <!-- END: Success Notification Content -->
-        <!-- BEGIN: Failed Notification Content -->
-        <div id="failed-notification-content" class="toastify-content hidden flex">
-            <i class="text-danger" data-lucide="x-circle"></i>
-            <div class="ml-4 mr-4">
-                <div class="font-medium">Registration failed!</div>
-                <div class="text-slate-500 mt-1"> Please check the fileld form. </div>
-            </div>
-        </div>
-        <!-- END: Failed Notification Content -->
     </div>
 @endsection
 
@@ -129,8 +155,7 @@
         let currentFieldIndex = 0;
 
         // Define field sequence for category form
-        const formFields = [
-            {
+        const formFields = [{
                 selector: '#name',
                 type: 'input'
             },
@@ -185,6 +210,7 @@
             focusField(formFields[0].selector);
         }, 500);
     }
+
     // preview image box
 
     function previewImage(input) {

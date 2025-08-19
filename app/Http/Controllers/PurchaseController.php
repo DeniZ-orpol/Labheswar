@@ -19,7 +19,7 @@ class PurchaseController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
@@ -29,12 +29,15 @@ class PurchaseController extends Controller
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
             $parties = PurchaseParty::get();
             $purchaseReceipt = PurchaseReceipt::with(['purchaseParty', 'createUser', 'updateUser'])
-                ->orderByDesc('id')->paginate(10);
+                ->orderByDesc('id')->paginate(7);
         } else {
             $parties = PurchaseParty::on($branch->connection_name)->get();
             $purchaseReceipt = PurchaseReceipt::on($branch->connection_name)
-                ->with(['purchaseParty', 'createUser', 'updateUser'])
-                ->orderByDesc('id')->paginate(10);
+                ->with(['purchaseParty', 'createUser', 'updateUser'])   
+                ->orderByDesc('id')->paginate(7);
+        }
+        if ($request->ajax()) {
+            return view('purchase.rows', compact('parties','purchaseReceipt'))->render();
         }
 
         return view('purchase.index', compact(['parties', 'purchaseReceipt']));
@@ -103,7 +106,7 @@ class PurchaseController extends Controller
                 'free' => 'array',
                 'free.*' => 'nullable|numeric|min:0',
                 'purchase_rate' => 'array',
-                'purchase_rate.*' => 'numeric|min:0',
+                'purchase_rate.*' => 'nullable|numeric|min:0',
                 'discount_percent' => 'array',
                 'discount_percent.*' => 'nullable|numeric|min:0|max:100',
                 'discount_lumpsum' => 'array',
@@ -164,9 +167,9 @@ class PurchaseController extends Controller
                     // Get product details for reference
 
                     if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                        $product = Product::with('hsnCode')->find($productId);
+                        $product = Product::find($productId);
                     } else {
-                        $product = Product::on($branch->connection_name)->with('hsnCode')->find($productId);
+                        $product = Product::on($branch->connection_name)->find($productId);
                     }
 
                     if (!$product) {
@@ -221,15 +224,14 @@ class PurchaseController extends Controller
                             'product_id' => $productId,
                             'purchase_id' => $purchaseId,
                             'type' => 'in', // or 'in' - adjust based on your inventory types
-                            'quantity' => $totalWithFree,
                             'total_qty' => $totalWithFree,
+                            'quantity' => $totalWithFree,
                             'mrp' => $validate['mrp'][$index] ?? 0,
                             'sale_price' => $validate['mrp'][$index] ?? 0,
                             'purchase_price' => $validate['purchase_rate'][$index] ?? 0,
                             'unit' => $product->unit_types ?? 'pcs',
                             'reason' => 'Purchase Bill #' . $validate['bill_no'] . ' - Receipt #' . $purchaseReceiptId,
                             'gst' => $validate['gst'],
-                            'gst_p' => $validate['gst'] === 'on' ? $product->hsnCode->gst : 0,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ];
@@ -460,9 +462,9 @@ class PurchaseController extends Controller
                 foreach ($validate['product'] as $index => $productId) {
                     // Get product details for reference
                     if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                        $product = Product::with('hsnCode')->find($productId);
+                        $product = Product::find($productId);
                     } else {
-                        $product = Product::on($branch->connection_name)->with('hsnCode')->find($productId);
+                        $product = Product::on($branch->connection_name)->find($productId);
                     }
 
                     if (!$product) {
@@ -533,14 +535,12 @@ class PurchaseController extends Controller
                             'purchase_id' => $itemId,
                             'type' => 'in',
                             'quantity' => $totalWithFree,
-                            'total_qty' => $totalWithFree,
                             'mrp' => $validate['mrp'][$index] ?? 0,
                             'sale_price' => $validate['mrp'][$index] ?? 0,
                             'purchase_price' => $validate['purchase_rate'][$index] ?? 0,
                             'unit' => $product->unit_types ?? 'pcs',
                             'reason' => 'Purchase Bill #' . $validate['bill_no'] . ' - Receipt #' . $id,
                             'gst' => $validate['gst'],
-                            'gst_p' => $validate['gst'] === 'on' ? $product->hsnCode->gst : 0,
                             'updated_at' => now(),
                         ];
 

@@ -8,6 +8,19 @@
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             Products
         </h2>
+        @if (session('success'))
+            <div id="success-alert" class="alert alert-success"
+                style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px;">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div id="error-alert" class="alert alert-danger"
+                style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 10px;">
+                {{ session('error') }}
+            </div>
+        @endif
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
                 <a href="{{ Route('products.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add Product</a>
@@ -15,137 +28,55 @@
                     @csrf
                     <label for="excel_file">Import Products (Excel):</label>
                     <input type="file" name="excel_file" required accept=".csv, .xlsx, .xls">
-                    <button type="submit">Import</button>
+                    <button type="submit" class="btn btn-primary shadow-md">Import</button>
                 </form>
-                <div class="input-form ml-auto">
-                    <form method="GET" action="{{ route('products.index') }}" class="flex">
+                <a href="{{ route('products.export') }}" class="btn btn-success shadow-md ml-2">Export</a>
+            </div>
+            <div class="intro-y col-span-12">
+                <div class="input-form ">
+                    <form method="GET" action="{{ route('products.index') }}" class="flex gap-2">
+
+                        <select name="category_id" class="form-control">
+                            <option value="">All Categories</option>
+                            @foreach ($categories as $category)
+                                <option value="{{ $category->id }}"
+                                    {{ isset($categoryId) && $categoryId == $category->id ? 'selected' : '' }}>
+                                    {{ $category->name }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        <select name="company_id" class="form-control">
+                            <option value="">All Companies</option>
+                            @foreach ($companies as $company)
+                                <option value="{{ $company->id }}"
+                                    {{ isset($companyId) && $companyId == $company->id ? 'selected' : '' }}>
+                                    {{ $company->name }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        <select name="hsn_code_id" class="form-control">
+                            <option value="">All HSN Codes</option>
+                            @foreach ($hsnCodes as $hsnCode)
+                                <option value="{{ $hsnCode->id }}"
+                                    {{ isset($hsnCodeId) && $hsnCodeId == $hsnCode->id ? 'selected' : '' }}>
+                                    {{ $hsnCode->hsn_code }}
+                                </option>
+                            @endforeach
+                        </select>
                         <input type="text" name="search" id="search-product" placeholder="Search by name/barcode"
-                            value="{{ request('search') }}" class="form-control flex-1">
+                            value="{{ request('search') }}" class="form-control">
+
                         <button type="submit" class="btn btn-primary shadow-md btn-hover">Search</button>
                     </form>
                 </div>
             </div>
 
-            <div class="intro-y col-span-12 overflow-auto">
-                <table id="DataTable" class="display table table-bordered w-full">
-                    <thead>
-                        <tr class="bg-primary text-white">
-                            <th>#</th>
-                            <th>Image</th>
-                            <th>Product</th>
-                            <th>Category</th>
-                            <th>HSN</th>
-                            <th>MRP</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($products as $product)
-                            <tr>
-                                <td>
-                                    @if ($isPaginated)
-                                        {{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}
-                                    @else
-                                        {{ $loop->iteration }}
-                                    @endif
-                                </td>
-                                <td>
-                                    @if ($product->image)
-                                        {{-- <img src="{{ asset('storage/' . $product->image) }}" alt="Product Image"
-                                                width="80"> --}}
-                                        <img src="{{ asset($product->image) }}" alt="Product Image" width="80">
-                                    @else
-                                        No Image
-                                    @endif
-                                </td>
-                                <td>{{ $product->product_name }}</td>
-                                <td>{{ $product->category->name ?? '-' }}</td>
-                                <td>{{ $product->hsnCode->hsn_code ?? '-' }}</td>
-                                <td>{{ $product->mrp }}</td>
-                                <td>
-                                    <div class="flex gap-2">
-                                        <a href="{{ route('products.show', $product->id) }}"
-                                            class="btn btn-primary">View</a>
-                                        <a href="{{ route('products.edit', array_merge(['product' => $product->id], request()->only(['page', 'search']))) }}"
-                                            class="btn btn-primary">Edit</a>
-                                        <form action="{{ route('products.destroy', $product->id) }}" method="POST"
-                                            onsubmit="return confirm('Are you sure?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger">Delete</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="text-center">No Products Found</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-
-                <!-- Show pagination only for branch users (when data is paginated) -->
-                @if ($isPaginated)
-                    <div class="pagination-wrapper">
-                        <div class="pagination-info">
-                            @if ($products->total() > 0)
-                                Showing {{ $products->firstItem() }} to {{ $products->lastItem() }} of
-                                {{ $products->total() }} entries
-                            @else
-                                No entries found
-                            @endif
-                        </div>
-                        <div class="pagination-nav">
-                            <nav role="navigation" aria-label="Pagination Navigation">
-                                <div class="pagination-controls">
-                                    {{-- Previous Page Button --}}
-                                    @if ($products->onFirstPage())
-                                        <button class="page-btn prev-btn disabled" disabled>
-                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                                <path fill-rule="evenodd"
-                                                    d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z" />
-                                            </svg>
-                                        </button>
-                                    @else
-                                        <a href="{{ $products->previousPageUrl() }}" class="page-btn prev-btn">
-                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                                <path fill-rule="evenodd"
-                                                    d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z" />
-                                            </svg>
-                                        </a>
-                                    @endif
-
-                                    {{-- Page Input --}}
-                                    <div class="page-input-container">
-                                        <span class="page-label">Page</span>
-                                        <input type="number" class="page-input" value="{{ $products->currentPage() }}"
-                                            min="1" max="{{ $products->lastPage() }}"
-                                            onkeypress="if(event.key === 'Enter') goToPage(this.value)">
-                                        <span class="page-total">of {{ $products->lastPage() }}</span>
-                                    </div>
-
-                                    {{-- Next Page Button --}}
-                                    @if ($products->hasMorePages())
-                                        <a href="{{ $products->nextPageUrl() }}" class="page-btn next-btn">
-                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                                <path fill-rule="evenodd"
-                                                    d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
-                                            </svg>
-                                        </a>
-                                    @else
-                                        <button class="page-btn next-btn disabled" disabled>
-                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                                <path fill-rule="evenodd"
-                                                    d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
-                                            </svg>
-                                        </button>
-                                    @endif
-                                </div>
-                            </nav>
-                        </div>
-                    </div>
-                @endif
+            <div class="intro-y col-span-12">
+                <div id="product-results">
+                    @include('products.product-list', ['products' => $products])
+                </div>
             </div>
         </div>
     </div>
@@ -279,54 +210,236 @@
                 width: 50px;
             }
         }
+
+        /* Sticky table header */
+        /* Remove sticky header CSS as we will handle it with JS */
+        .intro-y.col-span-12.overflow-auto {
+            max-height: 70vh;
+            /* Adjust this value as needed */
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        /* Sticky table header */
+        #DataTable thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: rgb(var(--color-primary) / var(--tw-bg-opacity));
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Ensure table takes full width */
+        #DataTable {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        /* Add border to table cells for better visibility */
+        #DataTable th {
+            border: 1px solid #e5e7eb;
+            padding: 12px 8px;
+        }
+
+        #DataTable td {
+            border: 1px solid #e5e7eb;
+            padding: 5px 8px;
+        }
+
+        #DataTable tbody tr:hover {
+            background-color: #f8fafc;
+        }
     </style>
 @endpush
 
 @push('scripts')
     <script>
-        function goToPage(pageNumber) {
-            const maxPage = {{ $isPaginated ? $products->lastPage() : 1 }};
-            const currentUrl = new URL(window.location.href);
-
-            // Validate page number
-            pageNumber = parseInt(pageNumber);
-            if (isNaN(pageNumber) || pageNumber < 1) {
-                pageNumber = 1;
-            } else if (pageNumber > maxPage) {
-                pageNumber = maxPage;
-            }
-
-            // Update the input field with validated page number
-            document.querySelector('.page-input').value = pageNumber;
-
-            // Navigate to the page
-            currentUrl.searchParams.set('page', pageNumber);
-            window.location.href = currentUrl.toString();
-        }
-
-        // Auto-select input content when focused
         document.addEventListener('DOMContentLoaded', function() {
+            // Elements (match your blade HTML)
+            const container = document.getElementById('productDataTable'); // outer scrollable container
+            const loadingElem = document.getElementById('loading');
             const searchInput = document.getElementById('search-product');
-            const pageInput = document.querySelector('.page-input');
-            if (pageInput) {
-                pageInput.addEventListener('focus', function() {
-                    this.select();
-                });
+            const categorySelect = document.querySelector('select[name="category_id"]');
+            const companySelect = document.querySelector('select[name="company_id"]');
+            const hsnCodeSelect = document.querySelector('select[name="hsn_code_id"]');
+            const exportBtn = document.querySelector('a[href="{{ route('products.export') }}"]');
+
+            // State
+            let nextPageUrl = @json($products->nextPageUrl()); // null or string
+            if (!nextPageUrl) nextPageUrl = null;
+            let isLoading = false;
+
+            // Helper: build current filters
+            function getCurrentFilters() {
+                const params = new URLSearchParams();
+                if (searchInput && searchInput.value.trim() !== '') params.set('search', searchInput.value.trim());
+                if (categorySelect && categorySelect.value !== '') params.set('category_id', categorySelect.value);
+                if (companySelect && companySelect.value !== '') params.set('company_id', companySelect.value);
+                if (hsnCodeSelect && hsnCodeSelect.value !== '') params.set('hsn_code_id', hsnCodeSelect.value);
+                return params;
             }
 
-            // Auto-focus search input if there's a search parameter
-            if (searchInput && new URLSearchParams(window.location.search).has('search')) {
-                searchInput.focus();
+            // Update export link (optional)
+            function updateExportLink() {
+                if (!exportBtn) return;
+                const base = exportBtn.href.split('?')[0];
+                const qs = getCurrentFilters().toString();
+                exportBtn.href = qs ? `${base}?${qs}` : base;
             }
 
-            // Handle Enter key in search input
-            if (searchInput) {
-                searchInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        this.closest('form').submit();
+            // Replace table/container HTML from AJAX response and update nextPageUrl
+            function replaceTableHtmlFromResponse(html) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+
+                // server returns entire #productDataTable (recommended) — replace container innerHTML
+                const newProductContainer = tempDiv.querySelector('#productDataTable');
+                if (newProductContainer && container) {
+                    container.innerHTML = newProductContainer.innerHTML;
+                } else {
+                    // fallback: server returns just #DataTable fragment
+                    const newDataTable = tempDiv.querySelector('#DataTable');
+                    const existingDataTable = container ? container.querySelector('#DataTable') : null;
+                    if (newDataTable && existingDataTable) {
+                        existingDataTable.outerHTML = newDataTable.outerHTML;
+                    } else {
+                        console.warn('AJAX response did not contain #productDataTable or #DataTable');
                     }
+                }
+
+                // Pick up new pagination next-link (if present)
+                const nextLink = tempDiv.querySelector(
+                    '.page-btn.next-btn:not(.disabled), .page-btn.next-btn[href]');
+                nextPageUrl = nextLink ? nextLink.href : null;
+            }
+
+            // Fetch products (apply filters, replace the list, reset scroll)
+            function fetchProducts() {
+                const qs = getCurrentFilters().toString();
+                const url = `{{ route('products.index') }}${qs ? ('?' + qs) : ''}`;
+
+                isLoading = true;
+                if (loadingElem) loadingElem.style.display = 'block';
+
+                fetch(url, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(res => res.text())
+                    .then(html => {
+                        replaceTableHtmlFromResponse(html);
+                        updateExportLink();
+                        // Reset container scroll to top so user sees first page of filtered results
+                        if (container) container.scrollTop = 0;
+                    })
+                    .catch(err => console.error('fetchProducts error:', err))
+                    .finally(() => {
+                        isLoading = false;
+                        if (loadingElem) loadingElem.style.display = 'none';
+                    });
+            }
+
+            // Append next page rows (infinite scroll)
+            function loadMore() {
+                if (!nextPageUrl || isLoading) return;
+
+                // Combine the nextPageUrl's page param with current filters
+                const urlObj = new URL(nextPageUrl, window.location.origin);
+                const params = getCurrentFilters();
+                if (urlObj.searchParams.has('page')) params.set('page', urlObj.searchParams.get('page'));
+                const finalUrl = `${urlObj.origin}${urlObj.pathname}?${params.toString()}`;
+
+                isLoading = true;
+                if (loadingElem) loadingElem.style.display = 'block';
+
+                fetch(finalUrl, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(res => res.text())
+                    .then(html => {
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = html;
+
+                        const newRowsEl = tempDiv.querySelector('#DataTable tbody');
+                        const currentTbody = container ? container.querySelector('#DataTable tbody') : document
+                            .querySelector('#DataTable tbody');
+
+                        if (newRowsEl && currentTbody) {
+                            currentTbody.insertAdjacentHTML('beforeend', newRowsEl.innerHTML);
+                        } else {
+                            // If tbody not found, replace full table/container (failsafe)
+                            replaceTableHtmlFromResponse(html);
+                        }
+
+                        // Update pagination block if server returned it
+                        const newPagination = tempDiv.querySelector('.pagination-wrapper');
+                        if (newPagination) {
+                            const existingPagination = document.querySelector('.pagination-wrapper');
+                            if (existingPagination) existingPagination.outerHTML = newPagination.outerHTML;
+                            else {
+                                // append after table if needed
+                                const table = document.querySelector('#DataTable');
+                                if (table) table.insertAdjacentHTML('afterend', newPagination.outerHTML);
+                            }
+                        }
+
+                        // Update next page url
+                        const nextLink = tempDiv.querySelector(
+                            '.page-btn.next-btn:not(.disabled), .page-btn.next-btn[href]');
+                        nextPageUrl = nextLink ? nextLink.href : null;
+                    })
+                    .catch(err => console.error('loadMore error:', err))
+                    .finally(() => {
+                        isLoading = false;
+                        if (loadingElem) loadingElem.style.display = 'none';
+                    });
+            }
+
+            // Debounce helper for search input
+            function debounce(fn, wait = 300) {
+                let t;
+                return function(...args) {
+                    clearTimeout(t);
+                    t = setTimeout(() => fn.apply(this, args), wait);
+                };
+            }
+
+            // Attach filter event listeners
+            if (searchInput) searchInput.addEventListener('input', debounce(fetchProducts, 350));
+            if (categorySelect) categorySelect.addEventListener('change', fetchProducts);
+            if (companySelect) companySelect.addEventListener('change', fetchProducts);
+            if (hsnCodeSelect) hsnCodeSelect.addEventListener('change', fetchProducts);
+
+            // Scroll handler — prefer container scroll, fallback to window scroll
+            const SCROLL_THRESHOLD = 150; // px from bottom
+            if (container) {
+                container.addEventListener('scroll', function() {
+                    if (isLoading || !nextPageUrl) return;
+                    const pos = container.scrollTop + container.clientHeight;
+                    if (pos >= container.scrollHeight - SCROLL_THRESHOLD) loadMore();
+                });
+            } else {
+                window.addEventListener('scroll', function() {
+                    if (isLoading || !nextPageUrl) return;
+                    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight -
+                        SCROLL_THRESHOLD) loadMore();
                 });
             }
+
+            // expose goToPage if your pagination uses it elsewhere
+            window.goToPage = function(page) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('page', page);
+                window.location.href = url.toString();
+            };
+
+            // Ensure export link is correct on initial load
+            updateExportLink();
         });
     </script>
 @endpush

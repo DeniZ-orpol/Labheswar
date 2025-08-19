@@ -9,5 +9,10 @@ class Category extends Model
 {
     use HasDynamicTable;
     protected $table = 'categories';
-    protected $fillable = ['name','image'];
+    protected $fillable = ['name','type','position','image'];
+
+    public function products()
+    {
+        return $this->hasMany(\App\Models\Product::class, 'category_id');
+    }
 }

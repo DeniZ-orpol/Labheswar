@@ -13,7 +13,7 @@ class ProfitAndLooseController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
@@ -21,11 +21,13 @@ class ProfitAndLooseController extends Controller
         $role = $auth['role'];
 
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            $profitsLooses = ProfitAndLoose::all();
+            $profitsLooses = ProfitAndLoose::orderBy('created_at', 'desc')->paginate(10);
         } else {
-            $profitsLooses = ProfitAndLoose::on($branch->connection_name)->get();
+            $profitsLooses = ProfitAndLoose::on($branch->connection_name)->orderBy('created_at', 'desc')->paginate(10);
         }
-
+        if ($request->ajax()) {
+            return view('profitAndLoose.rows', compact('profitsLooses'))->render();
+        }
         return view('profitAndLoose.index', compact('profitsLooses'));
     }
 
@@ -47,20 +49,20 @@ class ProfitAndLooseController extends Controller
         $branch = $auth['branch'];
         $role = $auth['role'];
 
-        try {
-            $validated = $request->validate([
-                'profit_loose' => 'required|string|max:255',
-                'amount' => 'nullable|string|max:255',
+        $validated = $request->validate([
+            'profit_loose' => 'required|string|max:255',
+            'amount' => 'nullable|string|max:255',
                 'description' => 'nullable|string',
             ]);
-
+            
             $data = [
                 'amount' => $validated['amount'],
                 'type' => $validated['profit_loose'],
                 'description' => $validated['description'] ?? null,
                 'status' => $validated['status'] ?? null,
             ];
-
+            
+        try {
             // For Super Admin, you need to handle differently since $branch is a collection
             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
                 ProfitAndLoose::create($data);
@@ -68,10 +70,9 @@ class ProfitAndLooseController extends Controller
                 ProfitAndLoose::on($branch->connection_name)->create($data);
             }
 
-            return redirect()->route('profit-loose.index')->with('success', 'Bank details created successfully.');
-
+            return redirect()->route('profit-loose.index')->with('success', 'Profit/Lose created successfully.');
         } catch (Exception $e) {
-            dd('Error fetching ledgers: ' . $e->getMessage());
+            return redirect()->route('profit-loose.index')->with('error', 'Failed to create Profit/Lose. Please try again.');
         }
     }
 
@@ -112,11 +113,10 @@ class ProfitAndLooseController extends Controller
         $branch = $auth['branch'];
         $role = $auth['role'];
 
-        try {
-            $validated = $request->validate([
-                'profit_loose' => 'required|string|max:255',
-                'amount' => 'nullable|string|max:255',
-                'description' => 'nullable|string',
+        $validated = $request->validate([
+            'profit_loose' => 'required|string|max:255',
+            'amount' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
             ]);
 
             $data = [
@@ -125,7 +125,8 @@ class ProfitAndLooseController extends Controller
                 'description' => $validated['description'] ?? null,
                 'status' => $validated['status'] ?? null,
             ];
-
+            
+        try {
             // For Super Admin, you need to handle differently since $branch is a collection
             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
                 $profitLoose = ProfitAndLoose::where('id', $id)->firstOrFail();
@@ -136,9 +137,8 @@ class ProfitAndLooseController extends Controller
             $profitLoose->update($data);
 
             return redirect()->route('profit-loose.index')->with('success', 'Profit/Loose updated successfully.');
-
         } catch (Exception $e) {
-            dd('Error fetching ledgers: ' . $e->getMessage());
+            return redirect()->route('profit-loose.index')->with('error', 'Failed to update Profit/Loose. Please try again.');
         }
     }
 

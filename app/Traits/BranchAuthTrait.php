@@ -27,23 +27,29 @@ trait BranchAuthTrait
 
         $role = Role::where('id', $user->role_id)->first();
 
-        if(strtoupper($role->role_name) === 'SUPER ADMIN'){
-            $branch = Branch::where('status', 'active')->get();
+        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $branch = Branch::where('id', $user->branch_id)->where('status', 'active')->first();
+            $branch->connection_name = config('database.default');
         } else {
             $branch = Branch::where('id', $user->branch_id)
                 ->where('status', 'active')
                 ->first();
-                
-            if (!$branch) {
-                return response()->json([
-                    'success' => false,
-                    'data' => [],
-                    'message' => 'No accessible branch found for user'
-                ]);
-            }
 
-            configureBranchConnection($branch);
+            if ($branch) {
+                configureBranchConnection($branch);
+            }
         }
+
+        if (!$branch) {
+            return response()->json([
+                'success' => false,
+                'data' => [],
+                'message' => 'No accessible branch found for user'
+            ]);
+        }
+
+        // configureBranchConnection($branch);
+        // }
 
         return [
             'user' => $user,

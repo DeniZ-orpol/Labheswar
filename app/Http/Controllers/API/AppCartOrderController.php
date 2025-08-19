@@ -7,6 +7,7 @@ use App\Models\AppCartsOrderBill;
 use App\Models\AppCartsOrders;
 use App\Models\Branch;
 use App\Models\Cart;
+use App\Models\Formula;
 use App\Models\Inventory;
 use App\Models\PopularProducts;
 use App\Models\Product;
@@ -28,7 +29,10 @@ class AppCartOrderController extends Controller
             $branch = $auth['branch'];
             // Validate request - UPDATED for unit-aware product_weight
             $request->validate([
-                'product_id' => 'required|integer',
+                // 'product_id' => 'required|integer',
+                'product_id' => $request->input('type') === 'general'
+                    ? 'nullable|integer'
+                    : 'required|integer',
                 'product_price' => 'required|numeric',
                 'product_qty' => 'nullable|numeric|min:0.001',
                 'product_weight' => 'nullable|string', // Store as string with unit (e.g., "0.5kg", "500g")
@@ -43,10 +47,155 @@ class AppCartOrderController extends Controller
             $requestedCartId = $request->input('cart_id');
             $newCart = $request->input('new_cart', false);
 
+
             // Start database transaction
             DB::connection($branch->connection_name)->beginTransaction();
 
             try {
+
+                if ($request->input('type') === 'general') {
+                    $existingUserCart = Cart::on($branch->connection_name)
+                        ->where('user_id', $user->id)
+                        ->first();
+
+                    // Handle cart selection (keeping your existing logic)
+                    if ($requestedCartId) {
+                        $targetCart = Cart::on($branch->connection_name)
+                            ->where('id', $requestedCartId)
+                            ->first();
+                        if (!$targetCart) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Requested cart not found'
+                            ], 404);
+                        }
+
+                        // Check if user already has a different cart
+                        if ($existingUserCart && $existingUserCart->id != $requestedCartId) {
+                            // User has different cart - free the existing cart first
+                            $existingUserCart->update([
+                                'user_id' => null
+                            ]);
+                        }
+                        $targetCart->update([
+                            'user_id' => $user->id
+                        ]);
+                        $cart = $targetCart;
+
+                    } elseif ($newCart) {
+                        if ($existingUserCart) {
+                            $existingUserCart->update([
+                                'user_id' => null
+                            ]);
+                        }
+                        $availableCart = Cart::on($branch->connection_name)
+                            ->where('status', 'available')
+                            ->first();
+
+                        if (!$availableCart) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'No carts available for new cart request'
+                            ], 400);
+                        }
+                        $availableCart->update([
+                            'user_id' => $user->id,
+                            'status' => 'unavailable'
+                        ]);
+                        $cart = $availableCart;
+                    } else {
+                        if ($existingUserCart) {
+                            $cart = $existingUserCart;
+                        } else {
+                            $availableCart = Cart::on($branch->connection_name)
+                                ->where('status', 'available')
+                                ->first();
+
+                            if (!$availableCart) {
+                                return response()->json([
+                                    'success' => false,
+                                    'message' => 'No carts available'
+                                ], 400);
+                            }
+
+                            $availableCart->update([
+                                'user_id' => $user->id,
+                                'status' => 'unavailable'
+                            ]);
+
+                            $cart = $availableCart;
+                        }
+                    }
+
+                    $existingCartItem = AppCartsOrders::on($branch->connection_name)
+                        ->where('cart_id', $cart->id)
+                        ->where('product_id', $productId)
+                        ->where('product_name', $request->product_name)
+                        ->where('order_receipt_id', null) // Ensure it's not already part of an order receipt
+                        ->first();
+
+
+                    $subTotal = $productPrice * $requestedQuantity;
+                    // $gstPercent = $product->hsnCode->gst ?? 0;
+                    // $gstAmount = ($subTotal * $gstPercent) / 100;
+                    // $gstAmount = ($subTotal * $gstPercent) / (100 + $gstPercent);
+                    // $totalAmount = $subTotal - $gstAmount;
+                    $totalAmount = $subTotal;
+
+                    if ($existingCartItem) {
+                        $updatedQuantity = $existingCartItem->product_quantity + $requestedQuantity;
+                        $updatedTotalAmount = $existingCartItem->total_amount + $totalAmount;
+                        $updatedSubTotal = $existingCartItem->sub_total + $subTotal;
+                        // $updatedGstAmount = $existingCartItem->gst + $gstAmount;
+                        $existingCartItem->update([
+                            'product_quantity' => $updatedQuantity,
+                            'total_amount' => $updatedTotalAmount,
+                            'sub_total' => $updatedSubTotal,
+                            'taxes' => 0,
+                            'gst' => "0",
+                            'gst_p' => "0",
+                            'return_product' => 0
+                        ]);
+                    } else {
+                        // Create new cart item using calculated values
+                        try {
+                            $cartItem = AppCartsOrders::on($branch->connection_name)->create([
+                                'user_id' => $user->id,
+                                'cart_id' => $cart->id,
+                                'product_id' => $productId,
+                                'type' => $request->input('type') ?? 'general',
+                                'product_name' => $request->input('product_name') ?? "General Purchase",
+                                'hsn_code' => $request->input('hsn_code') ?? null,
+                                'product_price' => $productPrice, // base price without gst
+                                'product_quantity' => $requestedQuantity ?? 1,
+                                'sub_total' => $subTotal,
+                                'total_amount' => $totalAmount,
+                                'taxes' => 0,
+                                'gst' => 0,
+                                'gst_p' => 0,
+                                'return_product' => 0
+                            ]);
+
+                        } catch (Exception $e) {
+                            dd($e->getMessage());
+                        }
+                        // dd($cart,$existingCartItem, $cartItem);
+                    }
+                    DB::connection($branch->connection_name)->commit();
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Product added to cart successfully',
+                        'data' => [
+                            'cart_id' => $cart->id,
+                            'cart_status' => $cart->status,
+                            'cart_item' => $cartItem ?? $existingCartItem,
+                            'branch' => $branch->name,
+                            'display_quantity' => $requestedQuantity . ' PCS',
+                        ]
+                    ]);
+                }
+
                 // Get product from branch database
                 $product = Product::on($branch->connection_name)
                     ->with('hsnCode')
@@ -60,51 +209,89 @@ class AppCartOrderController extends Controller
                     ], 404);
                 }
 
-                // Check inventory availability - GET ALL INVENTORY ENTRIES
-                $inventoryEntries = Inventory::on($branch->connection_name)
-                    ->where('product_id', $productId)
-                    ->where('quantity', '>', 0) // Only get entries with positive quantity
-                    ->orderBy('created_at', 'asc') // FIFO - First In, First Out
-                    ->get();
-
-                if ($inventoryEntries->isEmpty()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Product not available in inventory'
-                    ], 400);
-                }
-
-                // Calculate total available stock
-                $totalAvailableStock = $inventoryEntries->sum('quantity');
-
-                // NEW: Parse and convert product_weight for inventory management only
-                $inventoryCheckQuantity = $requestedQuantity; // Default for fixed quantity
                 $isLooseQuantity = false;
-                $inventoryDeductionQuantity = 0;
+                $inventoryCheckQuantity = $requestedQuantity;
+                $inventorycheckStatus = true;
 
-                // Check if this is a loose quantity product and has weight input
-                if ($product->decimal_btn == 1 && !empty($productWeightInput)) {
-                    $weightConversion = $this->parseAndConvertWeight($productWeightInput, $product->unit_types);
+                if ($product && $product->is_variant === "yes") {
+                    $formula = Formula::on($branch->connection_name)
+                        ->where('product_id', $productId)
+                        ->first();
 
-                    if ($weightConversion['success']) {
-                        $inventoryDeductionQuantity = $weightConversion['base_quantity']; // For inventory deduction
-                        $inventoryCheckQuantity = $inventoryDeductionQuantity; // For stock checking
-                        $isLooseQuantity = true;
-                    } else {
-                        return response()->json([
-                            'success' => false,
-                            'message' => $weightConversion['error']
-                        ], 400);
+                    if ($formula && $formula->auto_production) {
+                        $inventorycheckStatus = false;
                     }
                 }
+                // Check inventory availability - GET ALL INVENTORY ENTRIES
+                if ($inventorycheckStatus) {
+                    $query = Inventory::on($branch->connection_name)
+                        ->where('product_id', $productId);
+                    if ($product->negative_billing == "" || strtoupper($product->negative_billing) === "NO") {
+                        $query->where('quantity', '>', 0);
+                    }
+                    $inventoryEntries = $query->orderBy('created_at', 'asc') // FIFO - First In, First Out
+                        ->get();
 
-                // Check stock availability using the correct quantity
-                if ($totalAvailableStock < $inventoryCheckQuantity) {
-                    $unit = $isLooseQuantity ? strtoupper($product->unit_types) : 'PCS';
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Insufficient stock. Available quantity: ' . $totalAvailableStock . ' ' . $unit
-                    ], 400);
+                    if (($product->negative_billing == "" || strtoupper($product->negative_billing) === "NO") && $inventoryEntries->isEmpty()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Product not available in inventory'
+                        ], 400);
+                    }
+                    if (strtoupper($product->negative_billing) === "YES" && $inventoryEntries->isEmpty()) {
+                        $inventory = [
+                            'product_id' => $productId,
+                            'quantity' => 0,
+                            'total_qty' => 0,
+                            'mrp' => $product->mrp ?? 0,
+                            'sale_price' => $product->sale_rate_a ?? 0,
+                            'purchase_price' => $product->purchase_price ?? 0,
+                            'gst' => 'off',
+                            'gst_p' => 0,
+                            'reason' => null,
+                            'type' => 'in',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+
+                        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                            Inventory::insert($inventory);
+                        } else {
+                            Inventory::on($branch->connection_name)->insert($inventory);
+                        }
+                        $inventoryEntries = Inventory::on($branch->connection_name)->where('product_id', $productId)->orderBy('created_at', 'asc')->get();
+                    }
+
+                    // Calculate total available stock
+                    $totalAvailableStock = $inventoryEntries->sum('quantity');
+
+                    // NEW: Parse and convert product_weight for inventory management only
+                    $inventoryDeductionQuantity = 0;
+
+                    // Check if this is a loose quantity product and has weight input
+                    if ($product->decimal_btn == 1 && !empty($productWeightInput)) {
+                        $weightConversion = $this->parseAndConvertWeight($productWeightInput, $product->unit_types);
+
+                        if ($weightConversion['success']) {
+                            $inventoryDeductionQuantity = $weightConversion['base_quantity']; // For inventory deduction
+                            $inventoryCheckQuantity = $inventoryDeductionQuantity; // For stock checking
+                            $isLooseQuantity = true;
+                        } else {
+                            return response()->json([
+                                'success' => false,
+                                'message' => $weightConversion['error']
+                            ], 400);
+                        }
+                    }
+
+                    // Check stock availability using the correct quantity
+                    if (($product->negative_billing == "" || strtoupper($product->negative_billing) === "NO") && $totalAvailableStock < $inventoryCheckQuantity) {
+                        $unit = $isLooseQuantity ? strtoupper($product->unit_types) : 'PCS';
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Insufficient stock. Available quantity: ' . $totalAvailableStock . ' ' . $unit
+                        ], 400);
+                    }
                 }
 
                 // Check if user already has a cart assigned
@@ -133,38 +320,10 @@ class AppCartOrderController extends Controller
                         ]);
                     }
 
-                    // if ($targetCart->status === 'available') {
-                    //     $targetCart->update([
-                    //         'user_id' => $user->id,
-                    //         'status' => 'unavailable'
-                    //     ]);
-                    //     $cart = $targetCart;
-                    // } elseif ($targetCart->user_id === $user->id) {
-                    //     $cart = $targetCart;
-                    // } else {
-
                     $targetCart->update([
                         'user_id' => $user->id
                     ]);
                     $cart = $targetCart;
-                    // $availableCart = Cart::on($branch->connection_name)
-                    //     ->where('status', 'available')
-                    //     ->first();
-
-                    // if (!$availableCart) {
-                    //     return response()->json([
-                    //         'success' => false,
-                    //         'message' => 'Requested cart not available and no other carts available'
-                    //     ], 400);
-                    // }
-
-                    // $availableCart->update([
-                    //     'user_id' => $user->id,
-                    //     'status' => 'unavailable'  // Cart now has products, so unavailable
-                    // ]);
-
-                    // $cart = $availableCart;
-                    // }
                 } elseif ($newCart) {
                     if ($existingUserCart) {
                         $existingUserCart->update([
@@ -189,10 +348,6 @@ class AppCartOrderController extends Controller
 
                     $cart = $availableCart;
                 } else {
-                    // $userCart = Cart::on($branch->connection_name)
-                    //     ->where('user_id', $user->id)
-                    //     ->where('status', 'unavailable')
-                    //     ->first();
 
                     if ($existingUserCart) {
                         $cart = $existingUserCart;
@@ -217,19 +372,15 @@ class AppCartOrderController extends Controller
                     }
                 }
 
+                $priceTolerance = 0.01;
                 // Check if product is already in cart
                 $existingCartItem = AppCartsOrders::on($branch->connection_name)
                     ->where('cart_id', $cart->id)
                     ->where('product_id', $productId)
+                    ->whereRaw('ABS(product_price - ?) < ?', [$productPrice, $priceTolerance])
                     ->where('order_receipt_id', null) // Ensure it's not already part of an order receipt
                     ->first();
 
-                // if ($existingCartItem) {
-                //     return response()->json([
-                //         'success' => false,
-                //         'message' => 'Product already exists in cart. Please remove the existing item first or update its quantity.'
-                //     ], 400);
-                // }
 
                 // Calculate cart item values based on product type
                 if ($isLooseQuantity) {
@@ -245,13 +396,34 @@ class AppCartOrderController extends Controller
                 }
 
                 $gstPercent = $product->hsnCode->gst ?? 0;
-                $gstAmount = ($subTotal * $gstPercent) / 100;
-                $totalAmount = $subTotal + $gstAmount;
+                // $gstAmount = ($subTotal * $gstPercent) / 100;
+                $gstAmount = ($subTotal * $gstPercent) / (100 + $gstPercent);
+                $totalAmount = $subTotal - $gstAmount;
 
-                if($existingCartItem) {
+                $canUpdate = false;
+
+                if ($existingCartItem) {
+                    if ($isLooseQuantity) {
+                        // For loose quantity, only update if price matches
+                        if ($existingCartItem->product_weight == $productWeightInput) {
+                            $canUpdate = true;
+                        }
+                    } else {
+                        $canUpdate = true;
+                    }
+                }
+
+                if ($canUpdate) {
                     $updatedQuantity = $existingCartItem->product_quantity + $finalQuantity;
+                    $updatedTotalAmount = $existingCartItem->total_amount + $totalAmount;
+                    $updatedSubTotal = $existingCartItem->sub_total + $subTotal;
+                    $updatedGstAmount = $existingCartItem->gst + $gstAmount;
                     $existingCartItem->update([
-                        'product_quantity' => $updatedQuantity
+                        'product_quantity' => $updatedQuantity,
+                        'total_amount' => $updatedTotalAmount,
+                        'sub_total' => $updatedSubTotal,
+                        'taxes' => $updatedGstAmount,
+                        'gst' => $updatedGstAmount,
                     ]);
                 } else {
                     // Create new cart item using calculated values
@@ -270,6 +442,84 @@ class AppCartOrderController extends Controller
                         'gst_p' => $gstPercent,
                         'return_product' => 0
                     ]);
+
+                    /* if ($product->packaging_btn === 'on' && !empty($product->packaging) && $isLooseQuantity && !empty($inventoryCheckQuantity)) {
+                        // Fetch all packaging products in the specified packaging category
+                        $packagingProducts = Product::on($branch->connection_name)
+                        ->where('category_id', $product->packaging)
+                        ->where('product_type', 'packaging')
+                        ->get();
+
+                        foreach ($packagingProducts as $packagingProduct) {
+                            $weightFrom = floatval($packagingProduct->weight_from ?? 0);
+                            $weightTo = floatval($packagingProduct->weight_to ?? 0);
+
+                            // Match the ordered product weight with packaging weight range
+                            if ($inventoryCheckQuantity >= $weightFrom && $inventoryCheckQuantity <= $weightTo) {
+                                $packagingInventoryEntries = Inventory::on($branch->connection_name)
+                                    ->where('product_id', $packagingProduct->id)
+                                    ->orderBy('created_at', 'asc') 
+                                    ->get();
+
+                                if ($packagingInventoryEntries->isEmpty()) {
+                                    if (strtoupper($packagingProduct->negative_billing ?? 'NO') !== 'YES') {
+                                        return response()->json([
+                                            'success' => false,
+                                            'message' => 'Packaging item out of stock: ' . $packagingProduct->product_name
+                                        ], 400);
+                                    } else {
+                                        Inventory::on($branch->connection_name)->insert([
+                                            'product_id' => $packagingProduct->id,
+                                            'quantity' => 0,
+                                            'total_qty' => 0,
+                                            'mrp' => $packagingProduct->mrp ?? 0,
+                                            'sale_price' => $packagingProduct->sale_rate_a ?? 0,
+                                            'purchase_price' => $packagingProduct->purchase_rate ?? 0,
+                                            'gst' => 'off',
+                                            'gst_p' => 0,
+                                            'reason' => 'auto packaging deduction',
+                                            'type' => 'in',
+                                            'created_at' => now(),
+                                            'updated_at' => now(),
+                                        ]);
+
+
+                                        $packagingInventoryEntries = Inventory::on($branch->connection_name)
+                                        ->where('product_id', $packagingProduct->id)
+                                        ->orderBy('created_at', 'asc')
+                                        ->get();
+                                    }
+                                }
+                                $packagingCartItem = AppCartsOrders::on($branch->connection_name)->create([
+                                    'user_id' => $user->id,
+                                    'cart_id' => $cart->id,
+                                    'product_id' => $packagingProduct->id,
+                                    'firm_id' => $packagingProduct->firm_id ?? null,
+                                    'product_weight' => null, 
+                                    'product_price' => 0, 
+                                    'product_quantity' => 1,
+                                    'taxes' => 0 ,
+                                    'sub_total' => 0,
+                                    'total_amount' => 0,
+                                    'gst' => 0,
+                                    'gst_p' => 0,
+                                    'return_product' => 0
+                                ]);
+
+                                // Deduct exactly 1 unit from packaging product
+                                $remainingPackagingQty = 1;
+                                foreach ($packagingInventoryEntries as $entry) {
+                                    if ($remainingPackagingQty <= 0) {
+                                        break;
+                                    }
+                                    $deduct = $remainingPackagingQty;
+
+                                    $entry->decrement('quantity', $deduct);
+                                    $remainingPackagingQty -= $deduct;
+                                }
+                            }
+                        }
+                    } */
                 }
 
                 // Update popular products
@@ -288,22 +538,128 @@ class AppCartOrderController extends Controller
                     ]);
                 }
 
-                // UPDATED: Deduct inventory using FIFO method
-                $remainingToDeduct = $inventoryCheckQuantity;
+                // create me a this product is variant and formula in this product auto_production is on then deduct row muterial and also add this product in inventory
+                if ($product && $product->is_variant === "yes") {
+                    $formula = Formula::on($branch->connection_name)
+                        ->where('product_id', $productId)
+                        ->first();
 
-                foreach ($inventoryEntries as $inventoryEntry) {
-                    if ($remainingToDeduct <= 0) {
-                        break; // All quantity has been deducted
+                    $Inve_product= Inventory::on($branch->connection_name)
+                                ->where('product_id', $productId)
+                                ->orderBy('created_at', 'asc')
+                                ->get();
+
+                            // If no inventory exists for this product, create an initial record
+                    if ($Inve_product->isEmpty()) {
+                        Inventory::on($branch->connection_name)->insert([
+                            'product_id' => $productId,
+                            'quantity' => 0,
+                            'total_qty' => 0,
+                            'mrp' => $product->mrp ?? 0,
+                            'sale_price' => $product->sale_rate_a ?? 0,
+                            'purchase_price' => $product->purchase_rate ?? 0,
+                            'gst' => 'off',
+                            'gst_p' => 0,
+                            'reason' => null,
+                            'type' => 'in',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
                     }
+                     if ($formula && $formula->auto_production) {
+                        $ingredients = is_array($formula->ingredients)
+                            ? $formula->ingredients
+                            : json_decode($formula->ingredients, true);
 
-                    $availableInThisEntry = $inventoryEntry->quantity;
-                    $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
+                        foreach ($ingredients as $ingredient) {
+                            $ingredientProductId = $ingredient['product_id'];
+                            $requiredQty = $ingredient['quantity'] * $requestedQuantity;
 
-                    // Update this inventory entry
-                    $inventoryEntry->decrement('quantity', $deductFromThisEntry);
+                            $rawProduct = strtoupper($role->role_name) === 'SUPER ADMIN'
+                                ? Product::find($ingredientProductId)
+                                : Product::on($branch->connection_name)->find($ingredientProductId);
 
-                    $remainingToDeduct -= $deductFromThisEntry;
+                            if ($rawProduct) {
+                                // Fetch inventory entries (FIFO)
+                                $rowInventoryEntries = Inventory::on($branch->connection_name)
+                                    ->where('product_id', $ingredientProductId)
+                                    ->orderBy('created_at', 'asc')
+                                    ->get();
+
+                                // If no inventory exists for this product, create an initial record
+                                if ($rowInventoryEntries->isEmpty()) {
+                                    Inventory::on($branch->connection_name)->insert([
+                                        'product_id' => $ingredientProductId,
+                                        'quantity' => 0,
+                                        'total_qty' => 0,
+                                        'mrp' => $rawProduct->mrp ?? 0,
+                                        'sale_price' => $rawProduct->sale_rate_a ?? 0,
+                                        'purchase_price' => $rawProduct->purchase_rate ?? 0,
+                                        'gst' => 'off',
+                                        'gst_p' => 0,
+                                        'reason' => null,
+                                        'type' => 'in',
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+
+                                    $rowInventoryEntries = Inventory::on($branch->connection_name)
+                                        ->where('product_id', $ingredientProductId)
+                                        ->orderBy('created_at', 'asc')
+                                        ->get();
+                                }
+
+                                // Deduct raw material quantity (FIFO)
+                                $remainingQty = $requiredQty;
+                                foreach ($rowInventoryEntries as $entry) {
+                                    if ($remainingQty <= 0) break;
+
+                                    $deductQty = $remainingQty;
+                                    $entry->decrement('quantity', $deductQty);
+                                    $remainingQty -= $deductQty;
+                                }
+                            }
+                        }
+                    }else{
+
+                        // UPDATED: Deduct inventory using FIFO method
+                        $remainingToDeduct = $inventoryCheckQuantity;
+                        
+                        foreach ($inventoryEntries as $inventoryEntry) {
+                            if ($remainingToDeduct <= 0) {
+                                break; // All quantity has been deducted
+                            }
+                            
+                            $availableInThisEntry = $inventoryEntry->quantity;
+                            // $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
+                            $deductFromThisEntry = $remainingToDeduct;
+                            
+                            // Update this inventory entry
+                            $inventoryEntry->decrement('quantity', $deductFromThisEntry);
+        
+                            $remainingToDeduct -= $deductFromThisEntry;
+                        }
+                    }
+                }else{
+                    // UPDATED: Deduct inventory using FIFO method
+                    $remainingToDeduct = $inventoryCheckQuantity;
+
+                    foreach ($inventoryEntries as $inventoryEntry) {
+                        if ($remainingToDeduct <= 0) {
+                            break; // All quantity has been deducted
+                        }
+    
+                        $availableInThisEntry = $inventoryEntry->quantity;
+                        // $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
+                        $deductFromThisEntry = $remainingToDeduct;
+    
+                        // Update this inventory entry
+                        $inventoryEntry->decrement('quantity', $deductFromThisEntry);
+    
+                        $remainingToDeduct -= $deductFromThisEntry;
+                    }
                 }
+
 
                 // Calculate remaining total inventory for response
                 $remainingTotalStock = Inventory::on($branch->connection_name)
@@ -561,7 +917,7 @@ class AppCartOrderController extends Controller
                 ]);
             }
 
-            $cartTotal = $cartItems->sum('total_amount');
+            $cartTotal = $cartItems->sum('sub_total');
             $totalItems = $cartItems->sum('product_quantity');
 
             return response()->json([
@@ -626,46 +982,104 @@ class AppCartOrderController extends Controller
                     ->where('status', 'unavailable')
                     ->first();
 
-                if (!$cart) {
+                /*if (!$cart) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Cart not found or access denied'
                     ], 404);
-                }
+                }*/
 
                 // Get cart items with product details for loose quantity info
                 $cartItems = AppCartsOrders::on($branch->connection_name)
                     ->with([
                         'product' => function ($query) {
-                            $query->select('id', 'product_name', 'barcode', 'unit_types', 'decimal_btn');
+                            $query->select('id', 'product_name', 'barcode', 'unit_types', 'decimal_btn', 'hsn_code_id', 'cess')->with('hsnCode');
                         }
                     ])
                     ->where('cart_id', $cartId)
                     ->where('order_receipt_id', null) // Ensure items are not already part of an order receipt
                     ->get();
 
-                if ($cartItems->isEmpty()) {
+                /* if ($cartItems->isEmpty()) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Cart is empty, cannot create bill'
                     ], 400);
+                }*/
+                // Check if both cart items and general items are empty
+                $genralItems = $request->input('genral_item');
+                if ($cartItems->isEmpty() && (empty($genralItems) || !is_array($genralItems) || count($genralItems) === 0)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cart is empty and no general items provided, cannot create bill'
+                    ], 400);
                 }
 
-                // Calculate totals
-                $subTotal = $cartItems->sum('sub_total');
-                $totalTaxes = $cartItems->sum('gst');
+                $subTotal = 0;
+                $total = 0;
+                $totalTaxes = 0;
                 $discountRs = (float) $request->input('discount_rs', 0);
                 $discountPercentage = (float) $request->input('discount_percentage', 0);
+                $gstSummary = [];
 
-                // Apply percentage discount to subtotal
-                if ($discountPercentage > 0) {
-                    $discountRs += ($subTotal * $discountPercentage) / 100;
+                if ($cartItems->isNotEmpty()) {
+                    // Calculate totals
+                    $subTotal = $cartItems->sum('sub_total');
+                    $totalTaxes = $cartItems->sum('gst');
+
+                    // Apply percentage discount to subtotal
+                    if ($discountPercentage > 0) {
+                        $discountRs += ($subTotal * $discountPercentage) / 100;
+                    }
+
+                    $total = $subTotal - $totalTaxes;
+                    $subTotal = $subTotal - $discountRs;
+                    $gstSummary = [];
+
+                    foreach ($cartItems as $item) {
+
+                        $gstPercent = $item->gst_p;
+
+                        if (!isset($gstSummary[$gstPercent])) {
+                            $gstSummary[$gstPercent] = [
+                                'gst_percentage' => $gstPercent,
+                                'cess' => $item->product->cess ?? 0,
+                                'taxable_amount' => 0,
+                                'tax_amount' => 0,
+                                'amount' => 0
+                            ];
+                        }
+
+                        $gstSummary[$gstPercent]['taxable_amount'] += $item->total_amount; // or use $item->sub_total directly if it's pre-tax
+                        $gstSummary[$gstPercent]['tax_amount'] += $item->gst;
+                        $gstSummary[$gstPercent]['amount'] += $item->sub_total;
+                    }
                 }
+                /*
+                $genralItems = $request->input('genral_item');
 
-                $total = $subTotal + $totalTaxes - $discountRs;
+                if (is_array($genralItems) && count($genralItems) > 0) {
+                    $cleanedGenralItems = [];
+                    $genralSubTotal = 0;
 
-                // Create order bill
-                $orderBill = AppCartsOrderBill::on($branch->connection_name)->create([
+                    foreach ($genralItems as $item) {
+                        $name = !empty($item['name']) ? $item['name'] : 'Genral Item';
+                        $price = isset($item['price']) ? (float) $item['price'] : 0;
+                        $qty = isset($item['qty']) && is_numeric($item['qty']) ? (float) $item['qty'] : 1;
+                        $hsn = isset($item['hsn']) ? $item['hsn'] : null;
+                        $cleanedGenralItems[] = [
+                            'name' => !empty($item['name']) ? $item['name'] : 'Genral Item',
+                            'price' => isset($item['price']) ? $item['price'] : null,
+                            'qty' => isset($item['qty']) && is_numeric($item['qty']) ? $item['qty'] : 1,
+                            'hsn' => isset($item['hsn']) ? $item['hsn'] : null,
+                        ];
+                        $genralSubTotal += $price * $qty;
+                    }
+                    $subTotal += $genralSubTotal;
+                    $total += $genralSubTotal;
+                }*/
+
+                $data = [
                     'cart_id' => $cartId,
                     'total_texes' => $totalTaxes,
                     'sub_total' => $subTotal,
@@ -683,14 +1097,23 @@ class AppCartOrderController extends Controller
                     'is_delivery' => $request->input('is_delivery', false),
                     'address_id' => $request->input('address_id'),
                     'ship_to_name' => $request->input('ship_to_name'),
-                    'expected_delivery_date' => $request->input('expected_delivery_date')
-                ]);
+                    'expected_delivery_date' => $request->input('expected_delivery_date'),
+                ];
+
+                // Add general items to data if available
+                if (!empty($cleanedGenralItems)) {
+                    $data['genral_item'] = json_encode($cleanedGenralItems);
+                }
+
+                $orderBill = AppCartsOrderBill::on($branch->connection_name)->create($data);
 
                 // Update cart items with the order receipt ID
-                foreach ($cartItems as $item) {
-                    $item->update([
-                        'order_receipt_id' => $orderBill->id
-                    ]);
+                if ($cartItems->isNotEmpty()) {
+                    foreach ($cartItems as $item) {
+                        $item->update([
+                            'order_receipt_id' => $orderBill->id
+                        ]);
+                    }
                 }
 
                 // Prepare detailed items information with loose quantity details
@@ -698,46 +1121,47 @@ class AppCartOrderController extends Controller
                 $totalItemsCount = 0;
                 $looseQuantityItems = 0;
                 $fixedQuantityItems = 0;
+                if ($cartItems->isNotEmpty()) {
+                    foreach ($cartItems as $item) {
+                        $product = $item->product;
 
-                foreach ($cartItems as $item) {
-                    $product = $item->product;
+                        // Determine if this is a loose quantity item
+                        $isLooseQuantity = ($product && $product->decimal_btn == 1 && !empty($item->product_weight));
 
-                    // Determine if this is a loose quantity item
-                    $isLooseQuantity = ($product && $product->decimal_btn == 1 && !empty($item->product_weight));
+                        if ($isLooseQuantity) {
+                            $looseQuantityItems++;
+                            // Use the stored value directly (e.g., "0.5kg", "500g")
+                            $displayQuantity = $item->product_weight;
+                            $quantityDescription = "Loose quantity: {$displayQuantity}";
+                        } else {
+                            $fixedQuantityItems++;
+                            $displayQuantity = $item->product_quantity . ' PCS';
+                            $quantityDescription = "Fixed quantity: {$displayQuantity}";
+                        }
 
-                    if ($isLooseQuantity) {
-                        $looseQuantityItems++;
-                        // Use the stored value directly (e.g., "0.5kg", "500g")
-                        $displayQuantity = $item->product_weight;
-                        $quantityDescription = "Loose quantity: {$displayQuantity}";
-                    } else {
-                        $fixedQuantityItems++;
-                        $displayQuantity = $item->product_quantity . ' PCS';
-                        $quantityDescription = "Fixed quantity: {$displayQuantity}";
+                        $itemDetail = [
+                            'cart_item_id' => $item->id,
+                            'product_id' => $item->product_id,
+                            'product_name' => $product ? $product->product_name : $item->product_name,
+                            'product_barcode' => $product ? $product->barcode : null,
+                            'hsn_code' => $product->hsnCode->hsn_code ?? null,
+                            'product_unit_type' => $product ? $product->unit_types : 'PCS',
+                            'is_loose_quantity' => $isLooseQuantity,
+                            'product_quantity' => $item->product_quantity,
+                            'product_weight' => $item->product_weight, // Keep original string value
+                            'display_quantity' => $displayQuantity,
+                            'quantity_description' => $quantityDescription,
+                            'unit_price' => $item->product_price,
+                            'sub_total' => $item->sub_total,
+                            'tax_amount' => $item->gst,
+                            'tax_percentage' => $item->gst_p,
+                            'total_amount' => $item->total_amount,
+                        ];
+
+                        $itemsDetails[] = $itemDetail;
+                        $totalItemsCount += $item->product_quantity;
                     }
-
-                    $itemDetail = [
-                        'cart_item_id' => $item->id,
-                        'product_id' => $item->product_id,
-                        'product_name' => $product ? $product->product_name : 'Unknown Product',
-                        'product_barcode' => $product ? $product->barcode : null,
-                        'product_unit_type' => $product ? $product->unit_types : 'PCS',
-                        'is_loose_quantity' => $isLooseQuantity,
-                        'product_quantity' => $item->product_quantity,
-                        'product_weight' => $item->product_weight, // Keep original string value
-                        'display_quantity' => $displayQuantity,
-                        'quantity_description' => $quantityDescription,
-                        'unit_price' => $item->product_price,
-                        'sub_total' => $item->sub_total,
-                        'tax_amount' => $item->gst,
-                        'tax_percentage' => $item->gst_p,
-                        'total_amount' => $item->total_amount,
-                    ];
-
-                    $itemsDetails[] = $itemDetail;
-                    $totalItemsCount += $item->product_quantity;
                 }
-
                 // Optional: Clear cart after bill creation
                 $cartCleared = false;
                 if ($request->input('clear_cart', true)) { // Default to true
@@ -765,6 +1189,7 @@ class AppCartOrderController extends Controller
                         'discount_percentage' => $orderBill->discount_percentage, // Total discount percentage applied
                         'total' => $orderBill->total // Total after discount and taxes
                     ],
+                    'gst_summary' => $gstSummary,
                     // 'payment_info' => [
                     //     'payment_status' => $orderBill->payment_status,
                     //     'payment_method' => $orderBill->razorpay_payment_id ? 'online' : 'cash',
@@ -788,10 +1213,7 @@ class AppCartOrderController extends Controller
                         'cart_cleared' => $cartCleared,
                         'cart_status' => $cartCleared ? 'available' : 'unavailable' // available when empty, unavailable when has products
                     ],
-                    'branch_info' => [
-                        'branch_name' => $branch->name,
-                        'branch_id' => $branch->id
-                    ],
+                    'branch_info' => $branch,
                     'timestamps' => [
                         'created_at' => $orderBill->created_at,
                         'order_date' => now()->format('Y-m-d H:i:s')
@@ -939,58 +1361,114 @@ class AppCartOrderController extends Controller
                     ->with('hsnCode')
                     ->where('barcode', $barcode)
                     ->first();
+
+                if (!$product) {
+                    // Check if it's a carton or box barcode
+                    $product = Product::on($connection)
+                        ->with('hsnCode')
+                        ->where('carton_barcode', $barcode)
+                        ->orWhere('box_barcode', $barcode)
+                        ->first();
+                }
                 if (!$product) {
                     return response()->json(['success' => false, 'message' => 'Product not found'], 404);
                 }
 
-                $productId = $product->id;
-                $productPrice = $product->mrp;
-
-                // Check inventory availability - GET ALL INVENTORY ENTRIES
-                $inventoryEntries = Inventory::on($branch->connection_name)
-                    ->where('product_id', $productId)
-                    ->where('quantity', '>', 0) // Only get entries with positive quantity
-                    ->orderBy('created_at', 'asc') // FIFO - First In, First Out
-                    ->get();
-
-                if ($inventoryEntries->isEmpty()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Product not available in inventory'
-                    ], 400);
+                if ($product->carton_barcode && $product->carton_barcode === $barcode) {
+                    $cartonQuantity = $product->converse_carton ?? 1;
+                    $boxQuantity = $product->converse_box ?? 1;
+                    $requestedQuantity = $requestedQuantity * $cartonQuantity * $boxQuantity;
+                    // $requestedQuantity *= $cartonQuantity; 
+                } elseif ($product->box_barcode && $product->box_barcode === $barcode) {
+                    $boxQuantity = $product->converse_box ?? 1;
+                    $requestedQuantity *= $boxQuantity;
                 }
 
-                // Calculate total available stock
-                $totalAvailableStock = $inventoryEntries->sum('quantity');
+                $productId = $product->id;
+                $productPrice = $product->sale_rate_a;
 
-                // NEW: Parse and convert product_weight for inventory management only
-                $inventoryCheckQuantity = $requestedQuantity; // Default for fixed quantity
                 $isLooseQuantity = false;
-                $inventoryDeductionQuantity = 0;
+                $inventoryCheckQuantity = $requestedQuantity;
+                $inventorycheckStatus = true;
 
-                // Check if this is a loose quantity product and has weight input
-                if ($product->decimal_btn == 1 && !empty($productWeightInput)) {
-                    $weightConversion = $this->parseAndConvertWeight($productWeightInput, $product->unit_types);
+                if ($product && $product->is_variant === "yes") {
+                    $formula = Formula::on($branch->connection_name)
+                        ->where('product_id', $productId)
+                        ->first();
 
-                    if ($weightConversion['success']) {
-                        $inventoryDeductionQuantity = $weightConversion['base_quantity']; // For inventory deduction
-                        $inventoryCheckQuantity = $inventoryDeductionQuantity; // For stock checking
-                        $isLooseQuantity = true;
-                    } else {
-                        return response()->json([
-                            'success' => false,
-                            'message' => $weightConversion['error']
-                        ], 400);
+                    if ($formula && $formula->auto_production) {
+                        $inventorycheckStatus = false;
                     }
                 }
+                if ($inventorycheckStatus) {
+                    $query = Inventory::on($branch->connection_name)
+                        ->where('product_id', $productId);
+                    if ($product->negative_billing == "" || strtoupper($product->negative_billing) === "NO") {
+                        $query->where('quantity', '>', 0);
+                    }
+                    $inventoryEntries = $query->orderBy('created_at', 'asc') // FIFO - First In, First Out
+                        ->get();
 
-                // Check stock availability using the correct quantity
-                if ($totalAvailableStock < $inventoryCheckQuantity) {
-                    $unit = $isLooseQuantity ? strtoupper($product->unit_types) : 'PCS';
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Insufficient stock. Available quantity: ' . $totalAvailableStock . ' ' . $unit
-                    ], 400);
+                    if (($product->negative_billing == "" || strtoupper($product->negative_billing) === "NO") && $inventoryEntries->isEmpty()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Product not available in inventory'
+                        ], 400);
+                    }
+                    if (strtoupper($product->negative_billing) === "YES" && $inventoryEntries->isEmpty()) {
+                        $inventory = [
+                            'product_id' => $productId,
+                            'quantity' => 0,
+                            'total_qty' => 0,
+                            'mrp' => $product->mrp ?? 0,
+                            'sale_price' => $product->sale_rate_a ?? 0,
+                            'purchase_price' => $product->purchase_price ?? 0,
+                            'gst' => 'off',
+                            'gst_p' => 0,
+                            'reason' => null,
+                            'type' => 'in',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+
+                        if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+                            Inventory::insert($inventory);
+                        } else {
+                            Inventory::on($branch->connection_name)->insert($inventory);
+                        }
+                        $inventoryEntries = Inventory::on($branch->connection_name)->where('product_id', $productId)->orderBy('created_at', 'asc')->get();
+                    }
+
+                    // Calculate total available stock
+                    $totalAvailableStock = $inventoryEntries->sum('quantity');
+
+                    // NEW: Parse and convert product_weight for inventory management only
+                    $inventoryDeductionQuantity = 0;
+
+                    // Check if this is a loose quantity product and has weight input
+                    if ($product->decimal_btn == 1 && !empty($productWeightInput)) {
+                        $weightConversion = $this->parseAndConvertWeight($productWeightInput, $product->unit_types);
+
+                        if ($weightConversion['success']) {
+                            $inventoryDeductionQuantity = $weightConversion['base_quantity']; // For inventory deduction
+                            $inventoryCheckQuantity = $inventoryDeductionQuantity; // For stock checking
+                            $isLooseQuantity = true;
+                        } else {
+                            return response()->json([
+                                'success' => false,
+                                'message' => $weightConversion['error']
+                            ], 400);
+                        }
+                    }
+
+                    // Check stock availability using the correct quantity
+                    if (($product->negative_billing == "" || strtoupper($product->negative_billing) === "NO") && $totalAvailableStock < $inventoryCheckQuantity) {
+                        $unit = $isLooseQuantity ? strtoupper($product->unit_types) : 'PCS';
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Insufficient stock. Available quantity: ' . $totalAvailableStock . ' ' . $unit
+                        ], 400);
+                    }
                 }
 
                 // Check if user already has a cart assigned
@@ -1070,19 +1548,14 @@ class AppCartOrderController extends Controller
                     }
                 }
 
+                $priceTolerance = 0.01;
                 // Check if product is already in cart
                 $existingCartItem = AppCartsOrders::on($branch->connection_name)
                     ->where('cart_id', $cart->id)
                     ->where('product_id', $productId)
+                    ->whereRaw('ABS(product_price - ?) < ?', [$productPrice, $priceTolerance])
                     ->where('order_receipt_id', null) // Ensure it's not already part of an order receipt
                     ->first();
-
-                // if ($existingCartItem) {
-                //     return response()->json([
-                //         'success' => false,
-                //         'message' => 'Product already exists in cart. Please remove the existing item first or update its quantity.'
-                //     ], 400);
-                // }
 
                 // Calculate cart item values based on product type
                 if ($isLooseQuantity) {
@@ -1098,13 +1571,21 @@ class AppCartOrderController extends Controller
                 }
 
                 $gstPercent = $product->hsnCode->gst ?? 0;
-                $gstAmount = ($subTotal * $gstPercent) / 100;
-                $totalAmount = $subTotal + $gstAmount;
+                // $gstAmount = ($subTotal * $gstPercent) / 100;
+                $gstAmount = ($subTotal * $gstPercent) / (100 + $gstPercent);
+                $totalAmount = $subTotal - $gstAmount;
 
                 if ($existingCartItem) {
                     $updatedQuantity = $existingCartItem->product_quantity + $finalQuantity;
+                    $updatedTotalAmount = $existingCartItem->total_amount + $totalAmount;
+                    $updatedSubTotal = $existingCartItem->sub_total + $subTotal;
+                    $updatedGstAmount = $existingCartItem->gst + $gstAmount;
                     $existingCartItem->update([
-                        'product_quantity' => $updatedQuantity
+                        'product_quantity' => $updatedQuantity,
+                        'total_amount' => $updatedTotalAmount,
+                        'sub_total' => $updatedSubTotal,
+                        'taxes' => $updatedGstAmount,
+                        'gst' => $updatedGstAmount,
                     ]);
                 } else {
                     // Create new cart item using calculated values
@@ -1141,22 +1622,147 @@ class AppCartOrderController extends Controller
                     ]);
                 }
 
-                // UPDATED: Deduct inventory using FIFO method
-                $remainingToDeduct = $inventoryCheckQuantity;
+                // create me a this product is variant and formula in this product auto_production is on then deduct row muterial and also add this product in inventory
+                if ($product && $product->is_variant === "yes") {
+                    $formula = Formula::on($branch->connection_name)
+                        ->where('product_id', $productId)
+                        ->first();
 
-                foreach ($inventoryEntries as $inventoryEntry) {
-                    if ($remainingToDeduct <= 0) {
-                        break; // All quantity has been deducted
+                        $Inve_product= Inventory::on($branch->connection_name)
+                            ->where('product_id', $productId)
+                            ->orderBy('created_at', 'asc')
+                            ->get();
+ 
+                                // If no inventory exists for this product, create an initial record
+                        if ($Inve_product->isEmpty()) {
+                            Inventory::on($branch->connection_name)->insert([
+                                'product_id' => $productId,
+                                'quantity' => 0,
+                                'total_qty' => 0,
+                                'mrp' => $product->mrp ?? 0,
+                                'sale_price' => $product->sale_rate_a ?? 0,
+                                'purchase_price' => $product->purchase_rate ?? 0,
+                                'gst' => 'off',
+                                'gst_p' => 0,
+                                'reason' => null,
+                                'type' => 'in',
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    if ($formula && $formula->auto_production) {
+                        $ingredients = is_array($formula->ingredients)
+                            ? $formula->ingredients
+                            : json_decode($formula->ingredients, true);
+
+                        foreach ($ingredients as $ingredient) {
+                            $ingredientProductId = $ingredient['product_id'];
+                            $requiredQty = $ingredient['quantity'] * $requestedQuantity;
+
+                            $rawProduct = strtoupper($role->role_name) === 'SUPER ADMIN'
+                                ? Product::find($ingredientProductId)
+                                : Product::on($branch->connection_name)->find($ingredientProductId);
+
+                            if ($rawProduct) {
+                                // Fetch inventory entries (FIFO)
+                                $rowInventoryEntries = Inventory::on($branch->connection_name)
+                                    ->where('product_id', $ingredientProductId)
+                                    ->orderBy('created_at', 'asc')
+                                    ->get();
+
+                                // If no inventory exists for this product, create an initial record
+                                if ($rowInventoryEntries->isEmpty()) {
+                                    Inventory::on($branch->connection_name)->insert([
+                                        'product_id' => $ingredientProductId,
+                                        'quantity' => 0,
+                                        'total_qty' => 0,
+                                        'mrp' => $rawProduct->mrp ?? 0,
+                                        'sale_price' => $rawProduct->sale_rate_a ?? 0,
+                                        'purchase_price' => $rawProduct->purchase_rate ?? 0,
+                                        'gst' => 'off',
+                                        'gst_p' => 0,
+                                        'reason' => null,
+                                        'type' => 'in',
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+
+                                    $rowInventoryEntries = Inventory::on($branch->connection_name)
+                                        ->where('product_id', $ingredientProductId)
+                                        ->orderBy('created_at', 'asc')
+                                        ->get();
+                                }
+
+                                // Deduct raw material quantity (FIFO)
+                                $remainingQty = $requiredQty;
+                                foreach ($rowInventoryEntries as $entry) {
+                                    if ($remainingQty <= 0)
+                                        break;
+
+                                    $deductQty = $remainingQty;
+                                    $entry->decrement('quantity', $deductQty);
+                                    $remainingQty -= $deductQty;
+                                }
+                            }
+                        }
+                    } else {
+
+                        // UPDATED: Deduct inventory using FIFO method
+                        $remainingToDeduct = $inventoryCheckQuantity;
+
+                        foreach ($inventoryEntries as $inventoryEntry) {
+                            if ($remainingToDeduct <= 0) {
+                                break; // All quantity has been deducted
+                            }
+
+                            $availableInThisEntry = $inventoryEntry->quantity;
+                            // $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
+                            $deductFromThisEntry = $remainingToDeduct;
+
+                            // Update this inventory entry
+                            $inventoryEntry->decrement('quantity', $deductFromThisEntry);
+
+                            $remainingToDeduct -= $deductFromThisEntry;
+                        }
                     }
+                } else {
+                    // UPDATED: Deduct inventory using FIFO method
+                    $remainingToDeduct = $inventoryCheckQuantity;
 
-                    $availableInThisEntry = $inventoryEntry->quantity;
-                    $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
+                    foreach ($inventoryEntries as $inventoryEntry) {
+                        if ($remainingToDeduct <= 0) {
+                            break; // All quantity has been deducted
+                        }
 
-                    // Update this inventory entry
-                    $inventoryEntry->decrement('quantity', $deductFromThisEntry);
+                        $availableInThisEntry = $inventoryEntry->quantity;
+                        // $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
+                        $deductFromThisEntry = $remainingToDeduct;
 
-                    $remainingToDeduct -= $deductFromThisEntry;
+                        // Update this inventory entry
+                        $inventoryEntry->decrement('quantity', $deductFromThisEntry);
+
+                        $remainingToDeduct -= $deductFromThisEntry;
+                    }
                 }
+
+
+                // UPDATED: Deduct inventory using FIFO method
+                // $remainingToDeduct = $inventoryCheckQuantity;
+
+                // foreach ($inventoryEntries as $inventoryEntry) {
+                //     if ($remainingToDeduct <= 0) {
+                //         break; // All quantity has been deducted
+                //     }
+
+                //     $availableInThisEntry = $inventoryEntry->quantity;
+                //     // $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
+                //     $deductFromThisEntry = $remainingToDeduct;
+
+                //     // Update this inventory entry
+                //     $inventoryEntry->decrement('quantity', $deductFromThisEntry);
+
+                //     $remainingToDeduct -= $deductFromThisEntry;
+                // }
 
                 // Calculate remaining total inventory for response
                 $remainingTotalStock = Inventory::on($branch->connection_name)
@@ -1227,6 +1833,26 @@ class AppCartOrderController extends Controller
                     'message' => 'Cart item not found'
                 ], 404);
             }
+            if ($cartItem->type === 'general') {
+                $newQty = $request->quantity;
+                $price = $cartItem->product_price ?? 0;
+
+                $subTotal = $newQty * $price;
+                $totalAmount = $subTotal;
+
+                // UPDATE CART ITEM WITH NEW VALUES
+                $cartItem->update([
+                    'product_quantity' => $newQty,
+                    'sub_total' => $subTotal,
+                    'total_amount' => $totalAmount
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cart item updated successfully',
+                    'cart_item' => $cartItem,
+                ]);
+            }
 
             $product = Product::on($connection)->with('hsnCode')->find($cartItem->product_id);
             if (!$product) {
@@ -1273,7 +1899,7 @@ class AppCartOrderController extends Controller
                 ->where('product_id', $cartItem->product_id)
                 ->sum('quantity');
 
-            if ($totalAvailableStock < $inventoryDeductionQuantity) {
+            if (($product->negative_billing == "" || strtoupper($product->negative_billing) === "NO") && $totalAvailableStock < $inventoryDeductionQuantity) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Insufficient stock. Available quantity: ' . $totalAvailableStock
@@ -1282,10 +1908,12 @@ class AppCartOrderController extends Controller
 
             // DEDUCT NEW QUANTITY FROM INVENTORY USING FIFO
             if ($inventoryDeductionQuantity > 0) {
-                $inventoryEntries = Inventory::on($connection)
-                    ->where('product_id', $cartItem->product_id)
-                    ->where('quantity', '>', 0)
-                    ->orderBy('created_at', 'asc') // FIFO
+                $query = Inventory::on($connection)
+                    ->where('product_id', $cartItem->product_id);
+                if ($product->negative_billing == "" || strtoupper($product->negative_billing) === "NO") {
+                    $query->where('quantity', '>', 0);
+                }
+                $inventoryEntries = $query->orderBy('created_at', 'asc') // FIFO
                     ->get();
 
                 $remainingToDeduct = $inventoryDeductionQuantity;
@@ -1296,7 +1924,8 @@ class AppCartOrderController extends Controller
                     }
 
                     $availableInThisEntry = $inventoryEntry->quantity;
-                    $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
+                    // $deductFromThisEntry = min($remainingToDeduct, $availableInThisEntry);
+                    $deductFromThisEntry = $remainingToDeduct;
 
                     $inventoryEntry->decrement('quantity', $deductFromThisEntry);
                     $remainingToDeduct -= $deductFromThisEntry;
@@ -1306,8 +1935,9 @@ class AppCartOrderController extends Controller
             // CALCULATE NEW CART ITEM VALUES
             $subTotal = $newQty * $price;
             $gstPercent = $product->hsnCode->gst ?? 0;
-            $gstAmount = ($subTotal * $gstPercent) / 100;
-            $totalAmount = $subTotal + $gstAmount;
+            // $gstAmount = ($subTotal * $gstPercent) / 100;
+            $gstAmount = ($subTotal * $gstPercent) / (100 + $gstPercent);
+            $totalAmount = $subTotal - $gstAmount;
 
             // UPDATE CART ITEM WITH NEW VALUES
             $cartItem->update([
@@ -1360,13 +1990,13 @@ class AppCartOrderController extends Controller
             $user = $auth['user'];
             $role = $auth['role'];
             $branch = $auth['branch'];
-            $orders = AppCartsOrderBill::on($branch->connection_name)->get();
+            $orders = AppCartsOrderBill::on($branch->connection_name)->orderByDesc('id')->get();
             return response()->json([
                 'success' => true,
                 'data' => [
                     'total_bills' => $orders->count(),
                     'order_bills' => $orders,
-                    'branch' => $branch->name
+                    'branch' => $branch
                 ]
             ]);
         } catch (Exception $e) {
@@ -1425,6 +2055,58 @@ class AppCartOrderController extends Controller
                         'message' => 'Cart item does not belong to specified cart'
                     ], 400);
                 }
+                if ($cartItem->type === 'general') {
+
+                    $removedItemDetails = [
+                        'id' => $cartItem->id,
+                        'product_id' => $cartItem->product_id,
+                        'product_name' => $cartItem->product_name,
+                        'product_price' => $cartItem->product_price,
+                        'product_quantity' => $cartItem->product_quantity,
+                        'sub_total' => $cartItem->sub_total,
+                        'total_amount' => $cartItem->total_amount,
+                        'cart_id' => $cartItem->cart_id,
+                    ];
+
+                    $cartItem->delete();
+
+                    // Check if cart is now empty
+                    $remainingItems = AppCartsOrders::on($branch->connection_name)
+                        ->where('cart_id', $cartItem->cart_id)
+                        ->where('order_receipt_id', null)
+                        ->count();
+
+                    $cartStatus = 'unavailable'; // Cart still has products
+                    if ($remainingItems == 0) {
+                        // Cart is empty, make it available
+                        $cart = Cart::on($branch->connection_name)
+                            ->where('id', $cartItem->cart_id)
+                            ->first();
+
+                        if ($cart) {
+                            $cart->update([
+                                'user_id' => null,
+                                'status' => 'available'  // Empty cart is available
+                            ]);
+                            $cartStatus = 'available';  // Cart is now empty and available
+                        }
+                    }
+                    DB::connection($branch->connection_name)->commit();
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Product removed from cart successfully',
+                        'data' => [
+                            'removed_item' => $removedItemDetails,
+                            'inventory_updated' => [
+                                'product_id' => $cartItem->product_id ?? null,
+                                'product_name' => $cartItem->product_name,
+                            ],
+                            'cart_status' => $cartStatus,
+                            'remaining_items_in_cart' => $remainingItems,
+                            'branch' => $branch->name
+                        ]
+                    ]);
+                }
 
                 // Get product details
                 $product = Product::on($branch->connection_name)
@@ -1437,6 +2119,8 @@ class AppCartOrderController extends Controller
                         'message' => 'Product not found'
                     ], 404);
                 }
+
+
 
                 // Get inventory record
                 $inventory = Inventory::on($branch->connection_name)
@@ -1581,25 +2265,52 @@ class AppCartOrderController extends Controller
             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
                 $order = $order = AppCartsOrderBill::where('id', $id)->first();
 
-                $orderItems = AppCartsOrders::join('products', 'products.id', '=', 'app_cart_order.product_id')
+                $orderItems = AppCartsOrders::on($branch->connection_name)
+                    ->with('product')
+                    ->leftJoin('products', 'products.id', '=', 'app_cart_order.product_id')
                     ->where('app_cart_order.order_receipt_id', $id)
                     ->select(
                         'app_cart_order.*',
-                        'products.product_name',
+                        DB::raw('COALESCE(app_cart_order.product_name, products.product_name) as product_name'),
                         'products.barcode',
                         'products.image',
-                        'products.unit_types'
+                        'products.unit_types',
+                        'products.cess',
+                        DB::raw('FORMAT(app_cart_order.gst_p / 2, 2) as cgst_p'),
+                        DB::raw('FORMAT(app_cart_order.gst_p / 2, 2) as sgst_p')
                     )
                     ->get();
 
                 $totalItems = $orderItems->count();
+
+                $gstSummary = [];
+
+                foreach ($orderItems as $item) {
+                    $gstPercent = (string) ($item->gst_p ?? "0");
+
+                    if (!isset($gstSummary[$gstPercent])) {
+                        $gstSummary[$gstPercent] = [
+                            'gst_percentage' => $gstPercent,
+                            'cess' => $item->product->cess,
+                            'taxable_amount' => 0,
+                            'tax_amount' => 0,
+                            'amount' => 0
+                        ];
+                    }
+
+                    $gstSummary[$gstPercent]['taxable_amount'] += $item->total_amount; // or use $item->sub_total directly if it's pre-tax
+                    $gstSummary[$gstPercent]['tax_amount'] += $item->gst;
+                    $gstSummary[$gstPercent]['amount'] += $item->sub_total;
+                }
 
                 return response()->json([
                     'success' => true,
                     'data' => [
                         'order' => $order,
                         'order_items' => $orderItems,
-                        'total_items' => $totalItems
+                        'gst_summary' => (object) $gstSummary,
+                        'total_items' => $totalItems,
+                        'branch' => $branch
                     ]
                 ]);
             } else {
@@ -1607,26 +2318,53 @@ class AppCartOrderController extends Controller
                     ->where('id', $id)
                     ->first();
 
-                $orderItems = AppCartsOrders::on($branch->connection_name)
-                    ->join('products', 'products.id', '=', 'app_cart_order.product_id')
-                    ->where('app_cart_order.order_receipt_id', $id)
-                    ->select(
-                        'app_cart_order.*',
-                        'products.product_name',
-                        'products.barcode',
-                        'products.image',
-                        'products.unit_types'
-                    )
-                    ->get();
+              $orderItems = AppCartsOrders::on($branch->connection_name)
+                ->with('product')
+                ->leftJoin('products', 'products.id', '=', 'app_cart_order.product_id')
+                ->where('app_cart_order.order_receipt_id', $id)
+                ->select(
+                    'app_cart_order.*',
+                    DB::raw('COALESCE(app_cart_order.product_name, products.product_name) as product_name'),
+                    'products.barcode',
+                    'products.image',
+                    'products.unit_types',
+                    'products.cess',
+                    DB::raw('FORMAT(app_cart_order.gst_p / 2, 2) as cgst_p'),
+                    DB::raw('FORMAT(app_cart_order.gst_p / 2, 2) as sgst_p')
+                )
+                ->get();
 
                 $totalItems = $orderItems->count();
+
+                $gstSummary = [];
+
+                
+                foreach ($orderItems as $item) {
+                    $gstPercent = (string) ($item->gst_p ?? "0");
+
+                    if (!isset($gstSummary[$gstPercent])) {
+                        $gstSummary[$gstPercent] = [
+                            'gst_percentage' => $gstPercent,
+                            'cess' => $item->product->cess,
+                            'taxable_amount' => 0,
+                            'tax_amount' => 0,
+                            'amount' => 0
+                        ];
+                    }
+
+                    $gstSummary[$gstPercent]['taxable_amount'] += $item->total_amount; // or use $item->sub_total directly if it's pre-tax
+                    $gstSummary[$gstPercent]['tax_amount'] += $item->gst;
+                    $gstSummary[$gstPercent]['amount'] += $item->sub_total;
+                }
 
                 return response()->json([
                     'success' => true,
                     'data' => [
                         'order' => $order,
                         'order_items' => $orderItems,
-                        'total_items' => $totalItems
+                        'gst_summary' => (object) $gstSummary,
+                        'total_items' => $totalItems,
+                        'branch' => $branch
                     ]
                 ]);
             }
@@ -1762,17 +2500,17 @@ class AppCartOrderController extends Controller
             $kg = (float) $request->kg;
 
             // Check for fixed 1–5 KG prices
-            if (in_array($kg, [1, 2, 3, 4, 5])) {
-                $field = "price_" . intval($kg);
-                $price = $product->$field ?? 0;
+            // if (in_array($kg, [1, 2, 3, 4, 5])) {
+            //     $field = "price_" . intval($kg);
+            //     $price = $product->$field ?? 0;
 
-                return response()->json([
-                    'price' => formatNumber($price),
-                    'kg' => formatNumber($kg),
-                    'matched_fixed_price' => true,
-                    'branch_connection' => $connection
-                ]);
-            }
+            //     return response()->json([
+            //         'price' => formatNumber($price),
+            //         'kg' => formatNumber($kg),
+            //         'matched_fixed_price' => true,
+            //         'branch_connection' => $connection
+            //     ]);
+            // }
 
             // Dynamic price
             $price = weightInKilogramsToPrice($kg, $product);
@@ -1814,6 +2552,8 @@ class AppCartOrderController extends Controller
             [
                 'success' => false,
                 'error' => 'Invalid input. Provide kg, grams, or price.'
-            ],422);
+            ],
+            422
+        );
     }
 }

@@ -3,12 +3,6 @@
 @section('content')
     @php
         // $isSuperAdmin = strtolower($role->role_name) === 'super admin';
-
-        // Get gst from HSN
-        $hsnGst = null;
-        if ($product->hsnCode && $product->hsnCode->gst) {
-            $hsnGst = json_decode($product->hsnCode->gst, true);
-        }
     @endphp
     <div class="content">
         <div class="intro-y grid grid-cols-12 gap-5 mt-5">
@@ -46,10 +40,10 @@
                             <p><strong>Sale Rate A:</strong> ₹{{ $product->sale_rate_a }}</p>
                             <p><strong>Sale Rate B:</strong> ₹{{ $product->sale_rate_b }}</p>
                             <p><strong>Sale Rate C:</strong> ₹{{ $product->sale_rate_c }}</p>
-                            <p><strong>SGST:</strong> {{ isset($hsnGst['SGST']) ? $hsnGst['SGST'].'%' : '-' }}</p>
-                            <p><strong>CGST:</strong> {{ isset($hsnGst['CGST']) ? $hsnGst['CGST'].'%' : '-' }}</p>
-                            <p><strong>IGST:</strong> {{ isset($hsnGst['IGST']) ? $hsnGst['IGST'].'%' : '-' }}</p>
-                            <p><strong>Cess:</strong> {{ isset($hsnGst['CESS']) ? $hsnGst['CESS'].'%' : '-' }}</p>
+                            <p><strong>SGST:</strong> {{ $product->hsnCode ? ($product->hsnCode->gst ? $product->hsnCode->gst / 2 . '%' : '-') : '-' }}</p>
+                            <p><strong>CGST:</strong> {{ $product->hsnCode ? ($product->hsnCode->gst ? $product->hsnCode->gst / 2 . '%' : '-') : '-' }}</p>
+                            <p><strong>IGST:</strong> {{ $product->hsnCode ? ($product->hsnCode->gst ? $product->hsnCode->gst.'%' : '-') : '-' }}</p>
+                            <p><strong>Cess:</strong> {{ $product->cess }}</p>
                             <p><strong>Converse (Carton):</strong> {{ $product->converse_carton }}</p>
                             <p><strong>Carton Barcode:</strong> {{ $product->carton_barcode }}</p>
                             <p><strong>Converse (Box):</strong> {{ $product->converse_box }}</p>
@@ -69,7 +63,7 @@
                             @if ($product->image)
                                 <div class="mt-5">
                                     <div class="font-medium text-lg mb-2">Product Image</div>
-                                    <img src="{{ asset('storage/' . $product->image) }}" alt="Product Image"
+                                    <img src="{{ asset( $product->image) }}" alt="Product Image"
                                         style="max-width: 250px; border-radius: 10px;" />
                                 </div>
                             @endif

@@ -51,24 +51,65 @@
     </style>
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10 heading">
-            Create Category
+            Edit Category
         </h2>
-        <form
-            action="{{ route('categories.update', $category->id) }}"
-            method="POST" enctype="multipart/form-data" class="form-updated validate-form">
+        @if (session('success'))
+            <div id="success-alert" class="alert alert-success"
+                style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px;">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div id="error-alert" class="alert alert-danger"
+                style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 10px;">
+                {{ session('error') }}
+            </div>
+        @endif
+        <form action="{{ route('categories.update', $category->id) }}" method="POST" enctype="multipart/form-data"
+            class="form-updated validate-form">
             @csrf
             @method('PUT')
             <div class="row">
-                <div class="column">
-                    <!-- Name -->
-                    <div class="input-form col-span-3 mt-3">
-                        <label for="name" class="form-label w-full flex flex-col sm:flex-row">
-                            Name<span style="color: red;margin-left: 3px;"> *</span>
-                        </label>
-                        <input id="name" type="text" name="name" class="form-control field-new"
-                            placeholder="Enter Category name" required maxlength="255" value="{{ $category->name }}">
+                        <!-- Name -->
+                        <div class="column">
+                            <div class="input-form col-span-3 mt-3">
+                                <label for="name" class="form-label w-full flex flex-col sm:flex-row">
+                                    Name<span style="color: red;margin-left: 3px;"> *</span>
+                                </label>
+                                <input id="name" type="text" name="name" class="form-control field-new"
+                                    placeholder="Enter Category name" maxlength="255" value="{{ $category->name }}">
+                                @error('name')
+                                    <div class="text-danger mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="column">
+                            <!-- Type -->
+                            <div class="input-form col-span-3 mt-3">
+                                <label for="type" class="form-label w-full flex flex-col sm:flex-row">
+                                    Category Type
+                                    <span style="color: red; margin-left: 3px;">*</span>
+                                </label>
+                                <select id="type" name="type"
+                                    class="form-control field-new @error('type') is-invalid @enderror">
+                                    <option value="product"
+                                        {{ old('type', $category->type ?? '') == 'product' ? 'selected' : '' }}>
+                                        Product
+                                    </option>
+                                    <option value="packaging"
+                                        {{ old('type', $category->type ?? '') == 'packaging' ? 'selected' : '' }}>
+                                        Packaging
+                                    </option>
+                                </select>
+                                @error('type')
+                                    <div class="text-danger mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
                     </div>
-
+            <div class="row">
+                <div class="column">
                     <!-- category Image -->
                     <div class="input-form col-span-3 mt-3">
                         <label for="fileInput" class="form-label w-full flex flex-col sm:flex-row">
@@ -106,7 +147,7 @@
 @endsection
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
         setupEnterNavigation();
     });
 
@@ -114,8 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let currentFieldIndex = 0;
 
         // Define field sequence for category form
-        const formFields = [
-            {
+        const formFields = [{
                 selector: '#name',
                 type: 'input'
             },

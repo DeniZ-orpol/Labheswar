@@ -1188,7 +1188,11 @@ License: You must have a valid license purchased only from themeforest(the above
                     </li>
 
                     @php
-                        $productMenuOpen = request()->routeIs('products.*') || request()->routeIs('categories.*');
+                        $productMenuOpen =
+                            request()->routeIs('products.*') ||
+                            request()->routeIs('categories.*') ||
+                            request()->routeIs('company.*') ||
+                            request()->routeIs('hsn_codes.*');
                     @endphp
                     <li>
                         <a href="javascript:;" class="side-menu">
@@ -1222,13 +1226,6 @@ License: You must have a valid license purchased only from themeforest(the above
                                     <div class="side-menu__title"> Company </div>
                                 </a>
                             </li>
-                            {{-- <li>
-                                <a href="{{ route('inventory.index') }}"
-                                    class="side-menu {{ request()->routeIs('inventory.*') ? 'side-menu--active' : '' }}">
-                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                    <div class="side-menu__title"> Inventory </div>
-                                </a>
-                            </li> --}}
                             <li>
                                 <a href="{{ route('hsn_codes.index') }}"
                                     class="side-menu {{ request()->routeIs('hsn_codes.*') ? 'side-menu--active' : '' }}">
@@ -1244,6 +1241,7 @@ License: You must have a valid license purchased only from themeforest(the above
                         $productMenuOpen =
                             request()->routeIs('products.*') ||
                             request()->routeIs('categories.*') ||
+                            request()->routeIs('packaging.*') ||
                             request()->routeIs('company.*') ||
                             request()->routeIs('hsn_codes.*');
                     @endphp
@@ -1269,7 +1267,7 @@ License: You must have a valid license purchased only from themeforest(the above
                             </li>
                             <li>
                                 <a href="{{ route('categories.index') }}"
-                                    class="side-menu {{ request()->routeIs('categories.*') ? 'side-menu--active' : '' }}">
+                                    class="side-menu {{ request()->routeIs('category.*') ? 'side-menu--active' : '' }}">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
                                     <div class="side-menu__title"> Category </div>
                                 </a>
@@ -1281,13 +1279,6 @@ License: You must have a valid license purchased only from themeforest(the above
                                     <div class="side-menu__title"> Company </div>
                                 </a>
                             </li>
-                            {{-- <li>
-                                <a href="{{ route('inventory.index') }}"
-                                    class="side-menu {{ request()->routeIs('inventory.*') ? 'side-menu--active' : '' }}">
-                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                    <div class="side-menu__title"> Inventory </div>
-                                </a>
-                            </li> --}}
                             <li>
                                 <a href="{{ route('hsn_codes.index') }}"
                                     class="side-menu {{ request()->routeIs('hsn_codes.*') ? 'side-menu--active' : '' }}">
@@ -1295,42 +1286,13 @@ License: You must have a valid license purchased only from themeforest(the above
                                     <div class="side-menu__title"> Hsn Code </div>
                                 </a>
                             </li>
-                        </ul>
-                    </li>
-                    @php
-                        $stockMenuOpen =
-                            request()->routeIs('stock.*') ||
-                            request()->routeIs('inventory.*');
-
-                    @endphp
-                    <li>
-                        <a href="javascript:;" class="side-menu">
-                            <div class="side-menu__icon"> <i data-lucide="box"></i> </div>
-                            <div class="side-menu__title"> Inventory <i data-lucide="chevron-down"
-                                    class="side-menu__sub-icon "></i> </div>
-                        </a>
-                        <ul class="{{ $stockMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
                             <li>
-                                <a href="{{ route('stock.index') }}"
-                                    class="side-menu {{ request()->routeIs('stock.*') ? 'side-menu--active' : '' }}">
+                                <a href="{{ route('packaging.index') }}"
+                                    class="side-menu {{ request()->routeIs('packaging.*') ? 'side-menu--active' : '' }}">
                                     <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                    <div class="side-menu__title"> Stock Transfer </div>
+                                    <div class="side-menu__title"> Packaging </div>
                                 </a>
                             </li>
-                            <li>
-                                <a href="{{ route('inventory.index') }}"
-                                    class="side-menu {{ request()->routeIs('inventory.*') ? 'side-menu--active' : '' }}">
-                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                    <div class="side-menu__title"> Stock Summary </div>
-                                </a>
-                            </li>
-                            {{-- <li>
-                                <a href="#"
-                                    class="side-menu {{ request()->routeIs('orders.*') ? 'side-menu--active' : '' }}">
-                                    <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                    <div class="side-menu__title"> Stock Movement Analysis   </div>
-                                </a>
-                            </li> --}}
                         </ul>
                     </li>
                     @php
@@ -1354,6 +1316,117 @@ License: You must have a valid license purchased only from themeforest(the above
                         </ul>
                     </li>
                 @endif
+                @php
+                    $inventoryMenuOpen = request()->routeIs('inventory.*') ||
+                        request()->routeIs('stock-in-hand.*');
+
+                @endphp
+                <li>
+                    <a href="javascript:;" class="side-menu">
+                        <div class="side-menu__icon"> <i data-lucide="box"></i> </div>
+                        <div class="side-menu__title"> Inventory <i data-lucide="chevron-down"
+                                class="side-menu__sub-icon "></i> </div>
+                    </a>
+                    <ul class="{{ $inventoryMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
+                        {{-- <li>
+                            <a href="{{ route('inventory.index') }}"
+                                class="side-menu {{ request()->routeIs('inventory.index') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Stock Summary </div>
+                            </a>
+                        </li> --}}
+                        <li>
+                            <a href="{{ route('inventory.create') }}"
+                                class="side-menu {{ request()->routeIs('inventory.create') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Add Open Stock </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route(name: 'inventory.index') }}"
+                                class="side-menu {{ request()->routeIs('inventory.index') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Stock in Hand </div>
+                            </a>
+                        </li>
+                        <!-- <li>
+                            <a href="{{ route('stock.index') }}"
+                                class="side-menu {{ request()->routeIs('stock.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Stock Transfer </div>
+                            </a>
+                        </li> -->
+                        {{-- <li>
+                            <a href="#"
+                                class="side-menu {{ request()->routeIs('orders.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Stock Movement Analysis   </div>
+                            </a>
+                        </li> --}}
+                    </ul>
+                </li>
+                @php
+                    $productionMenuOpen = request()->routeIs('manufacturing.*') || request()->routeIs('formula.*') || request()->routeIs('one-to-many.*') || request()->routeIs('stockissue.*')
+                    || request()->routeIs('directreceipt.*') || request()->routeIs('stockreceipt.*') || request()->routeIs('pending.*');
+                @endphp
+                <li>
+                    <a href="javascript:;" class="side-menu">
+                        <div class="side-menu__icon"> <i data-lucide="box"></i> </div>
+                        <div class="side-menu__title"> Production <i data-lucide="chevron-down"
+                                class="side-menu__sub-icon "></i> </div>
+                    </a>
+                    <ul class="{{ $productionMenuOpen ? 'side-menu__sub-open' : 'hidden' }}">
+                        <li>
+                            <a href="{{ route('directreceipt.index') }}"
+                                class="side-menu {{ request()->routeIs('directreceipt.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Direct Receipt </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('stockissue.index') }}"
+                                class="side-menu {{ request()->routeIs('stockissue.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Stock Issue </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('stockreceipt.index') }}"
+                                class="side-menu {{ request()->routeIs('stockreceipt.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Stock Receipt </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('many-to-one.index') }}"
+                                class="side-menu {{ request()->routeIs('many-to-one.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Many To One </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('formula.index') }}"
+                                class="side-menu {{ request()->routeIs('formula.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Formula </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('one-to-many.index') }}"
+                                class="side-menu {{ request()->routeIs('one-to-many.*') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> One To Many   </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('stockissue.pending') }}"
+                                class="side-menu {{ request()->routeIs('stockissue.pending') ? 'side-menu--active' : '' }}">
+                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
+                                <div class="side-menu__title"> Pending </div>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
                 @php
                     $purchaseMenuOpen = request()->routeIs('purchase.*') || request()->routeIs('purchase.party.*');
                 @endphp
@@ -1389,7 +1462,6 @@ License: You must have a valid license purchased only from themeforest(the above
                     $ledgerMenuOpen =
                         request()->routeIs('ledger.*') ||
                         request()->routeIs('bank.*') ||
-                        request()->routeIs('stock-in-hand.*') ||
                         request()->routeIs('profit-loose.*');
                 @endphp
                 {{-- <li>
@@ -1421,16 +1493,9 @@ License: You must have a valid license purchased only from themeforest(the above
                             <a href="{{ route('bank.index') }}"
                                 class="side-menu {{ request()->routeIs('bank.*') ? 'side-menu--active' : '' }}">
                                 <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title"> Bank & Cash </div>
+                                <div class="side-menu__title"> Bank </div>
                             </a>
                         </li>
-                        <!-- <li>
-                            <a href="{{ route('stock-in-hand.index') }}"
-                                class="side-menu {{ request()->routeIs('stock-in-hand.*') ? 'side-menu--active' : '' }}">
-                                <div class="side-menu__icon"> <i data-lucide="activity"></i> </div>
-                                <div class="side-menu__title"> Stock in Hand </div>
-                            </a>
-                        </li> -->
                         <li>
                             <a href="{{ route('profit-loose.index') }}"
                                 class="side-menu {{ request()->routeIs('profit-loose.*') ? 'side-menu--active' : '' }}">

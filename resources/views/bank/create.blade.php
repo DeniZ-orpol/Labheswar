@@ -11,6 +11,11 @@
             padding: 10px;
             box-sizing: border-box;
         }
+        .error-text {
+            color: red;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
     </style>
 @endpush
 @section('content')
@@ -28,8 +33,11 @@
                         <label for="bank_name" class="form-label w-full flex flex-col sm:flex-row">
                             Bank Name<span style="color: red;margin-left: 3px;"> *</span>
                         </label>
-                        <input id="bank_name" type="text" name="bank_name" class="form-control field-new"
-                            placeholder="Enter Bank name" required maxlength="255">
+                        <input id="bank_name" type="text" name="bank_name" class="form-control field-new @error('bank_name') is-invalid @enderror"
+                            placeholder="Enter Bank name" maxlength="255" value="{{ old('bank_name') }}">
+                        @error('bank_name')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <!-- Account No -->
@@ -37,8 +45,11 @@
                         <label for="account_no" class="form-label w-full flex flex-col sm:flex-row">
                             Account No<span style="color: red;margin-left: 3px;"> *</span>
                         </label>
-                        <input id="account_no" type="text" name="account_no" class="form-control field-new"
-                            placeholder="Enter Bank name" required maxlength="255">
+                        <input id="account_no" type="text" name="account_no" class="form-control field-new @error('account_no') is-invalid @enderror"
+                            placeholder="Enter Bank name" maxlength="255" value="{{ old('account_no') }}">
+                        @error('account_no')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <!-- IFSC Code -->
@@ -46,8 +57,11 @@
                         <label for="ifsc_code" class="form-label w-full flex flex-col sm:flex-row">
                             IFSC Code<span style="color: red;margin-left: 3px;"> *</span>
                         </label>
-                        <input id="ifsc_code" type="text" name="ifsc_code" class="form-control field-new"
-                            placeholder="Enter Bank name" required maxlength="255">
+                        <input id="ifsc_code" type="text" name="ifsc_code" class="form-control field-new @error('ifsc_code') is-invalid @enderror"
+                            placeholder="Enter Bank name" maxlength="255" value="{{ old('ifsc_code') }}">
+                        @error('ifsc_code')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <!-- Opening Bank Balance -->
@@ -55,8 +69,11 @@
                         <label for="opening_balance" class="form-label w-full flex flex-col sm:flex-row">
                             Opening Balance
                         </label>
-                        <input id="opening_balance" type="text" name="opening_balance" class="form-control field-new"
-                            placeholder="Enter Bank name" maxlength="255">
+                        <input id="opening_balance" type="text" name="opening_balance" class="form-control field-new @error('opening_balance') is-invalid @enderror"
+                            placeholder="Enter Bank name" maxlength="255" value="{{ old('opening_balance') }}">
+                        @error('opening_balance')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <!-- Close On -->
@@ -64,8 +81,11 @@
                         <label for="close_on" class="form-label w-full flex flex-col sm:flex-row">
                             Close On
                         </label>
-                        <input id="close_on" type="text" name="close_on" class="form-control field-new"
-                            placeholder="Enter Bank name" maxlength="255">
+                        <input id="close_on" type="text" name="close_on" class="form-control field-new @error('close_on') is-invalid @enderror"
+                            placeholder="Enter Bank name" maxlength="255" value="{{ old('close_on') }}">
+                        @error('close_on')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
             </div>

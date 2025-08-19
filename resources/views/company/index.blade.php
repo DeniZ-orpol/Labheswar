@@ -5,99 +5,52 @@
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             Company List
         </h2>
+        @if (session('success'))
+            <div id="success-alert" class="alert alert-success" style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px;">
+                {{ session('success') }}
+            </div>
+        @endif
+    
+        @if (session('error'))
+            <div id="error-alert" class="alert alert-danger" style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 10px;">
+                {{ session('error') }}
+            </div>
+        @endif
         <div class="grid grid-cols-12 gap-6 mt-5 grid-updated">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
                 <a href="{{ Route('company.create') }}" class="btn btn-primary shadow-md mr-2 btn-hover">Add New Company</a>
+                <div class="input-form ml-auto">
+                    <form method="GET" action="{{ route('company.index') }}" class="flex gap-2">
+                        <input type="text" name="search" id="search-company" placeholder="Search by name"
+                            value="{{ request('search') }}" class="form-control flex-1">
+                        <button type="submit" class="btn btn-primary shadow-md btn-hover">Search</button>
+                    </form>
+                </div>
             </div>
 
             <!-- BEGIN: Users Layout -->
             <!-- DataTable: Add class 'datatable' to your table -->
-            <table id="DataTable" class="display table table-bordered intro-y col-span-12">
-                <thead>
-                    <tr class="bg-primary font-bold text-white">
-                        <th>#</th>
-                        <th>Company Name</th>
-                        <th style="TEXT-ALIGN: left;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($companies as $company)
-                        <tr>
-                            {{-- {{dd($hsn->gst)}} --}}
-                            <td>{{ $loop->iteration + $companies->firstItem() - 1 }}</td>
-                            <td>{{ $company->name }}</td>
-                            <td>
-                                <!-- Add buttons for actions like 'View', 'Edit' etc. -->
-                                <!-- <button class="btn btn-primary">Message</button> -->
-                                <div class="flex gap-2 justify-content-left">
-                                    <form action="{{ route('company.destroy', $company->id) }}" method="POST"
-                                        onsubmit="return confirm('Are you sure you want to delete this company?');"
-                                        style="display: inline-block;">
-                                        @csrf
-                                        @method('DELETE') <!-- Add this line -->
-                                        <button type="submit" class="btn btn-danger mr-1 mb-2">Delete</button>
-                                    </form>
-                                    <a href="{{ route('company.edit', $company->id) }}" class="btn btn-primary mr-1 mb-2">
-                                        Edit
-                                        {{-- {{ dd($hsn->id) }} --}}
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-            <!-- END: Users Layout -->
-
-            {{-- Move pagination here --}}
-            @if ($companies instanceof \Illuminate\Pagination\LengthAwarePaginator && $companies->hasPages())
-                <div class="pagination-wrapper">
-                    <div class="pagination-info">
-                        Showing {{ $companies->firstItem() }} to {{ $companies->lastItem() }} of
-                        {{ $companies->total() }} entries
-                    </div>
-                    <div class="pagination-nav">
-                        <nav role="navigation" aria-label="Pagination Navigation">
-                            <ul class="pagination">
-                                {{-- Previous Page Link --}}
-                                @if ($companies->onFirstPage())
-                                    <li class="page-item disabled" aria-disabled="true">
-                                        <span class="page-link">‹</span>
-                                    </li>
-                                @else
-                                    <li class="page-item">
-                                        <a class="page-link" href="{{ $companies->previousPageUrl() }}" rel="prev">‹</a>
-                                    </li>
-                                @endif
-
-                                {{-- Page Numbers --}}
-                                @for ($i = 1; $i <= $companies->lastPage(); $i++)
-                                    @if ($i == $companies->currentPage())
-                                        <li class="page-item active">
-                                            <span class="page-link">{{ $i }}</span>
-                                        </li>
-                                    @else
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ $companies->url($i) }}">{{ $i }}</a>
-                                        </li>
-                                    @endif
-                                @endfor
-
-                                {{-- Next Page Link --}}
-                                @if ($companies->hasMorePages())
-                                    <li class="page-item">
-                                        <a class="page-link" href="{{ $companies->nextPageUrl() }}" rel="next">›</a>
-                                    </li>
-                                @else
-                                    <li class="page-item disabled" aria-disabled="true">
-                                        <span class="page-link">›</span>
-                                    </li>
-                                @endif
-                            </ul>
-                        </nav>
-                    </div>
+             <div class="intro-y col-span-12 mt-5">
+                <div id="scrollable-table" style="max-height: calc(100vh - 200px); overflow-y: auto; border: 1px solid #ddd;">
+                    <table  class="table table-bordered w-full" style="border-collapse: collapse;">
+                        <thead style="position: sticky; top: 0; z-index: 10;">
+                            <tr class="bg-primary font-bold text-white">
+                                <th>#</th>
+                                <th>Company Name</th>
+                                <th style="TEXT-ALIGN: left;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="company-data">
+                            @include('company.rows', ['page' => 1])
+                        </tbody>
+                    </table>
                 </div>
-            @endif
+                <!-- END: Users Layout -->
+                <div id="loading" style="display: none; text-align: center; padding: 10px;">
+                    <p>Loading more companies...</p>
+                </div>
+            </div>
+
 
 
             <!-- END: Users Layout -->
@@ -119,7 +72,7 @@
 
 
         .pagination-info {
-            display: none  ;
+            display: none;
             font-size: 14px;
             color: #6b7280;
             font-weight: 500;
@@ -264,5 +217,85 @@
             // Redirect to new URL
             window.location.href = currentUrl.toString();
         }
+
+        let page = 1;
+        let loading = false;
+        let currentSearch = '';
+
+        const scrollContainer = document.getElementById('scrollable-table');
+        const companyData = document.getElementById('company-data');
+        const loadingIndicator = document.getElementById('loading');
+        const searchInput = document.getElementById('search-company');
+        let searchTimer;
+
+        // Search on keyup with debounce
+        searchInput.addEventListener('keyup', function () {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                currentSearch = searchInput.value.trim();
+                page = 1;
+                loadMoreData(page, false);
+            }, 300);
+        });
+
+        // Infinite scroll event
+        scrollContainer.addEventListener('scroll', function () {
+            const scrollBottom = scrollContainer.scrollTop + scrollContainer.clientHeight;
+            const scrollHeight = scrollContainer.scrollHeight;
+
+            if (scrollBottom >= scrollHeight - 100 && !loading) {
+                page++;
+                loadMoreData(page, true);
+            }
+        });
+
+        // Load data (append or replace)
+        function loadMoreData(pageToLoad, append = false) {
+            loading = true;
+            loadingIndicator.style.display = 'block';
+
+            // Build fetch URL with params: page, search, branch_id
+            let url = new URL(window.location.href);
+            url.searchParams.set('page', pageToLoad);
+
+            if (currentSearch) {
+                url.searchParams.set('search', currentSearch);
+            } else {
+                url.searchParams.delete('search');
+            }
+
+            const branchSelect = document.getElementById('branch_select');
+            if (branchSelect && branchSelect.value) {
+                url.searchParams.set('branch_id', branchSelect.value);
+            } else {
+                url.searchParams.delete('branch_id');
+            }
+
+            fetch(url.toString(), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.text())
+            .then(data => {
+                if (data.trim().length == 0) {
+                    loadingIndicator.innerHTML = '';
+                    return;
+                }
+
+                if (append) {
+                    companyData.insertAdjacentHTML('beforeend', data);
+                } else {
+                    companyData.innerHTML = data;
+                }
+
+                loadingIndicator.style.display = 'none';
+                loading = false;
+            })
+            .catch(error => {
+                console.error("Error fetching companies:", error);
+                loadingIndicator.style.display = 'none';
+                loading = false;
+            });
+        }
+
     </script>
 @endpush

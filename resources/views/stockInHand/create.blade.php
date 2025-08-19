@@ -75,6 +75,17 @@
         <h2 class="intro-y text-lg font-medium mt-10 heading">
             Stock in Hand
         </h2>
+        @if (session('success'))
+            <div id="success-alert" class="alert alert-success" style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 10px;">
+                {{ session('success') }}
+            </div>
+        @endif
+    
+        @if (session('error'))
+            <div id="error-alert" class="alert alert-danger" style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 10px;">
+                {{ session('error') }}
+            </div>
+        @endif
         <form action="{{ route('stock-in-hand.store') }}" method="POST" class="form-updated validate-form">
             @csrf
             <div class="row">
