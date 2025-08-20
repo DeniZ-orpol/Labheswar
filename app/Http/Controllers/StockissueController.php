@@ -228,6 +228,27 @@ class StockissueController extends Controller
                             ? Product::create($attributes)
                             : Product::on($toConnection)->create($attributes);
                     }
+                    $inInventory = [
+                        'product_id' => $branchProduct->id,
+                        'type' => 'in',
+                        'total_qty' => $qtyToDeduct,
+                        'quantity' => $qtyToDeduct,
+                        'unit' => $product->unit_types ?? 'pcs',
+                        'reason' => "Stock received from branch in #{$request->issue_no}",
+                        'gst' => 'off',
+                        'gst_p' => 0,
+                        'mrp' => $request->mrp[$i] ?? $product->mrp,
+                        'sale_price' => $request->sale_rate[$i] ?? $product->sale_rate_a,
+                        'purchase_price' => $product->purchase_rate ?? 0,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+
+                    if ($isMasterTarget) {
+                        Inventory::create($inInventory);
+                    } else {
+                        Inventory::on($toConnection)->create($inInventory);
+                    }
                 }
             }
 
