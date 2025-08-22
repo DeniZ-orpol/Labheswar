@@ -8,8 +8,8 @@
         <td>
             <div class="flex gap-2">
                 <a href="{{ route('directreceipt.show', $directReceipt->id) }}" class="btn btn-primary">View</a>
-                <!-- <a href="{{ route('directreceipt.edit', $directReceipt->id) }}"
-                                            class="btn btn-primary">Edit</a> -->
+                <a href="{{ route('directreceipt.edit', $directReceipt->id) }}"
+                                            class="btn btn-primary">Edit</a>
                 <form action="{{ route('directreceipt.destroy', $directReceipt->id) }}" method="POST"
                     onsubmit="return confirm('Are you sure?');">
                     @csrf

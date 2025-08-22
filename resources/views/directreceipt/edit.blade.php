@@ -80,24 +80,26 @@
                                 </div>
                             </div>
                         </th>
-                        <th>
-                            <input type="number" name="cost[]" class="form-control field-new cost" maxlength="255"
-                                value="{{ old('mrp.' . $index, $directReceipt->products[$index]['cost'] ?? '') }}" readonly>
-                        </th>
-                        <th>
-                            <input type="number" name="mrp[]" class="form-control field-new mrp" maxlength="255"
-                                value="{{ old('mrp.' . $index, $directReceipt->products[$index]['mrp'] ?? '') }}">
-                        </th>
-                        <th>
-                            <input type="number" name="sale_rate[]" class="form-control field-new sale_rate" maxlength="255" onchange="calculateRowAmount(this)"
-                                value="{{ old('sale_rate.' . $index, $directReceipt->products[$index]['sale_rate'] ?? '') }}">
-                        </th>
                         <th scope="col" class="required">
-                            <input type="number" name="qty[]" class="form-control qty" onchange="calculateRowAmount(this)" required min="0"
+                            <input type="number" name="qty[]" class="form-control qty" onchange="calculateRowAmount(this)" required min="0" step="0.001"
                                 value="{{ old('qty.' . $index, $directReceipt->products[$index]['qty'] ?? '') }}">
                         </th>
                         <th>
-                            <input type="number" name="amount[]" class="form-control field-new text-end" maxlength="255" readonly step="0.01"
+                            <input type="number" name="cost[]" class="form-control field-new cost" maxlength="255" step="0.001"
+                                value="{{ old('mrp.' . $index, $directReceipt->products[$index]['cost'] ?? '') }}" readonly>
+                                <input type="hidden" name="hidden_cost[]" class="form-control field-new hidden_cost"
+                                value="{{ old('mrp.' . $index, $directReceipt->products[$index]['cost'] ?? '') }}">
+                        </th>
+                        <th>
+                            <input type="number" name="mrp[]" class="form-control field-new mrp" maxlength="255" step="0.001"
+                                value="{{ old('mrp.' . $index, $directReceipt->products[$index]['mrp'] ?? '') }}">
+                        </th>
+                        <th>
+                            <input type="number" name="sale_rate[]" class="form-control field-new sale_rate" maxlength="255" onchange="calculateRowAmount(this)" step="0.001"
+                                value="{{ old('sale_rate.' . $index, $directReceipt->products[$index]['sale_rate'] ?? '') }}">
+                        </th>
+                        <th>
+                            <input type="number" name="amount[]" class="form-control field-new text-end" maxlength="255" readonly step="0.001"
                                 value="{{ old('amount.' . $index, $directReceipt->products[$index]['amount'] ?? '') }}">
                         </th>
 
@@ -385,18 +387,19 @@
                     hiddenInput.value = formula.id;
                 }
 
-                const productMrpInput = container.closest('tr').querySelector('.mrp');
-                const productCostInput = container.closest('tr').querySelector('.cost');
-                const productsalerateInput = container.closest('tr').querySelector('.sale_rate');
-                productMrpInput.value = product.mrp;
-                productCostInput.value = formula.total_cost ?? 0;
-                productsalerateInput.value = product.sale_rate_a;
+                const productQtyInput = container.closest('tr').querySelector('.qty');
+                // const productMrpInput = container.closest('tr').querySelector('.mrp');
+                const productHiddenCostInput = container.closest('tr').querySelector('.hidden_cost');
+                // const productsalerateInput = container.closest('tr').querySelector('.sale_rate');
+                // productMrpInput.value = product.mrp;
+                productHiddenCostInput.value = formula.one_piece_cost ?? 0;
+                // productsalerateInput.value = product.sale_rate_a;
                 
 
                 hideDropdown();
 
-                 if (productMrpInput) {
-                    productMrpInput.focus();
+                 if (productQtyInput) {
+                    productQtyInput.focus();
                 }
 
 
@@ -432,7 +435,7 @@
             if (e.target && e.target.classList.contains('deleteRowBtn')) {
                 const tbody = document.querySelector('#billTbl tbody');
                 const rows = tbody.querySelectorAll('tr');
-                if (row.length > 1) {
+                if (rows.length > 1) {
                     const row = e.target.closest('tr');
                     if (row) {
                         row.remove();
@@ -466,9 +469,9 @@
 
             const productFields = [
                 '.product-search-input',
+                'input[name="qty[]"]',
                 'input[name="mrp[]"]',
                 'input[name="sale_rate[]"]',
-                'input[name="qty[]"]',
             ];
 
             document.addEventListener('keydown', function(e) {
@@ -1007,18 +1010,33 @@
 
     });
     function calculateRowAmount(input) {
+        
         const row = input.closest('tr');
+        
+        // Update amount field
+        if (event.target.name === 'qty[]') {
+            const row = event.target.closest('tr');
+
+            const productCostInput = row.querySelector('input[name="cost[]"]');
+            const productHiddenCostInput = parseFloat(row.querySelector('.hidden_cost')?.value || 0);
+            const productMrpInput = row.querySelector('input[name="mrp[]"]');
+            const productRateInput = row.querySelector('input[name="sale_rate[]"]');
+
+            if (productCostInput) productCostInput.value = productHiddenCostInput.toFixed(2);
+            if (productMrpInput) productMrpInput.value = productHiddenCostInput.toFixed(2);
+            if (productRateInput) productRateInput.value = productHiddenCostInput.toFixed(2);
+        }
         const qty = parseFloat(row.querySelector('input[name="qty[]"]')?.value || 0);
         const saleRate = parseFloat(row.querySelector('input[name="sale_rate[]"]')?.value || 0);
+        const amountInput = row.querySelector('input[name="amount[]"]');
 
         let finalAmount = 0;
-
         finalAmount = qty * saleRate;
-        // Update amount field
-        const amountInput = row.querySelector('input[name="amount[]"]');
         if (amountInput) {
             amountInput.value = finalAmount.toFixed(2);
         }
+
+
 
         row.dataset.finalAmount = finalAmount.toFixed(2);
 

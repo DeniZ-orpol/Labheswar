@@ -186,7 +186,7 @@ class InventoryController extends Controller
         }
 
     }
-    public function index()
+    public function index(Request $request)
     {
         $auth = $this->authenticateAndConfigureBranch();
         $user = $auth['user'];
@@ -194,28 +194,48 @@ class InventoryController extends Controller
         $role = $auth['role'];
 
         // Fetch inventory and order data
+       if (strtoupper($role->role_name) === 'SUPER ADMIN') {
+            $baseQuery = Inventory::query();
+        } else {
+            $baseQuery = Inventory::on($branch->connection_name);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $baseQuery->whereHas('product', function ($q) use ($search) {
+                $q->where('product_name', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // Get distinct product IDs (with pagination)
+        $productIds = $baseQuery->select('product_id')
+            ->distinct()
+            ->paginate(20);
+
+        // Now fetch inventories only for these product IDs
         if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-            $inventories = Inventory::get();
+            $inventories = Inventory::whereIn('product_id', $productIds->pluck('product_id'))->get();
             $orderInventories = AppCartsOrders::get();
         } else {
-            $inventories = Inventory::on($branch->connection_name)->get();
+            $inventories = Inventory::on($branch->connection_name)
+                ->whereIn('product_id', $productIds->pluck('product_id'))
+                ->get();
             $orderInventories = AppCartsOrders::on($branch->connection_name)->get();
         }
+
 
         $inventoriesList = collect();
 
         if ($inventories->isNotEmpty()) {
-            $productIds = $inventories->pluck('product_id')->unique()->filter();
 
-            if ($productIds->isNotEmpty()) {
                 // Get product details
                 if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                    $products = Product::with('hsnCode')->whereIn('id', $productIds)
+                    $products = Product::with('hsnCode')->whereIn('id', $productIds->pluck('product_id'))
                         ->get()
                         ->keyBy('id');
                 } else {
                     $products = Product::on($branch->connection_name)->with('hsnCode')
-                        ->whereIn('id', $productIds)
+                        ->whereIn('id', $productIds->pluck('product_id'))
                         ->get()
                         ->keyBy('id');
                 }
@@ -261,11 +281,17 @@ class InventoryController extends Controller
                 $inventoriesList = $ordered->merge(
                     $grouped->reject(fn($item) => $ordered->contains(fn($o) => $o->product_id === $item->product_id))
                 );
-            }
+        }
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('inventory.rows', ['inventories' => $inventoriesList,'paginator' => $productIds])->render(),
+                'hasMore' => $productIds->hasMorePages(),
+            ]);
         }
         // dd($inventoriesList);
         return view('inventory.index', [
             'inventories' => $inventoriesList,
+            'paginator' => $productIds,            
         ]);
     }
 

@@ -491,8 +491,6 @@ class ProductController extends Controller
                 'discount_scheme' => 'nullable|string',
                 'bonus_use' => 'nullable',
                 'product_type' => 'required|nullable|string',
-                'weight_to' => 'nullable',
-                'weight_from' => 'nullable',
                 'decimal_btn' => 'nullable',
                 'sale_online' => 'nullable',
                 // 'price_1' => 'nullable|numeric|min:0',
@@ -662,8 +660,6 @@ class ProductController extends Controller
                 'discount_scheme' => $validate['discount_scheme'] ?? null,
                 'bonus_use' => $validate['bonus_use'] == 'yes' ? 1 : 0,
                 'product_type' => $validate['product_type'] ?? null,
-                'weight_to' => $validate['weight_to'] ?? null,
-                'weight_from' => $validate['weight_from'] ?? null,
                 'auto_variants_in_weight_btn' => isset($validate['auto_variants_in_weight_btn']) && $validate['auto_variants_in_weight_btn'] ? 'yes' : 'no',
                 'auto_variants_in_weight' => isset($validate['auto_variants_in_weight']) && $validate['auto_variants_in_weight'] ? $validate['auto_variants_in_weight'] : [],
                 'auto_variants_in_amount_btn' => isset($validate['auto_variants_in_amount_btn']) && $validate['auto_variants_in_amount_btn'] ? 'yes' : 'no',
@@ -832,8 +828,6 @@ class ProductController extends Controller
                 'discount_scheme' => 'nullable|string',
                 'bonus_use' => 'nullable',
                 'product_type' => 'required|nullable|string',
-                'weight_to' => 'nullable',
-                'weight_from' => 'nullable',
                 'decimal_btn' => 'nullable',
                 'sale_online' => 'nullable',
                 // 'price_1' => 'nullable|numeric|min:0',
@@ -1016,8 +1010,6 @@ class ProductController extends Controller
                 'discount_scheme' => $validate['discount_scheme'] ?? null,
                 'bonus_use' => $validate['bonus_use'] == 'yes' ? 1 : 0,
                 'product_type' => $validate['product_type'] ?? null,
-                'weight_to' => $validate['weight_to'] ?? null,
-                'weight_from' => $validate['weight_from'] ?? null,
                 'updated_by' => session('branch_user_id'), // Track who updated the product
                 // 'price_1' => $price1 ?? 0,
                 // 'price_2' => $price2 ?? 0,
@@ -1263,7 +1255,7 @@ class ProductController extends Controller
                         // Handle HSN Code - create or get existing
                         $hsnCodeId = null;
                         if (!empty($row[7])) {
-                            $gst = $row[8] ?? '';
+                            $gst = $row[8] != '' ? $row[8] : 0;
                             $shortName = $row[9] ?? '';
                             if (strtoupper($role->role_name) === 'SUPER ADMIN') {
                                 $hsnCode = HsnCode::where('hsn_code', $row[7])
@@ -1343,8 +1335,8 @@ class ProductController extends Controller
                             // 'sgst' => $row[9] ?? '',
                             // 'cgst1' => $row[10] ?? '',
                             // 'cgst2' => $row[11] ?? '',
-                            'cess' => $row[10] ?? 0,
-                            'mrp' => $row[11] ?? 0,
+                            'cess' => $row[10] != "" ? $row[10] : 0,
+                            'mrp' => $row[11] != "" ? $row[11] : 0,
                             'purchase_rate' => $row[12] != "" ? $row[12] : 0,
                             'sale_rate_a' => $row[13] != "" ? $row[13] : null,
                             'sale_rate_b' => $row[14] != "" ? $row[14] : null,
@@ -1355,10 +1347,10 @@ class ProductController extends Controller
                             'converse_box' => $row[19] ?? null,
                             'box_barcode' => $row[20] ?? null,
                             'negative_billing' => $row[21] ?? "NO",
-                            'min_qty' => $row[22] ?? 0,
-                            'reorder_qty' => $row[23] ?? 0,
+                            'min_qty' => $row[22] != "" ? $row[22] : 0,
+                            'reorder_qty' => $row[23] != "" ? $row[23] : 0,
                             'discount' => $row[24] ?? "not_applicable",
-                            'max_discount' => $row[25] ?? 0,
+                            'max_discount' => $row[25] != "" ? $row[25] : 0,
                             'discount_scheme' => $row[26] ?? null,
                             'bonus_use' => $row[27] != "" ? ($row[27] == "yes" ? 1 : 0) : "0",
                         ];
@@ -1553,11 +1545,6 @@ class ProductController extends Controller
                 if ($type !== '') {
                     // Only fetch categories with the specified type
                     $query->where('product_type', $type);
-                } else {
-                    // Fetch categories where type is either 'product' or null
-                    $query->where(function ($q) {
-                        $q->whereNull('product_type')->orWhere('product_type', 'product');
-                    });
                 }
                 return $query;
             };

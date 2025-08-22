@@ -287,11 +287,10 @@ class DirectReceiptController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // dd($request->all());
         $auth = $this->authenticateAndConfigureBranch();
         $branch = $auth['branch'];
         $role = $auth['role'];
-
+        
         $request->validate([
             'ledger' => 'required|string',
             'dr_no' => 'required|string',
@@ -309,46 +308,140 @@ class DirectReceiptController extends Controller
             'amount.*' => 'required|numeric|min:0',
             'total_amount' => 'required|numeric|min:0',
         ]);
-
-        $products = [];
-        $count = count($request->product_id);
-        for ($i = 0; $i < $count; $i++) {
-            $products[] = [
-                'product_search' => $request->product_search[$i],
-                'product_id' => $request->product_id[$i],
-                'cost' => $request->cost[$i],
-                'mrp' => $request->mrp[$i],
-                'sale_rate' => $request->sale_rate[$i],
-                'qty' => $request->qty[$i],
-                'amount' => $request->amount[$i],
-            ];
-        }
-
+        
+        
         \DB::beginTransaction();
 
         try {
-            $directReceiptData = [
+            // 1. Fetch existing receipt
+            $directReceipt = strtoupper($role->role_name) === 'SUPER ADMIN'
+                ? DirectReceipt::findOrFail($id)
+                : DirectReceipt::on($branch->connection_name)->findOrFail($id);
+
+            $oldProducts = json_decode($directReceipt->products, true);
+
+            // 2. Rollback old inventory (increment back raw, decrement finished)
+            foreach ($oldProducts as $old) {
+                $formula = strtoupper($role->role_name) === 'SUPER ADMIN'
+                    ? Formula::findOrFail($old['product_id'])
+                    : Formula::on($branch->connection_name)->findOrFail($old['product_id']);
+
+                $ingredients = is_array($formula->ingredients)
+                    ? $formula->ingredients
+                    : json_decode($formula->ingredients, true);
+
+                foreach ($ingredients as $ingredient) {
+                    $rollbackQty = $ingredient['quantity'] * $old['qty'];
+
+                    $inventory = strtoupper($role->role_name) === 'SUPER ADMIN'
+                        ? Inventory::where('product_id', $ingredient['product_id'])->first()
+                        : Inventory::on($branch->connection_name)->where('product_id', $ingredient['product_id'])->first();
+
+                    if ($inventory) {
+                        $inventory->increment('quantity', $rollbackQty);
+                    }
+                }
+
+                // rollback finished product (deduct out)
+                $finishedInventory = strtoupper($role->role_name) === 'SUPER ADMIN'
+                    ? Inventory::where('product_id', $formula->product_id)->first()
+                    : Inventory::on($branch->connection_name)->where('product_id', $formula->product_id)->first();
+
+                if ($finishedInventory) {
+                    $finishedInventory->decrement('quantity', $old['qty']);
+                }
+            }
+
+            // 3. Build new products from request
+            $products = [];
+            $ingredientTotals = [];
+            $ingredientUsages = [];
+            $count = count($request->product_id);
+
+            for ($i = 0; $i < $count; $i++) {
+                $formulaId = $request->product_id[$i];
+                $issuedQty = $request->qty[$i];
+
+                $formula = strtoupper($role->role_name) === 'SUPER ADMIN'
+                    ? Formula::findOrFail($formulaId)
+                    : Formula::on($branch->connection_name)->findOrFail($formulaId);
+
+                $products[] = [
+                    'product_search' => $request->product_search[$i],
+                    'product_id' => $request->product_id[$i],
+                    'formula_product_id' => $formula->product_id,
+                    'cost' => $request->cost[$i],
+                    'mrp' => $request->mrp[$i],
+                    'sale_rate' => $request->sale_rate[$i],
+                    'qty' => $request->qty[$i],
+                    'amount' => $request->amount[$i],
+                ];
+
+                $ingredients = is_array($formula->ingredients)
+                    ? $formula->ingredients
+                    : json_decode($formula->ingredients, true);
+
+                foreach ($ingredients as $ingredient) {
+                    $ingredientTotals[$ingredient['product_id']] =
+                        ($ingredientTotals[$ingredient['product_id']] ?? 0) + ($ingredient['quantity'] * $issuedQty);
+                }
+            }
+
+            // 4. Stock check
+            foreach ($ingredientTotals as $productId => $requiredQty) {
+                $inventoryEntries = strtoupper($role->role_name) === 'SUPER ADMIN'
+                    ? Inventory::where('product_id', $productId)->first()
+                    : Inventory::on($branch->connection_name)->where('product_id', $productId)->first();
+
+                $availableQty = $inventoryEntries?->quantity ?? 0;
+                if ($requiredQty > $availableQty) {
+                    $productName = Product::find($productId)->name ?? 'Unknown';
+                    return redirect()->back()
+                        ->with('error', "Insufficient stock for ingredient: {$productName}. Required: {$requiredQty}, Available: {$availableQty}")
+                        ->withInput();
+                }
+
+                $ingredientUsages[] = [
+                    'product_id' => $productId,
+                    'required_qty' => $requiredQty,
+                ];
+            }
+
+            // 5. Update Direct Receipt
+            $directReceipt->update([
                 'ledger' => $request->ledger,
                 'dr_no' => $request->dr_no,
                 'date' => $request->date,
                 'products' => json_encode($products),
                 'total_amount' => $request->total_amount,
-                'updated_at' => now(),
-            ];
+            ]);
 
-            if (strtoupper($role->role_name) === 'SUPER ADMIN') {
-                $directReceipt = DirectReceipt::findOrFail($id);
-                $directReceipt->update($directReceiptData);
-            } else {
-                $directReceipt = DirectReceipt::on($branch->connection_name)->findOrFail($id);
-                $directReceipt->update($directReceiptData);
+            // 6. Apply new inventory (decrement raw, increment finished)
+            foreach ($ingredientUsages as $usage) {
+                $inventory = strtoupper($role->role_name) === 'SUPER ADMIN'
+                    ? Inventory::where('product_id', $usage['product_id'])->first()
+                    : Inventory::on($branch->connection_name)->where('product_id', $usage['product_id'])->first();
+
+                if ($inventory) {
+                    $inventory->decrement('quantity', $usage['required_qty']);
+                }
             }
 
-            \DB::commit();
+            foreach ($products as $product) {
+                $finishedInventory = strtoupper($role->role_name) === 'SUPER ADMIN'
+                    ? Inventory::where('product_id', $product['formula_product_id'])->first()
+                    : Inventory::on($branch->connection_name)->where('product_id', $product['formula_product_id'])->first();
 
-            return redirect()->route('directreceipt.index')->with('success', 'Direct Receipt updated successfully.');
+                if ($finishedInventory) {
+                    $finishedInventory->increment('quantity', $product['qty']);
+                }
+            }
+
+
+            \DB::commit();
+            return redirect()->route('directreceipt.index')->with('success', 'Direct Receipt updated successfully with inventory adjustments.');
         } catch (\Exception $e) {
-            \DB::rollback();
+            \DB::rollBack();
             \Log::error('Direct Receipt update failed: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error updating Direct Receipt: ' . $e->getMessage())->withInput();
         }
