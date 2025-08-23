@@ -85,7 +85,7 @@ class InventoryController extends Controller
                 ->where('id', $request->product_id)
                 ->firstOrFail();
         }
-        if ($request->column == 'total_qty') {
+        if ($request->column == 'total_qty' || $request->column == 'gst') {
             $inventory = Inventory::on($branch->connection_name)->where('product_id', $request->product_id)
                         ->whereNull('purchase_id')
                         ->whereNull('one_to_many_id')
@@ -94,27 +94,40 @@ class InventoryController extends Controller
 
             if (!$inventory) {
                 // Call private function to insert inventory
-                $this->insertInventory($product, $request->value,$request->gst,$request->gst_p);
-                return response()->json(['success' => true, 'message' => 'Inventory inserted.']);
+                if($request->column == 'total_qty'){
+                    $this->insertInventory($product, $request->value,$request->gst,$request->gst_p);
+                    return response()->json(['success' => true, 'message' => 'Inventory inserted.']);
+                }else{
+                    $this->insertInventory($product, 0,$request->gst,$request->gst_p);
+                    return response()->json(['success' => true, 'message' => 'Inventory inserted.']);
+                }
             }
 
-            // Update existing inventory
-            if ($request->value != '') {
+            if($request->column == 'gst'){
+                $inventory->gst = $request->value ?? "off";
+                $inventory->gst_p = $request->gst_p ?? 0;
+
+            }else{
                 $inventory->total_qty = $request->value;
                 $inventory->quantity = $request->value ?? "";
             }
 
-
             $inventory->save();
 
-            return response()->json(['success' => true, 'message' => 'Product updated.']);
+            return response()->json(['success' => true, 'message' => 'Inventory updated.']);
         }
 
 
 
         // dd($request->all(), $product->id);
         if ($request->value != '') {
-            $product->{$request->column} = $request->value;
+            if($request->column == 'purchase_price'){
+                $product->purchase_rate = $request->value;
+            }else if($request->column == 'sale_rate'){
+                $product->sale_rate_a = $request->value;
+            }else{
+                $product->{$request->column} = $request->value;
+            }
         }
         $product->save();
 
@@ -496,8 +509,6 @@ class InventoryController extends Controller
         $user = $auth['user'];
         $branch = $auth['branch'];
         $role = $auth['role'];
-
-        dd($request->all());
 
         try {
             if (empty($request->product_id) && !empty($request->reference_id)) {
