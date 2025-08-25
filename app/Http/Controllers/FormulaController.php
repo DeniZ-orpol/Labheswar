@@ -15,7 +15,6 @@ class FormulaController extends Controller
     use BranchAuthTrait;
 
     /**
-     * asd
      * Display a listing of the resource.
      */
     public function index(Request $request)
