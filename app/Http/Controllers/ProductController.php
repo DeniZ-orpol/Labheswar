@@ -706,7 +706,8 @@ class ProductController extends Controller
                         $variantData['is_variant'] = 'yes'; // not a parent itself
                         $variantData['negative_billing'] = "YES";
                         $variantData['decimal_btn'] = 0;
-
+                        $variantData['image'] = $path;
+                        $variantData['hsn_code_id'] = $validate['hsn_code_id'];
                         unset($variantData['id']); // to avoid primary key conflict
                         unset($variantData['custom_variant_btn']);
 
@@ -1061,6 +1062,8 @@ class ProductController extends Controller
 
                         $variantData = [
                             'product_name' => $name ?? '',
+                            'image' => $path,
+                            'hsn_code_id' => $validate['hsn_code_id'],
                             'barcode' => $barcodes[$index] ?? '',
                             'sale_rate_a' => $prices[$index] ?? 0,
                             'reference_id' => $product->id,
@@ -1086,7 +1089,7 @@ class ProductController extends Controller
                             $variantData['negative_billing'] = "YES";
                             $variantData['decimal_btn'] = 0;
                             $variantData['updated_by'] = session('branch_user_id');
-
+                            $variantData['image'] = $path;
                             // Remove fields that should not be duplicated
                             unset($variantData['id']);
                             unset($variantData['custom_variant_btn']);
